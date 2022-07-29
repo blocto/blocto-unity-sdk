@@ -13,6 +13,8 @@ using Newtonsoft.Json;
 using UnityEngine.Networking;
 using UnityEngine;
 using Error = Blocto.Flow.Client.Http.Models.Apis.Error;
+// ReSharper disable TooManyArguments
+// ReSharper disable MethodTooLong
 
 namespace Blocto.Flow.Client.Http.Unity 
 {
@@ -61,7 +63,6 @@ namespace Blocto.Flow.Client.Http.Unity
             return BlocksAll(height, start_height, end_height, expand, select, System.Threading.CancellationToken.None);
         }
         
-        // ReSharper disable Unity.PerformanceAnalysis
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>Gets Blocks by Height</summary>
         /// <param name="height">A comma-separated list of block heights to get. This parameter is incompatible with `start_height` and `end_height`.</param>
@@ -82,8 +83,7 @@ namespace Blocto.Flow.Client.Http.Unity
             IsAppendQueryWithSelect(select, urlBuilder);
             urlBuilder.Length--;
             
-            var uri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
-            var client = CreateUnityWebRequestWithGet(uri, "application/json", new DownloadHandlerBuffer());
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
             try
             {
                 // StartCoroutine(SendRequest(client));
@@ -123,8 +123,48 @@ namespace Blocto.Flow.Client.Http.Unity
             {
                     client?.Dispose();
             }
-            
-            return default;
+        }
+        
+        /// <summary>Get Blocks by ID.</summary>
+        /// <param name="id">A block ID or comma-separated list of block IDs.</param>
+        /// <param name="expand">A comma-separated list indicating which properties of the content to expand.</param>
+        /// <param name="select">A comma-separated list indicating which properties of the content to return.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ICollection<Block> Blocks(IEnumerable<string> id, IEnumerable<string> expand, IEnumerable<string> select)
+        {
+            return Blocks(id, expand, select, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Get Blocks by ID.</summary>
+        /// <param name="id">A block ID or comma-separated list of block IDs.</param>
+        /// <param name="expand">A comma-separated list indicating which properties of the content to expand.</param>
+        /// <param name="select">A comma-separated list indicating which properties of the content to return.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ICollection<Block> Blocks(IEnumerable<string> id, IEnumerable<string> expand, IEnumerable<string> select, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new ArgumentNullException("id");
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/blocks/{id}?");
+            urlBuilder.Replace("{id}", Uri.EscapeDataString(string.Join(",", id.Select(s_ => ConvertToString(s_, CultureInfo.InvariantCulture)))));
+            IsAppendQueryWithExpand(expand, urlBuilder);
+            IsAppendQueryWithSelect(select, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<ICollection<Block>>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
         }
         
         /// <summary>Get a Transaction by ID.</summary>
@@ -157,8 +197,7 @@ namespace Blocto.Flow.Client.Http.Unity
             IsAppendQueryWithSelect(select, urlBuilder);
             urlBuilder.Length--;
 
-            var uri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
-            var client = CreateUnityWebRequestWithGet(uri, "application/json", new DownloadHandlerBuffer());
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
             try
             {
                 var result = ProcessWebRequest<Transaction>(client);
@@ -168,8 +207,313 @@ namespace Blocto.Flow.Client.Http.Unity
             {
                 client?.Dispose();
             }
-            
-            return default;
+        }
+        
+        /// <summary>Submit a Transaction</summary>
+        /// <param name="body">The transaction to submit.</param>
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Transaction SendTransaction(TransactionBody body)
+        {
+            return SendTransaction(body, System.Threading.CancellationToken.None);
+        }
+        
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Submit a Transaction</summary>
+        /// <param name="body">The transaction to submit.</param>
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Transaction SendTransaction(TransactionBody body, System.Threading.CancellationToken cancellationToken)
+        {
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions");
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<Transaction>(client);
+                return result; 
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        /// <summary>Gets a Collection by ID</summary>
+        /// <param name="id">The collection ID.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Collection Collections(string id, IEnumerable<string> expand)
+        {
+            return Collections(id, expand, System.Threading.CancellationToken.None);
+        }
+        
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Gets a Collection by ID</summary>
+        /// <param name="id">The collection ID.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Collection Collections(string id, IEnumerable<string> expand, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new ArgumentNullException("id");
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/collections/{id}?");
+            urlBuilder.Replace("{id}", Uri.EscapeDataString(ConvertToString(id, CultureInfo.InvariantCulture)));
+            IsAppendQueryWithExpand(expand, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<Collection>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        /// <summary>Get an Account By Address</summary>
+        /// <param name="address">The address of the account.</param>
+        /// <param name="block_height">The block height to query for the account details at the "sealed" is used by default.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Account Accounts(string address, string block_height, IEnumerable<string> expand)
+        {
+            return Accounts(address, block_height, expand, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Get an Account By Address</summary>
+        /// <param name="address">The address of the account.</param>
+        /// <param name="block_height">The block height to query for the account details at the "sealed" is used by default.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Account Accounts(string address, string block_height, IEnumerable<string> expand, System.Threading.CancellationToken cancellationToken)
+        {
+            if (address == null)
+                throw new ArgumentNullException("address");
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/accounts/{address}?");
+            urlBuilder.Replace("{address}", Uri.EscapeDataString(ConvertToString(address, CultureInfo.InvariantCulture)));
+            IsAppendQueryWithBlockHeight(block_height, urlBuilder);
+            IsAppendQueryWithExpand(expand, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<Account>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+
+        /// <summary>Execute a Cadence Script</summary>
+        /// <param name="block_id">The ID of the block to execute the script against. For a specific block height, use `block_height` instead.</param>
+        /// <param name="block_height">The height of the block to execute the script against. This parameter is incompatible with `block_id`.</param>
+        /// <param name="body">The script to execute.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Response Scripts(string block_id, string block_height, ScriptBody body)
+        {
+            return Scripts(block_id, block_height, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Execute a Cadence Script</summary>
+        /// <param name="block_id">The ID of the block to execute the script against. For a specific block height, use `block_height` instead.</param>
+        /// <param name="block_height">The height of the block to execute the script against. This parameter is incompatible with `block_id`.</param>
+        /// <param name="body">The script to execute.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public Response Scripts(string block_id, string block_height, ScriptBody body, System.Threading.CancellationToken cancellationToken)
+        {
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/scripts?");
+            IsAppendQueryWithBlockId(block_id, urlBuilder);
+            IsAppendQueryWithBlockHeight(block_height, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<Response>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        /// <summary>Get Events</summary>
+        /// <param name="type">The event type is [identifier of the event as defined here](https://docs.onflow.org/core-contracts/flow-token/#events).</param>
+        /// <param name="start_height">The start height of the block range for events. Must be used together with `end_height`. This parameter is incompatible with `block_ids`.</param>
+        /// <param name="end_height">The end height of the block range for events. Must be used together with `start_height`. This parameter is incompatible with `block_ids`.</param>
+        /// <param name="block_ids">List of block IDs. Either provide this parameter or both height parameters. This parameter is incompatible with heights parameters.</param>
+        /// <param name="select">A comma-separated list indicating which properties of the content to return.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ICollection<BlockEvents> Events(string type, string start_height, string end_height, IEnumerable<string> block_ids, IEnumerable<string> select)
+        {
+            return Events(type, start_height, end_height, block_ids, select, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Get Events</summary>
+        /// <param name="type">The event type is [identifier of the event as defined here](https://docs.onflow.org/core-contracts/flow-token/#events).</param>
+        /// <param name="start_height">The start height of the block range for events. Must be used together with `end_height`. This parameter is incompatible with `block_ids`.</param>
+        /// <param name="end_height">The end height of the block range for events. Must be used together with `start_height`. This parameter is incompatible with `block_ids`.</param>
+        /// <param name="block_ids">List of block IDs. Either provide this parameter or both height parameters. This parameter is incompatible with heights parameters.</param>
+        /// <param name="select">A comma-separated list indicating which properties of the content to return.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ICollection<BlockEvents> Events(string type, string start_height, string end_height, IEnumerable<string> block_ids, IEnumerable<string> select, System.Threading.CancellationToken cancellationToken)
+        {
+            if (type == null)
+                throw new ArgumentNullException("type");
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/events?");
+            urlBuilder.Append(Uri.EscapeDataString("type") + "=").Append(Uri.EscapeDataString(ConvertToString(type, CultureInfo.InvariantCulture))).Append("&");
+            IsAppendQueryWithStartHeight(start_height, urlBuilder);
+            IsAppendQueryWithEndHeight(end_height, urlBuilder);
+            IsAppendQueryWithBlockIds(block_ids, urlBuilder);
+            IsAppendQueryWithSelect(select, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<ICollection<BlockEvents>>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+
+        /// <summary>Get a Transaction Result by ID.</summary>
+        /// <param name="transaction_id">The transaction ID of the transaction result.</param>
+        /// <param name="expand">A comma-separated list indicating which properties of the content to expand.</param>
+        /// <param name="select">A comma-separated list indicating which properties of the content to return.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public TransactionResult Results(string transaction_id, IEnumerable<string> expand, IEnumerable<string> select)
+        {
+            return Results(transaction_id, expand, select, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Get a Transaction Result by ID.</summary>
+        /// <param name="transaction_id">The transaction ID of the transaction result.</param>
+        /// <param name="expand">A comma-separated list indicating which properties of the content to expand.</param>
+        /// <param name="select">A comma-separated list indicating which properties of the content to return.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public TransactionResult Results(string transaction_id, IEnumerable<string> expand, IEnumerable<string> select, System.Threading.CancellationToken cancellationToken)
+        {
+            if (transaction_id == null)
+                throw new ArgumentNullException("transaction_id");
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transaction_results/{transaction_id}?");
+            urlBuilder.Replace("{transaction_id}", Uri.EscapeDataString(ConvertToString(transaction_id, CultureInfo.InvariantCulture)));
+            IsAppendQueryWithExpand(expand, urlBuilder);
+            IsAppendQueryWithSelect(select, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<TransactionResult>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        /// <summary>Get Execution Results by Block ID</summary>
+        /// <param name="block_id">Single ID or comma-separated list of block IDs.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ICollection<ExecutionResult> ResultsAll(IEnumerable<string> block_id)
+        {
+            return ResultsAll(block_id, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Get Execution Results by Block ID</summary>
+        /// <param name="block_id">Single ID or comma-separated list of block IDs.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ICollection<ExecutionResult> ResultsAll(IEnumerable<string> block_id, System.Threading.CancellationToken cancellationToken)
+        {
+            if (block_id == null)
+                throw new ArgumentNullException(nameof(block_id));
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/execution_results?");
+            IsAppendQueryWithBlockIds(block_id, urlBuilder);
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<ICollection<ExecutionResult>>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        /// <summary>Get Execution Result by ID</summary>
+        /// <param name="id">The ID of the execution result.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ExecutionResult Results(string id)
+        {
+            return Results(id, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>Get Execution Result by ID</summary>
+        /// <param name="id">The ID of the execution result.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public ExecutionResult Results(string id, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/execution_results/{id}");
+            urlBuilder.Replace("{id}", Uri.EscapeDataString(ConvertToString(id, CultureInfo.InvariantCulture)));
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());;
+            try
+            {
+                var result = ProcessWebRequest<ExecutionResult>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
         }
         
         private T ProcessWebRequest<T>(UnityWebRequest unityWebRequest)
@@ -201,97 +545,181 @@ namespace Blocto.Flow.Client.Http.Unity
             }
             else
             {
-                throw new ApiException("The HTTP status code of the response was not expected (" + (int)client.responseCode + ").", (int)client.responseCode, "", null); 
+                throw new ApiException("The HTTP status code of the response was not expected (" + (int)unityWebRequest.responseCode + ").", (int)unityWebRequest.responseCode, "", null); 
             } 
             
             return default;
         }
         
+        /// <summary>
+        /// Handler web response status code is 400
+        /// </summary>
+        /// <param name="unityWebRequest">UnityWebRequest</param>
+        /// <exception cref="ApiException{Error}"></exception>
         private void BadRequestHandler(UnityWebRequest unityWebRequest)
         {
             var objectResponse_ = ReadObjectResponseAsync<Error>(unityWebRequest);
             throw new ApiException<Error>("Bad Request", (int)unityWebRequest.responseCode, objectResponse_.Text, objectResponse_.Object, null); 
         }
         
+        /// <summary>
+        /// Handler web response status code is 404
+        /// </summary>
+        /// <param name="unityWebRequest">UnityWebRequest</param>
+        /// <exception cref="ApiException{Error}"></exception>
         private void NotFoundHandler(UnityWebRequest unityWebRequest)
         {
             var objectResponse_ = ReadObjectResponseAsync<Error>(unityWebRequest);
             throw new ApiException<Error>("Not Found", (int)unityWebRequest.responseCode, objectResponse_.Text, objectResponse_.Object, null); 
         }
         
+        /// <summary>
+        /// Handler web response status code is 500
+        /// </summary>
+        /// <param name="unityWebRequest">UnityWebRequest</param>
+        /// <exception cref="ApiException{Error}"></exception>
         private void InternalServerError(UnityWebRequest unityWebRequest)
         {
             var objectResponse_ = ReadObjectResponseAsync<Error>(unityWebRequest);
             throw new ApiException<Error>("Internal Server Error", (int)unityWebRequest.responseCode, objectResponse_.Text, objectResponse_.Object, null); 
         }
 
-        private void IsAppendQueryWithSelect(IEnumerable<string> select, StringBuilder urlBuilder_)
+        /// <summary>
+        /// Confirm whether need to append select query parameter
+        /// </summary>
+        /// <param name="select">selects parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithSelect(IEnumerable<string> select, StringBuilder urlBuilder)
         {
             if (select == null)
             {
                 return;
             }
 
-            urlBuilder_.Append(Uri.EscapeDataString("select") + "=");
+            urlBuilder.Append(Uri.EscapeDataString("select") + "=");
             foreach (var item_ in select)
             {
-                urlBuilder_.Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append(",");
+                urlBuilder.Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append(",");
             }
 
-            urlBuilder_.Length--;
-            urlBuilder_.Append("&");
+            urlBuilder.Length--;
+            urlBuilder.Append("&");
         }
         
-        private void IsAppendQueryWithExpand(IEnumerable<string> expand, StringBuilder urlBuilder_)
+        /// <summary>
+        /// Confirm whether need to append expand query parameter 
+        /// </summary>
+        /// <param name="expand">Expand parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithExpand(IEnumerable<string> expand, StringBuilder urlBuilder)
         {
             if (expand == null)
             {
                 return;
             }
 
-            urlBuilder_.Append(Uri.EscapeDataString("expand") + "=");
+            urlBuilder.Append(Uri.EscapeDataString("expand") + "=");
             foreach (var item_ in expand)
             {
-                urlBuilder_.Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append(",");
+                urlBuilder.Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append(",");
             }
 
-            urlBuilder_.Length--;
-            urlBuilder_.Append("&");
+            urlBuilder.Length--;
+            urlBuilder.Append("&");
         }
 
-        private void IsAppendQueryWithEndHeight(string end_height, StringBuilder urlBuilder_)
+        /// <summary>
+        /// Confirm whether need to append end height query parameter 
+        /// </summary>
+        /// <param name="end_height">end height parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithEndHeight(string end_height, StringBuilder urlBuilder)
         {
             if (end_height != null)
             {
-                urlBuilder_.Append(Uri.EscapeDataString("end_height") + "=").Append(Uri.EscapeDataString(ConvertToString(end_height, CultureInfo.InvariantCulture))).Append("&");
+                urlBuilder.Append(Uri.EscapeDataString("end_height") + "=").Append(Uri.EscapeDataString(ConvertToString(end_height, CultureInfo.InvariantCulture))).Append("&");
             }
         }
 
-        private void IsAppendQueryWithStartHeight(string start_height, StringBuilder urlBuilder_)
+        /// <summary>
+        /// Confirm whether need to append start height query parameter 
+        /// </summary>
+        /// <param name="start_height">start height parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithStartHeight(string start_height, StringBuilder urlBuilder)
         {
             if (start_height != null)
             {
-                urlBuilder_.Append(Uri.EscapeDataString("start_height") + "=").Append(Uri.EscapeDataString(ConvertToString(start_height, CultureInfo.InvariantCulture))).Append("&");
+                urlBuilder.Append(Uri.EscapeDataString("start_height") + "=").Append(Uri.EscapeDataString(ConvertToString(start_height, CultureInfo.InvariantCulture))).Append("&");
             }
         }
 
-        private void IsAppendQueryWithHeight(IEnumerable<string> height, StringBuilder urlBuilder_)
+        /// <summary>
+        /// Confirm whether need to append height query parameter 
+        /// </summary>
+        /// <param name="height">height parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithHeight(IEnumerable<string> height, StringBuilder urlBuilder)
         {
             if (height == null)
             {
                 return;
             }
 
-            urlBuilder_.Append(Uri.EscapeDataString("height") + "=");
+            urlBuilder.Append(Uri.EscapeDataString("height") + "=");
             foreach (var item_ in height)
             {
-                urlBuilder_.Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append(",");
+                urlBuilder.Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append(",");
             }
 
-            urlBuilder_.Length--;
-            urlBuilder_.Append("&");
+            urlBuilder.Length--;
+            urlBuilder.Append("&");
         }
 
+        /// <summary>
+        /// Confirm whether need to append block height query parameter 
+        /// </summary>
+        /// <param name="block_height">block height parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithBlockHeight(string block_height, StringBuilder urlBuilder)
+        {
+            if (block_height != null)
+            {
+                urlBuilder.Append(Uri.EscapeDataString("block_height") + "=").Append(Uri.EscapeDataString(ConvertToString(block_height, CultureInfo.InvariantCulture))).Append("&");
+            }
+        }
+
+        /// <summary>
+        /// Confirm whether need to append block id query parameter 
+        /// </summary>
+        /// <param name="block_id">block id parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithBlockId(string block_id, StringBuilder urlBuilder)
+        {
+            if (block_id != null)
+            {
+                urlBuilder.Append(Uri.EscapeDataString("block_id") + "=").Append(Uri.EscapeDataString(ConvertToString(block_id, CultureInfo.InvariantCulture))).Append("&");
+            }
+        }
+        
+        /// <summary>
+        /// Confirm whether need to append block ids query parameter 
+        /// </summary>
+        /// <param name="block_ids">block ids parameter</param>
+        /// <param name="urlBuilder">Url string builder</param>
+        private void IsAppendQueryWithBlockIds(IEnumerable<string> block_ids, StringBuilder urlBuilder)
+        {
+            if (block_ids == null)
+            {
+                return;
+            }
+
+            foreach (var item_ in block_ids)
+            {
+                urlBuilder.Append(Uri.EscapeDataString("block_ids") + "=").Append(Uri.EscapeDataString(ConvertToString(item_, CultureInfo.InvariantCulture))).Append("&");
+            }
+        }
+        
         private string ConvertToString(object value, IFormatProvider cultureInfo)
         {
             switch (value)
@@ -332,8 +760,9 @@ namespace Blocto.Flow.Client.Http.Unity
             return Convert.ToString(value, cultureInfo);
         }
         
-        private UnityWebRequest CreateUnityWebRequestWithGet(Uri uri, string contentType, DownloadHandlerBuffer downloadHandlerBuffer, UploadHandlerRaw uploadHandlerRaw = null)
+        private UnityWebRequest CreateUnityWebRequestWithGet(StringBuilder urlBuilder, string contentType, DownloadHandlerBuffer downloadHandlerBuffer, UploadHandlerRaw uploadHandlerRaw = null)
         {
+            var uri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
             var unityWebRequest = new UnityWebRequest(uri, "GET");
             unityWebRequest.SetRequestHeader("Content-Type", contentType);
             if(uploadHandlerRaw != null)
