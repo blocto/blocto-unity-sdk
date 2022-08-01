@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Threading.Tasks;
 using Blocto.Flow.Client.Http.Unity;
+using Plugins.Flow;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,7 +29,7 @@ public class MainController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        var fcl = new FlowClientLibrary();
     }
     
     private async void ButtonClick()
