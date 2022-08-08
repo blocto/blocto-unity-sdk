@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 
 namespace Flow.FCL.Utility
 {
-    public interface IWebRequestHelper
+    public interface IWebRequestUtils
     {
         public TResponse GetResponse<TResponse>(string url);
 

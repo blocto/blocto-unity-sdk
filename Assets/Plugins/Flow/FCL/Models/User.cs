@@ -16,5 +16,6 @@ namespace Flow.FCL.Models
         public string F_vsn { get; set; }
 
         public bool LoggedIn { get; set; }
+        
     }
 }

@@ -13,11 +13,13 @@ using UnityEngine.Networking;
 
 namespace Flow.FCL.Utility
 {
-    public class WebRequestHelper : MonoBehaviour, IWebRequestHelper
+    // 我們前端 API 之後會從 header 辨認 App id
+    // 再打 wallet webapp 的時候請帶上 Blocto-Application-Identifier 這個 Header
+    public class WebRequestUtils : MonoBehaviour, IWebRequestUtils
     {
         private readonly Dictionary<string, Action<UnityWebRequest>> _handlers;
         
-        public WebRequestHelper()
+        public WebRequestUtils()
         {
             _handlers = new Dictionary<string, Action<UnityWebRequest>>
                         {

@@ -21,16 +21,16 @@ namespace Flow.FCL.Models
         
         private IWalletProvider _walletProvider;
         
-        private IWebRequestHelper _webRequestHelper;
+        private IWebRequestUtils _webRequestUtils;
         
         public void SetWalletProvider(IWalletProvider walletProvider)
         {
             _walletProvider = walletProvider;
         }
         
-        public void SetWebRequestHelper(IWebRequestHelper webRequestHelper)
+        public void SetWebRequestHelper(IWebRequestUtils webRequestUtils)
         {
-            _webRequestHelper = webRequestHelper;
+            _webRequestUtils = webRequestUtils;
         }
         
         /// <summary>
@@ -57,7 +57,7 @@ namespace Flow.FCL.Models
             var signUrl = signUrlBuilder.ToString();
             
             signUrl.ToLog();
-            var authnResponse = _webRequestHelper.GetResponse<AuthnResponse>(signUrl);
+            var authnResponse = _webRequestUtils.GetResponse<AuthnResponse>(signUrl);
             
             var iframeUrlBuilder = new StringBuilder();
             iframeUrlBuilder.Append(authnResponse.AuthnLocal.Endpoint + "?")

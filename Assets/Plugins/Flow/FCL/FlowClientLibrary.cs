@@ -1,22 +1,11 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
-using Flow.Net.SDK.Client.Unity.Models.Apis;
-using Flow.Net.SDK.Client.Unity.Models.Enums;
 using Flow.Net.Sdk.Core.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using Plugins.Flow;
-using Plugins.Flow.FCL.Models;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Flow.FCL
 {
@@ -28,7 +17,7 @@ namespace Flow.FCL
         
         private CurrentUser _currentUser;
         
-        private IWebRequestHelper _webRequestHelper;
+        private IWebRequestUtils _webRequestUtils;
         
         public FlowClientLibrary()
         {
@@ -38,16 +27,16 @@ namespace Flow.FCL
         public void Start()
         {
             var factory = gameObject.AddComponent<HelperFactory>();
-            _webRequestHelper = factory.CreateWebRequestHelper();
+            _webRequestUtils = factory.CreateWebRequestHelper();
         }
 
         /// <summary>
         /// Set custom webrequest helper
         /// </summary>
-        /// <param name="webRequestHelper">IWebRequestHelper</param>
-        public void SetWebRequestHelper(IWebRequestHelper webRequestHelper)
+        /// <param name="webRequestUtils">IWebRequestHelper</param>
+        public void SetWebRequestHelper(IWebRequestUtils webRequestUtils)
         {
-            _webRequestHelper = webRequestHelper;
+            _webRequestUtils = webRequestUtils;
         }
         
         public CurrentUser CurrentUser()
@@ -65,7 +54,7 @@ namespace Flow.FCL
         public void Authenticate(Action callback = null)
         {
             var url = Config.Get("discovery.wallet");
-            var authnResponse = _webRequestHelper.GetResponse<AuthnResponse>(url);  
+            var authnResponse = _webRequestUtils.GetResponse<AuthnResponse>(url);  
             
             var authnUrlBuilder = new StringBuilder();
             authnUrlBuilder.Append(authnResponse.AuthnLocal.Endpoint + "?")
