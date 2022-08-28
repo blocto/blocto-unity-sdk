@@ -1,6 +1,6 @@
 using System;
 using Newtonsoft.Json;
-using Plugins.Flow.FCL.Models;
+using Flow.FCL.Models;
 
 namespace Flow.FCL.Models
 {

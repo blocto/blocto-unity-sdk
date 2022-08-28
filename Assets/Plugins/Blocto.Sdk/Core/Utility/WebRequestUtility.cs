@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
@@ -14,11 +13,11 @@ using UnityEngine.Networking;
 
 namespace Blocto.Sdk.Core.Utility
 {
-    public class WebRequestHelper : MonoBehaviour
+    public class WebRequestUtility : MonoBehaviour
     {
         private readonly Dictionary<string, Action<UnityWebRequest>> _handlers;
         
-        public WebRequestHelper()
+        public WebRequestUtility()
         {
             _handlers = new Dictionary<string, Action<UnityWebRequest>>
                         {
@@ -47,7 +46,7 @@ namespace Blocto.Sdk.Core.Utility
             {
                 var tmp = unityWebRequest.downloadHandler.data;
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
-                Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
+                // Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  
             }
@@ -102,6 +101,8 @@ namespace Blocto.Sdk.Core.Utility
             var uri = new Uri(url, UriKind.RelativeOrAbsolute);
             var unityWebRequest = new UnityWebRequest(uri, method);
             unityWebRequest.SetRequestHeader("Content-Type", contentType);
+            unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
+            
             if(uploadHandlerRaw != null)
             {
                 unityWebRequest.uploadHandler = uploadHandlerRaw;
@@ -114,7 +115,7 @@ namespace Blocto.Sdk.Core.Utility
         
         private IEnumerator SendRequest(UnityWebRequest unityRequest)
         {
-            Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
+            // Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
             yield return unityRequest.SendWebRequest();
         }
         

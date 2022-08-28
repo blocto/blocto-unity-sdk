@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace Flow.FCL.Models
+namespace Flow.FCL.Models.Authn
 {
     public partial class AuthnLocal
     {

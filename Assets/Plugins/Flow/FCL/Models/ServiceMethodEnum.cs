@@ -1,6 +1,6 @@
 using System.Runtime.Serialization;
 
-namespace Plugins.Flow.FCL.Models
+namespace Flow.FCL.Models
 {
     public enum ServiceMethodEnum
     {

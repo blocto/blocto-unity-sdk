@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Flow.FCL.Models.Authn;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
+using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using UnityEngine;
 
@@ -23,14 +25,35 @@ namespace Flow.FCL.Models
         
         private IWebRequestUtils _webRequestUtils;
         
+        private CoreModule _coreModule;
+        
+        private CurrentUser _currentUser;
+        
+        private Config.Config _config;
+        
         public void SetWalletProvider(IWalletProvider walletProvider)
         {
             _walletProvider = walletProvider;
         }
         
+        public void SetCoreModule(CoreModule coreModule)
+        {
+            _coreModule = coreModule;
+        }
+        
         public void SetWebRequestHelper(IWebRequestUtils webRequestUtils)
         {
             _webRequestUtils = webRequestUtils;
+        }
+        
+        public void SetCurrentUser(CurrentUser currentUser)
+        {
+            _currentUser = currentUser;
+        }
+        
+        public void SetConfig(Config.Config config)
+        {
+            _config = config;
         }
         
         /// <summary>
@@ -39,7 +62,47 @@ namespace Flow.FCL.Models
         /// <returns>CurrentUser</returns>
         public CurrentUser Snapshot()
         {
-            return this;
+            return _currentUser;
+        }
+        
+        public void Authenticate(Action callback = null)
+        {
+            var url = _config.Get("discovery.wallet");
+            _coreModule.Authenticate(url, () => {
+                                               switch (_walletProvider.PollingResponse.Status)
+                                               {
+                                                   case PollingStatusEnum.APPROVED:
+                                                       Debug.Log($"Polling response status APPROVED");
+                                                       _currentUser = new CurrentUser
+                                                                      {
+                                                                          Addr = new FlowAddress(_walletProvider.PollingResponse.Data.Addr),
+                                                                          LoggedIn = true, 
+                                                                          F_type = "USER",
+                                                                          F_vsn = _walletProvider.PollingResponse.FVsn,
+                                                                          Services = _walletProvider.PollingResponse.Data.Services.ToList(),
+                                                                          ExpiresAt = _walletProvider.PollingResponse.Data.Expires 
+                                                                      };
+                                                       
+                                                       _currentUser.SetWalletProvider(_walletProvider);
+                                                       _currentUser.SetCoreModule(_coreModule);
+                                                       Debug.Log($"currentUser service count: {_currentUser.Services.Count}");
+                                                       break;
+                                                   case PollingStatusEnum.DECLINED:
+                                                       _currentUser = new CurrentUser
+                                                                      {
+                                                                           LoggedIn = false, 
+                                                                           F_type = "USER",
+                                                                           F_vsn = _walletProvider.PollingResponse.FVsn,
+                                                                           ExpiresAt = _walletProvider.PollingResponse.Data.Expires
+                                                                      };
+                                                       break;
+                                                   case PollingStatusEnum.PENDING:
+                                                   case PollingStatusEnum.REDIRECT:
+                                                   case PollingStatusEnum.NONE:
+                                                   default:
+                                                       break;
+                                               }
+                                          }, callback);
         }
         
         public void SignUserMessage()
@@ -57,7 +120,7 @@ namespace Flow.FCL.Models
             var signUrl = signUrlBuilder.ToString();
             
             signUrl.ToLog();
-            var authnResponse = _webRequestUtils.GetResponse<AuthnResponse>(signUrl);
+            var authnResponse = _webRequestUtils.GetResponse<AuthnResponse>(signUrl, "POST", "application/json", new Dictionary<string, object>());
             
             var iframeUrlBuilder = new StringBuilder();
             iframeUrlBuilder.Append(authnResponse.AuthnLocal.Endpoint + "?")

@@ -1,0 +1,15 @@
+namespace Plugins.Blocto.Sdk.Core.Model
+{
+    public enum VoucherPropertyEnum
+    {
+        cadence,
+        refBlock,
+        computeLimit,
+        arguments,
+        proposalKey,
+        payer,
+        authorizers,
+        payloadSigs,
+        envelopeSigs
+    }
+}

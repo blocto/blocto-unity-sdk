@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
@@ -29,10 +31,39 @@ namespace Flow.FCL.Utility
                         };
         }
 
-        public TResponse GetResponse<TResponse>(string url)
+        public TResponse GetResponse<TResponse>(string url, string method, string contentType, Dictionary<string, object> parameters)
+        {
+            Debug.Log($"Get response, url: {url}");
+            var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
+            if(parameters.Keys.Any())
+            {
+                var jsonStr = JsonConvert.SerializeObject(parameters);
+                var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
+                var uploadHandler = new UploadHandlerRaw(requestBytes);
+                client.uploadHandler = uploadHandler;
+            }
+            
+            try
+            {
+                var result = ProcessWebRequest<TResponse>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        public TResponse GetResponse<TResponse>(string url, string method, string contentType, object parameter)
         {
             Debug.Log($"Get AuthnResponse, url: {url}");
-            var client = CreateUnityWebRequest(url, "POST", "application/json", new DownloadHandlerBuffer());;
+            var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
+            client.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
+            var jsonStr = JsonConvert.SerializeObject(parameter);
+            var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
+            var uploadHandler = new UploadHandlerRaw(requestBytes);
+            client.uploadHandler = uploadHandler;
+            
             try
             {
                 var result = ProcessWebRequest<TResponse>(client);
@@ -63,7 +94,7 @@ namespace Flow.FCL.Utility
             {
                 var tmp = unityWebRequest.downloadHandler.data;
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
-                Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
+                // Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  
             }
@@ -118,6 +149,7 @@ namespace Flow.FCL.Utility
             var uri = new Uri(url, UriKind.RelativeOrAbsolute);
             var unityWebRequest = new UnityWebRequest(uri, method);
             unityWebRequest.SetRequestHeader("Content-Type", contentType);
+            unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
             if(uploadHandlerRaw != null)
             {
                 unityWebRequest.uploadHandler = uploadHandlerRaw;
@@ -130,7 +162,7 @@ namespace Flow.FCL.Utility
         
         private IEnumerator SendRequest(UnityWebRequest unityRequest)
         {
-            Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
+            // Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
             yield return unityRequest.SendWebRequest();
         }
         

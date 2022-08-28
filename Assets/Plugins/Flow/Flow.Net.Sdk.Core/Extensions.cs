@@ -34,7 +34,51 @@ namespace Flow.Net.Sdk.Core
                 throw new FlowException("Failed to convert string to hex.", exception);
             }
         }
+        
+        public static List<byte> StringToBytes(this string input)
+        {
+            input = RemoveHexPrefix(input); 
+            return Enumerable.Range(0, input.Length)
+                             .Where(x => x % 2 == 0)
+                             .Select(x => Convert.ToByte(input.Substring(x, 2), 16))
+                             .ToList();
+        }
+        
+        public static string HexToBase64(this string strInput)
+        {
+            try
+            {
+                var bytes = new byte[strInput.Length / 2];
+                for (var i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = Convert.ToByte(strInput.Substring(i * 2, 2), 16);
+                }
+                return Convert.ToBase64String(bytes);
+            }
+            catch (Exception)
+            {
+                return "-1";
+            }
+        }
 
+        public static byte[] HexToBase64Bytes(this string strInput)
+        {
+            try
+            {
+                var bytes = new byte[strInput.Length / 2];
+                for (var i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = Convert.ToByte(strInput.Substring(i * 2, 2), 16);
+                }
+                
+                return bytes;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        
         public static byte[] HexToBytes(this string hex)
         {
             try

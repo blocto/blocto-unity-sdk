@@ -8,7 +8,9 @@ namespace Flow.FCL.Utility
 {
     public interface IWebRequestUtils
     {
-        public TResponse GetResponse<TResponse>(string url);
+        public TResponse GetResponse<TResponse>(string url, string method, string contentType, Dictionary<string, object> parameters);
+        
+        public TResponse GetResponse<TResponse>(string url, string method, string contentType, object parameter);
 
         public UnityWebRequest CreateUnityWebRequest(string url, string method, string contentType, DownloadHandlerBuffer downloadHandlerBuffer, UploadHandlerRaw uploadHandlerRaw = null);
     }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
+using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
 using UnityEngine;
@@ -227,7 +228,10 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             var urlBuilder = new StringBuilder();
             urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions");
 
-            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            var bodyJsonStr = JsonConvert.SerializeObject(body);
+            $"SendTransaction-{bodyJsonStr}".ToLog();
+            var uploadHandler = CreateUploadHandler(bodyJsonStr, "application/json");
+            var client = CreateUnityWebRequest(urlBuilder, "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
             try
             {
                 var result = ProcessWebRequest<Transaction>(client);
@@ -534,7 +538,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             {
                 var tmp = unityWebRequest.downloadHandler.data;
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
-                Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
+                // Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
                 return objectResponse_.Object;  
             }
                 
@@ -774,7 +778,23 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             return unityWebRequest;
         }
         
-        private UploadHandler CreateUploadHandler(string body, string contentType)
+        private UnityWebRequest CreateUnityWebRequest(StringBuilder urlBuilder, string method, string contentType, DownloadHandlerBuffer downloadHandlerBuffer, UploadHandlerRaw uploadHandlerRaw = null)
+        {
+            var uri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
+            $"SendTransaction url: {uri}".ToLog();
+            var unityWebRequest = new UnityWebRequest(uri, method);
+            unityWebRequest.SetRequestHeader("Content-Type", contentType);
+            if(uploadHandlerRaw != null)
+            {
+                unityWebRequest.uploadHandler = uploadHandlerRaw;
+            }
+            
+            unityWebRequest.downloadHandler = downloadHandlerBuffer;
+            
+            return unityWebRequest;
+        }
+        
+        private UploadHandlerRaw CreateUploadHandler(string body, string contentType)
         {
             var requestBytes = Encoding.UTF8.GetBytes(body); 
             var uploadHandler = new UploadHandlerRaw(requestBytes);
@@ -784,7 +804,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
         
         private IEnumerator SendRequest(UnityWebRequest unityRequest)
         {
-            Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
+            // Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
             yield return unityRequest.SendWebRequest();
         }
         

@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace Plugins.Flow.FCL.Models
+namespace Flow.FCL.Models
 {
     public partial class PollingServiceProvider
     {

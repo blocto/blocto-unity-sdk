@@ -22,7 +22,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
         /// A HTTP UnityWebRequest for the Flow v1 API
         /// </summary>
         /// <param name="serverUrl"></param>
-        public FlowUnityWebRequest(string serverUrl, GameObject gameObject)
+        public FlowUnityWebRequest(GameObject gameObject, string serverUrl)
         {
             _flowApiV1 = gameObject.AddComponent<FlowApiV1>();
             _flowApiV1.BaseUrl = serverUrl;

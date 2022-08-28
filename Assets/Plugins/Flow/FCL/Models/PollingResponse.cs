@@ -1,11 +1,12 @@
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Plugins.Flow.FCL.Models;
+using Flow.FCL.Models;
+using Flow.FCL.Models.Authz;
 
 namespace Flow.FCL.Models
 {
-    public partial class PollingResponse
+    public partial class PollingResponse : IResponse
     {
         [JsonProperty("f_type")]
         public string FType { get; set; }

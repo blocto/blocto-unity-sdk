@@ -6,6 +6,7 @@ using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
+using Newtonsoft.Json;
 using Event = Flow.Net.SDK.Client.Unity.Models.Apis.Event;
 
 namespace Flow.Net.SDK.Extensions
@@ -313,7 +314,16 @@ namespace Flow.Net.SDK.Extensions
 
         private static ICollection<byte[]> FromArguments(this IEnumerable<ICadence> cadenceArguments)
         {
-            return cadenceArguments.Select(x => Encoding.UTF8.GetBytes(x.Encode())).ToList();
+            // return cadenceArguments.Select(x => Encoding.UTF8.GetBytes(x.Encode())).ToList();
+            return cadenceArguments.Select(x => {
+                                               var str = JsonConvert.SerializeObject(x);
+                                               // $"FormArgument serialize: {str}".ToLog();
+                                               var encode = x.Encode();
+                                               // $"Encode: {encode}".ToLog();
+                                               var bytes = Encoding.UTF8.GetBytes(encode);
+                                               // $"Bytes: {bytes.BytesToHex()}".ToLog();
+                                               return bytes;
+                                           }).ToList();
         }
     }
 }
