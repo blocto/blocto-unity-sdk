@@ -34,6 +34,8 @@ namespace Flow.FCL
         
         private string _testScript = "import FungibleToken from 0x9a0766d93b6608b7\nimport FlowToken from 0x7e60df042a9c0868\n\ntransaction(amount: UFix64, to: Address) {\n\n    // The Vault resource that holds the tokens that are being transferred\n    let sentVault: @FungibleToken.Vault\n\n    prepare(signer: AuthAccount) {\n\n        // Get a reference to the signer's stored vault\n        let vaultRef = signer.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)\n            ?? panic(\"Could not borrow reference to the owner's Vault!\")\n\n        // Withdraw tokens from the signer's stored vault\n        self.sentVault <- vaultRef.withdraw(amount: amount)\n    }\n\n    execute {\n\n        // Get the recipient's public account object\n        let recipient = getAccount(to)\n\n        // Get a reference to the recipient's Receiver\n        let receiverRef = recipient.getCapability(/public/flowTokenReceiver)\n            .borrow<&{FungibleToken.Receiver}>()\n            ?? panic(\"Could not borrow receiver reference to the recipient's Vault\")\n\n        // Deposit the withdrawn tokens in the recipient's receiver\n        receiverRef.deposit(from: <-self.sentVault)\n    }\n}";
         
+        private string _txId;
+        
         private AuthnParams _authnParams;
 
         public CoreModule(IWalletProvider walletProvider, IFlowClient flowClient, IResolveUtils resolveUtils, UtilFactory utilFactory)
@@ -42,7 +44,7 @@ namespace Flow.FCL
             _flowClient = flowClient;
             _resolveUtils = resolveUtils;
             _webRequestUtils = utilFactory.CreateWebRequestUtil();
-            _bloctoResolveUtility = new ResolveUtility();
+            _bloctoResolveUtility = utilFactory.CreateResolveUtility();
         }
         
         /// <summary>
@@ -111,7 +113,7 @@ namespace Flow.FCL
             $"preSignable json str: {jsonStr}".ToLog();
             $"preSignable json obj: {preSignableJObj}".ToLog();
             
-            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
+            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj.SignabelTemplate);
             
             var preAuthzJsonStr = JsonConvert.SerializeObject(preAuthzResponse);
             $"PreauthzResponse json str: {preAuthzJsonStr}".ToLog();
@@ -126,20 +128,32 @@ namespace Flow.FCL
                            };
             
             var payers = preAuthzResponse.PreAuthzData.Payer
-                                         .Select(payer => new Account
-                                                          {
-                                                              Addr = payer.Identity.Address,
-                                                              KeyId = Convert.ToUInt32(payer.Identity.KeyId),
-                                                              TempId = $"{payer.Identity.Address}-{payer.Identity.KeyId}"
-                                                          })
+                                         .Select(payer => {
+                                                     var tmp = GetAccount(payer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
+                                                     var seqNum = tmp.Keys.First(p => p.Index == Convert.ToUInt32(payer.Identity.KeyId)).SequenceNumber;
+                                                     var account = new Account
+                                                                     {
+                                                                         Addr = payer.Identity.Address,
+                                                                         KeyId = Convert.ToUInt32(payer.Identity.KeyId),
+                                                                         TempId = $"{payer.Identity.Address}-{payer.Identity.KeyId}",
+                                                                         SequenceNum = seqNum
+                                                                     };
+                                                     return account;
+                                                 })
                                          .ToList();
             var authorizations = preAuthzResponse.PreAuthzData.Authorization
-                                                 .Select(p => new Account
-                                                              {
-                                                                  Addr = p.Identity.Address,
-                                                                  KeyId = Convert.ToUInt32(p.Identity.KeyId),
-                                                                  TempId = $"{p.Identity.Address}-{p.Identity.KeyId}"
-                                                              })
+                                                 .Select(authorizer => {
+                                                             var tmp = GetAccount(authorizer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
+                                                             var seqNum = tmp.Keys.First(p => p.Index == Convert.ToUInt32(authorizer.Identity.KeyId)).SequenceNumber;
+                                                             var account = new Account
+                                                                                 {
+                                                                                     Addr = authorizer.Identity.Address,
+                                                                                     KeyId = Convert.ToUInt32(authorizer.Identity.KeyId),
+                                                                                     TempId = $"{authorizer.Identity.Address}-{authorizer.Identity.KeyId}",
+                                                                                     SequenceNum = seqNum
+                                                                                 };
+                                                             return account;
+                                                         })
                                                  .ToList();
 
             $"Create Authz Url".ToLog();
@@ -153,15 +167,15 @@ namespace Flow.FCL
                 var postUrl = authzUrlBuilder.ToString();
                 var postUri = new Uri(postUrl);
                 
-                $"proposer addr: {proposer.Addr}".ToLog();
-                $"payer addr: {payers.First().Addr}".ToLog();
-                $"authorizer addr: {authorizations.First().Addr}".ToLog();
                 
                 var signable = _resolveUtils.ResolveAuthorizerSignable(proposer, payers.First(), authorizations);
+                var tmpAccount = GetAccount(proposer.Addr).ConfigureAwait(false).GetAwaiter().GetResult();
+                var signableJObj = _bloctoResolveUtility.ResolveSignable(tx, preAuthzResponse.PreAuthzData, tmpAccount);
                 $"Signable json str: {JsonConvert.SerializeObject(signable)}".ToLog();
+                $"Signable jobject str: {signableJObj}".ToLog();
                 
                 Debug.Log($"postUrl: {postUrl}");
-                var authzResponse = _webRequestUtils.GetResponse<AuthzResponse>(postUrl, "POST", "application/json", signable);
+                var authzResponse = _webRequestUtils.GetResponse<AuthzResponse>(postUrl, "POST", "application/json", signableJObj);
                 $"Authz response json: {JsonConvert.SerializeObject(authzResponse)}".ToLog();
                 
                 var authzGetUrlBuilder = new StringBuilder();
@@ -237,6 +251,11 @@ namespace Flow.FCL
                                                             $"TxId: {txResponse.Id}".ToLog();
                                                          }, null);
             }
+        }
+        
+        public string GetLastTxId()
+        {
+            return _txId;
         }
         
         public async Task<FlowAccount> GetAccount(string address)

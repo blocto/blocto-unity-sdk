@@ -30,14 +30,16 @@ namespace Flow.FCL
         public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, Config.Config config, string mode, IResolveUtils resolveUtils)
         {
             var fcl = gameObject.AddComponent<FlowClientLibrary>();
-            var factory = gameObject.AddComponent<UtilFactory>();
             var tmpWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject, config.Get("testnet"));
+            var flowClient = new FlowUnityWebRequest(gameObject, config.Get("testnet")); 
+            var factory = UtilFactory.CreateUtilFactory(gameObject, flowClient);
+            
             fcl._resolveUtils = resolveUtils;
             fcl._walletProvider = tmpWalletProvider;
             fcl._webRequestUtils = factory.CreateWebRequestUtil();
             fcl._coreModule = new CoreModule(
                 tmpWalletProvider,
-                new FlowUnityWebRequest(gameObject, config.Get("testnet")), 
+                flowClient,
                 resolveUtils,
                 factory);
             fcl.Config = config;
@@ -105,7 +107,7 @@ namespace Flow.FCL
                                                        }, callback);
         }
         
-        public void PreAuthz(PreSignable preSignable, FlowTransaction tx)
+        public void PreAuthz(PreSignable preSignable, FlowTransaction tx, Action callback)
         {
             var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
             var urlBuilder = new StringBuilder();
@@ -114,7 +116,7 @@ namespace Flow.FCL
                       .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
             
             Debug.Log($"Pre authz url: {urlBuilder.ToString()}");
-            _coreModule.PreAuthz(preSignable, service, tx, null);
+            _coreModule.PreAuthz(preSignable, service, tx, () => {}, callback);
         }
         
         /// <summary>

@@ -10,6 +10,7 @@ using Flow.Net.SDK.Extensions;
 using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Plugins.Blocto.Sdk.Core.Extension;
 
 namespace Flow.FCL.Utility
 {
@@ -44,7 +45,7 @@ namespace Flow.FCL.Utility
                               Cadence = _tx.Script,
                               ComputeLimit = computeLimit,
                               Arguments = messageArgs,
-                              // RefBlock = "747039f6e88261b8fc87139b5feb0e7f36465134f93db2b0281c2ca5eaed3175"
+                              RefBlock = "747039f6e88261b8fc87139b5feb0e7f36465134f93db2b0281c2ca5eaed3175"
                           };
             
             var voucher = new Voucher
@@ -61,8 +62,7 @@ namespace Flow.FCL.Utility
                                           {
                                               Proposer = true,
                                               Authorizer = true,
-                                              Payer = true,
-                                              Param = false
+                                              Payer = true
                                           },
                                   Cadence = _tx.Script,
                                   Args = args,
@@ -169,7 +169,6 @@ namespace Flow.FCL.Utility
                                               Proposer = true,
                                               Authorizer = true,
                                               Payer = true,
-                                              Param = false
                                           },
                                   Cadence = _tx.Script,
                                   Args = args,
@@ -262,30 +261,6 @@ namespace Flow.FCL.Utility
             CreateSignable(signable, proposer, payer, authorizations, accountDict, payloadSigs);
             signable!.Message = GetEncodeMessage(signable, authorizations.First().Addr, signable.Interaction.Message.RefBlock);
             
-            // var tx = new FlowTransaction
-            //          {
-            //              Script = signable.Cadence,
-            //              GasLimit = Convert.ToUInt64(signable.Interaction.Message.ComputeLimit),
-            //              Payer = new FlowAddress(payer.Addr),
-            //              ProposalKey = new FlowProposalKey
-            //                            {
-            //                                Address = new FlowAddress(signable.Voucher.ProposalKey.Address.ToString()),
-            //                                KeyId = Convert.ToUInt32(signable.Voucher.ProposalKey.KeyId),
-            //                                SequenceNumber = Convert.ToUInt64(signable.Voucher.ProposalKey.SequenceNum)
-            //                            },
-            //              ReferenceBlockId = signable.Interaction.Message.RefBlock,
-            //              Arguments = new List<ICadence>
-            //                          {
-            //                              new CadenceNumber(CadenceNumberType.UFix64, "7.50000000"),
-            //                              new CadenceAddress("068606b2acddc1ca")
-            //                          }
-            //          };
-            //
-            // tx.Authorizers.Add(new FlowAddress(authorizations.First().Addr));
-            // tx.SignerList.Add(authorizations.First().Addr, 1);
-            // var canonicalPayload = Rlp.EncodedCanonicalPayload(tx);
-            // var message = DomainTag.AddTransactionDomainTag(canonicalPayload);
-            // signable.Message = message.BytesToHex();
             
             return signable;
         }
@@ -309,7 +284,7 @@ namespace Flow.FCL.Utility
                                                                       new JProperty("tempId", $"{payer.Addr}-{payer.KeyId}"),
                                                                       new JProperty("addr", payer.Addr),
                                                                       new JProperty("keyId", payer.KeyId),
-                                                                      new JProperty("sequenceNum", signable.Voucher.ProposalKey.SequenceNum),
+                                                                      new JProperty("sequenceNum", payer.SequenceNum),
                                                                       new JProperty("role", new JObject
                                                                                             {
                                                                                                 new JProperty("proposer", false),
@@ -325,9 +300,10 @@ namespace Flow.FCL.Utility
                                                                                       new JProperty("role", new JObject
                                                                                                             {
                                                                                                                 new JProperty("payer", false),
-                                                                                                                new JProperty("proposer", false),
+                                                                                                                new JProperty("proposer", true),
                                                                                                                 new JProperty("authorizer", true),
                                                                                                             }),
+                                                                                      new JProperty("sequenceNum", authorizer.SequenceNum),
                                                                                       new JProperty("signature", signature)
                                                                                   }}
                               };
@@ -396,6 +372,8 @@ namespace Flow.FCL.Utility
             datas.Add(RLPUtility.GetBytes(signable.Voucher.ProposalKey.KeyId).ToList());
             
             $"ProposalKey seqNum: {signable.Voucher.ProposalKey.SequenceNum}".ToLog();
+            var seqNumBytes = RLPUtility.GetBytes(signable.Voucher.ProposalKey.SequenceNum).ToList();
+            $"ProposalKey seqNum hex: {seqNumBytes.ToHex()}".ToLog();
             datas.Add(RLPUtility.GetBytes(signable.Voucher.ProposalKey.SequenceNum).ToList());
             
             $"Payer addr: {signable.Voucher.Payer}".ToLog();

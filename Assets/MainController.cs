@@ -24,7 +24,7 @@ public class MainController : MonoBehaviour
     
     private Button _authnBtn;
     
-    private Button _preAuthzBtn;
+    private Button _sendTransaction;
     
     private Button _getAccountBtn;
     
@@ -45,9 +45,9 @@ public class MainController : MonoBehaviour
         _authnBtn = tmp.GetComponent<Button>();
         _authnBtn.onClick.AddListener(ConnectionWallet);
         
-        tmp = GameObject.Find("PreAuthzBtn");
-        _authnBtn = tmp.GetComponent<Button>();
-        _authnBtn.onClick.AddListener(PreAuthz);
+        tmp = GameObject.Find("SendTransactionBtn");
+        _sendTransaction = tmp.GetComponent<Button>();
+        _sendTransaction.onClick.AddListener(PreAuthz);
         
         tmp = GameObject.Find("SignBtn");
         _signBtn = tmp.GetComponent<Button>();
@@ -103,9 +103,10 @@ public class MainController : MonoBehaviour
                             new BaseArgument
                             {
                                 Type = "Address",
-                                Value = "0x068606b2acddc1ca"
+                                Value = "0xe2c2f0fd9fdec656"
                             }
                         };
+        
         var tx = new FlowTransaction
                  {
                      Script = _script,
@@ -118,8 +119,32 @@ public class MainController : MonoBehaviour
                  };
         
         var preSignable = _resolveUtils.ResolvePreSignable(arguments, MainController._script, 1000);
+        // var payer = new Account
+        //                {
+        //                    Addr = "f086a545ce3c552d",
+        //                    KeyId = 1071,
+        //                    TempId = $"f086a545ce3c552d-1071",
+        //                    SequenceNum = 417 
+        //                };
+        // var payers = new List<Account>{payer};
+        // var authorization = new List<Account>()
+        //                     {
+        //                         new Account
+        //                         {
+        //                             Addr = "068606b2acddc1ca",
+        //                             KeyId = 1,
+        //                             TempId = "068606b2acddc1ca-1",
+        //                             SequenceNum = 0
+        //                         }
+        //                     };
+        // var proposer = authorization.First();
+        // var signable = _resolveUtils.ResolveAuthorizerSignable(proposer, payers.First(), authorization);
+        // var payerSignable = _resolveUtils.ResolvePayerSignable(payers.First(), authorization.First(), signable, "bc226d9495c99260f4daf592a79ec545fe9f80effd2371918c766fc7532096791c89a3f166d263485aec1fb0de530d6c938942acd3b7c8ce7dc35917580d5a46");
+
         $"PreSignabel f_type: {preSignable.F_Type}".ToLog();
-        _fcl.PreAuthz(preSignable, tx);
+        _fcl.PreAuthz(preSignable, tx, () => {
+                                       _resultTxt.text = _fcl.CurrentUser().GetLastTxId();
+                                   });
     }
     
     private void SignUserMessage()

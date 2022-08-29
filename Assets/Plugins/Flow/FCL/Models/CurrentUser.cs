@@ -56,6 +56,11 @@ namespace Flow.FCL.Models
             _config = config;
         }
         
+        public string GetLastTxId()
+        {
+            return _coreModule.GetLastTxId();
+        }
+        
         /// <summary>
         /// Returns the current user object.
         /// </summary>

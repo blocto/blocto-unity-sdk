@@ -12,9 +12,5 @@ namespace Flow.FCL.Models.Authz
         
         [JsonProperty("payer")]
         public bool Payer { get; set; }
-        
-        [JsonProperty("param")]
-        public bool Param { get; set; }
-        
     }
 }
