@@ -8,9 +8,9 @@ namespace Flow.FCL.Models.Authz
         public object Address { get; set; }
 
         [JsonProperty("keyId")]
-        public int KeyId { get; set; }
+        public uint KeyId { get; set; }
 
         [JsonProperty("sequenceNum")]
-        public int SequenceNum { get; set; }
+        public ulong SequenceNum { get; set; }
     }
 }

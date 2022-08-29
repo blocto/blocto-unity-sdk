@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,8 @@ using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.Net.SDK.Client.Unity.Unity;
+using Flow.Net.Sdk.Core.Cadence;
+using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -103,29 +106,20 @@ public class MainController : MonoBehaviour
                                 Value = "0x068606b2acddc1ca"
                             }
                         };
+        var tx = new FlowTransaction
+                 {
+                     Script = _script,
+                     GasLimit = 9999,
+                     Arguments = new List<ICadence>
+                                 {
+                                     new CadenceNumber(CadenceNumberType.UFix64, "7.5"),
+                                     new CadenceAddress("068606b2acddc1ca")
+                                 },
+                 };
         
         var preSignable = _resolveUtils.ResolvePreSignable(arguments, MainController._script, 1000);
-        // var proposer = new Account
-        //                {
-        //                    Addr = "f086a545ce3c552d",
-        //                    KeyId = 1071,
-        //                    TempId = $"f086a545ce3c552d-1071",
-        //                    SequenceNum = 417 
-        //                };
-        // var payer = new List<Account>{proposer};
-        // var authorization = new List<Account>()
-        //                     {
-        //                         new Account
-        //                         {
-        //                             Addr = "068606b2acddc1ca",
-        //                             KeyId = 1,
-        //                             TempId = "068606b2acddc1ca-1"
-        //                         }
-        //                     };
-        // var signable = _resolveUtils.ResolveAuthorizerSignable(proposer, payer.First(), authorization);
-        // var payerSignable = _resolveUtils.ResolvePayerSignable(payer.First(), authorization.First(), signable, "bc226d9495c99260f4daf592a79ec545fe9f80effd2371918c766fc7532096791c89a3f166d263485aec1fb0de530d6c938942acd3b7c8ce7dc35917580d5a46");
         $"PreSignabel f_type: {preSignable.F_Type}".ToLog();
-        _fcl.PreAuthz(preSignable);
+        _fcl.PreAuthz(preSignable, tx);
     }
     
     private void SignUserMessage()

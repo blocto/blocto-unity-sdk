@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
@@ -15,6 +16,7 @@ using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using UnityEngine;
+using KeyGenerator = Flow.FCL.Utility.KeyGenerator;
 
 namespace Flow.FCL
 {
@@ -25,6 +27,8 @@ namespace Flow.FCL
         private IWebRequestUtils _webRequestUtils;
         
         private IResolveUtils _resolveUtils;
+        
+        private ResolveUtility _bloctoResolveUtility;
         
         private IFlowClient _flowClient;
         
@@ -38,6 +42,7 @@ namespace Flow.FCL
             _flowClient = flowClient;
             _resolveUtils = resolveUtils;
             _webRequestUtils = utilFactory.CreateWebRequestUtil();
+            _bloctoResolveUtility = new ResolveUtility();
         }
         
         /// <summary>
@@ -89,7 +94,7 @@ namespace Flow.FCL
             _walletProvider.Login(authnUrl, pollingUri, internalCallback, callback);
         } 
         
-        public void PreAuthz(PreSignable preSignable, FclService preAuthzService, Action internalCallback, Action callback = null)
+        public void PreAuthz(PreSignable preSignable, FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action callback = null)
         {
             var preAuthzUrlBuilder = new StringBuilder();
             preAuthzUrlBuilder.Append(preAuthzService.Endpoint.AbsoluteUri + "?")
@@ -99,15 +104,14 @@ namespace Flow.FCL
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             preSignable.Voucher.RefBlock = lastBlock.Header.Id;
             preSignable.Interaction.Message.RefBlock = lastBlock.Header.Id;
+            tx.ReferenceBlockId = lastBlock.Header.Id;
             
+            var preSignableJObj = _bloctoResolveUtility.ResolvePreSignable(tx);
             var jsonStr = JsonConvert.SerializeObject(preSignable);
             $"preSignable json str: {jsonStr}".ToLog();
-            $"preSignable cadence: {Encoding.UTF8.GetBytes(preSignable.Cadence).BytesToHex()}".ToLog();
-            $"preSignable cadence base64: {Convert.ToBase64String(Encoding.UTF8.GetBytes(preSignable.Cadence))}".ToLog();
-            $"preSignable arguments 1 json str: {JsonConvert.SerializeObject(preSignable.Args.First())}, base64: {Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(preSignable.Args.First())))}".ToLog();
-            $"preSignable arguments 1 json str: {JsonConvert.SerializeObject(preSignable.Args[1])}, base64: {Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(preSignable.Args[1])))}".ToLog();
+            $"preSignable json obj: {preSignableJObj}".ToLog();
             
-            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignable);
+            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
             
             var preAuthzJsonStr = JsonConvert.SerializeObject(preAuthzResponse);
             $"PreauthzResponse json str: {preAuthzJsonStr}".ToLog();
@@ -116,7 +120,7 @@ namespace Flow.FCL
             var proposer = new Account
                            {
                                Addr = preAuthzResponse.PreAuthzData.Proposer.Identity.Address,
-                               KeyId = preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId,
+                               KeyId = Convert.ToUInt32(preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId),
                                TempId = $"{preAuthzResponse.PreAuthzData.Proposer.Identity.Address}-{preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId}",
                                SequenceNum = proposalKey.SequenceNum
                            };
@@ -125,7 +129,7 @@ namespace Flow.FCL
                                          .Select(payer => new Account
                                                           {
                                                               Addr = payer.Identity.Address,
-                                                              KeyId = payer.Identity.KeyId,
+                                                              KeyId = Convert.ToUInt32(payer.Identity.KeyId),
                                                               TempId = $"{payer.Identity.Address}-{payer.Identity.KeyId}"
                                                           })
                                          .ToList();
@@ -133,7 +137,7 @@ namespace Flow.FCL
                                                  .Select(p => new Account
                                                               {
                                                                   Addr = p.Identity.Address,
-                                                                  KeyId = p.Identity.KeyId,
+                                                                  KeyId = Convert.ToUInt32(p.Identity.KeyId),
                                                                   TempId = $"{p.Identity.Address}-{p.Identity.KeyId}"
                                                               })
                                                  .ToList();
@@ -148,6 +152,10 @@ namespace Flow.FCL
                 
                 var postUrl = authzUrlBuilder.ToString();
                 var postUri = new Uri(postUrl);
+                
+                $"proposer addr: {proposer.Addr}".ToLog();
+                $"payer addr: {payers.First().Addr}".ToLog();
+                $"authorizer addr: {authorizations.First().Addr}".ToLog();
                 
                 var signable = _resolveUtils.ResolveAuthorizerSignable(proposer, payers.First(), authorizations);
                 $"Signable json str: {JsonConvert.SerializeObject(signable)}".ToLog();
@@ -180,7 +188,13 @@ namespace Flow.FCL
                                                                                .Append(Uri.EscapeDataString("payerId") + "=")
                                                                                .Append(Uri.EscapeDataString(item.Params.PayerId));
                                                             var payerUri = new Uri(payerPostUrlBuilder.ToString());
+                                                            
+                                                            $"Payer addr: {payers.First().Addr}".ToLog();
+                                                            $"Authorizer addr: {authorizations.First().Addr}".ToLog();
                                                             var payerSignable = _resolveUtils.ResolvePayerSignable(payers.First(), authorizations.First(), signable, signature?.ToString());
+                                                            var jsonStr = JsonConvert.SerializeObject(payerSignable);
+                                                            $"Payer signable json: {jsonStr}".ToLog();
+                                                            
                                                             var payerSignResponse = _webRequestUtils.GetResponse<PayerSignResponse>(payerUri.AbsoluteUri, "POST", "application/json", payerSignable);
                                                             
                                                             var tx = new FlowTransaction
@@ -239,8 +253,8 @@ namespace Flow.FCL
             return new ProposalKey
             {
                 Address = addr,
-                KeyId = keyId,
-                SequenceNum = Convert.ToInt32(proposalKey.SequenceNumber)
+                KeyId = Convert.ToUInt32(keyId),
+                SequenceNum = Convert.ToUInt64(proposalKey.SequenceNumber)
             };
         }
     }

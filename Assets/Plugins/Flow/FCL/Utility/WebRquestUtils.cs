@@ -9,6 +9,7 @@ using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -56,10 +57,13 @@ namespace Flow.FCL.Utility
         
         public TResponse GetResponse<TResponse>(string url, string method, string contentType, object parameter)
         {
-            Debug.Log($"Get AuthnResponse, url: {url}");
             var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
             client.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
-            var jsonStr = JsonConvert.SerializeObject(parameter);
+            var jsonStr = default(string);
+            jsonStr = parameter is JObject
+                          ? parameter.ToString()
+                          : JsonConvert.SerializeObject(parameter);
+            
             var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
             var uploadHandler = new UploadHandlerRaw(requestBytes);
             client.uploadHandler = uploadHandler;

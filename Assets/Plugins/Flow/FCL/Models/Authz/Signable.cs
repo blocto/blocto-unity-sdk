@@ -19,7 +19,7 @@ namespace Flow.FCL.Models.Authz
         public string Addr { get; set; }
         
         [JsonProperty("keyId")]
-        public int KeyId { get; set; }
+        public uint KeyId { get; set; }
         
         public new virtual Signable DeepCopy()
         {

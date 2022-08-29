@@ -105,7 +105,7 @@ namespace Flow.FCL
                                                        }, callback);
         }
         
-        public void PreAuthz(PreSignable preSignable)
+        public void PreAuthz(PreSignable preSignable, FlowTransaction tx)
         {
             var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
             var urlBuilder = new StringBuilder();
@@ -114,7 +114,7 @@ namespace Flow.FCL
                       .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
             
             Debug.Log($"Pre authz url: {urlBuilder.ToString()}");
-            _coreModule.PreAuthz(preSignable, service, null);
+            _coreModule.PreAuthz(preSignable, service, tx, null);
         }
         
         /// <summary>

@@ -225,19 +225,19 @@ namespace Flow.FCL.Utility
             
             var accountDict = new Dictionary<string, JObject>
                               {
-                                  {$"{proposer.Addr}-{proposer.KeyId}", new JObject
-                                                                        {
-                                                                            new JProperty("tempId", $"{proposer.Addr}-{proposer.KeyId}"),
-                                                                            new JProperty("addr", proposer.Addr),
-                                                                            new JProperty("keyId", proposer.KeyId),
-                                                                            new JProperty("sequenceNum", proposer.SequenceNum),
-                                                                            new JProperty("role", new JObject
-                                                                                                  {
-                                                                                                      new JProperty("proposer", true),
-                                                                                                      new JProperty("payer", true),
-                                                                                                      new JProperty("authorizer", false),
-                                                                                                  }) 
-                                                                        }},
+                                  {$"{payer.Addr}-{payer.KeyId}", new JObject
+                                                                  {
+                                                                      new JProperty("tempId", $"{payer.Addr}-{payer.KeyId}"),
+                                                                      new JProperty("addr", payer.Addr),
+                                                                      new JProperty("keyId", payer.KeyId),
+                                                                      new JProperty("sequenceNum", payer.SequenceNum),
+                                                                      new JProperty("role", new JObject
+                                                                                            {
+                                                                                                new JProperty("proposer", false),
+                                                                                                new JProperty("payer", true),
+                                                                                                new JProperty("authorizer", false),
+                                                                                            }) 
+                                                                  }},
                                   {$"{authorizations.First().Addr}-{authorizations.First().KeyId}", new JObject
                                                                                                     {
                                                                                                         new JProperty("tempId", $"{authorizations.First().Addr}-{authorizations.First().KeyId}"),
@@ -258,6 +258,7 @@ namespace Flow.FCL.Utility
             }
             
             var signable = _preSignable.DeepCopy();
+            $"Create Signable".ToLog();
             CreateSignable(signable, proposer, payer, authorizations, accountDict, payloadSigs);
             signable!.Message = GetEncodeMessage(signable, authorizations.First().Addr, signable.Interaction.Message.RefBlock);
             
@@ -311,7 +312,7 @@ namespace Flow.FCL.Utility
                                                                       new JProperty("sequenceNum", signable.Voucher.ProposalKey.SequenceNum),
                                                                       new JProperty("role", new JObject
                                                                                             {
-                                                                                                new JProperty("proposer", true),
+                                                                                                new JProperty("proposer", false),
                                                                                                 new JProperty("payer", true),
                                                                                                 new JProperty("authorizer", false),
                                                                                             }) 
@@ -336,6 +337,7 @@ namespace Flow.FCL.Utility
                 throw new Exception("PreAuth not exist");
             }
             
+            $"Create PayerSignable".ToLog();
             var payerSignable = signable.DeepCopy();
             payerSignable.Interaction.Accounts = accountDict;
             payerSignable.Voucher.PayloadSigs = payloadSigs;
@@ -343,43 +345,12 @@ namespace Flow.FCL.Utility
             payerSignable.KeyId = payer.KeyId;
             payerSignable.Roles = new JObject
                                   {
-                                      new JProperty("proposer", true),
+                                      new JProperty("proposer", false),
                                       new JProperty("payer", true),
                                       new JProperty("authorizer", false),
                                   };
             var message = EncodedCanonicalAuthorizationEnvelope(payerSignable, authorizer.Addr);
             payerSignable.Message = message;
-            // var tx = new FlowTransaction
-            //          {
-            //              Script = payerSignable.Cadence,
-            //              GasLimit = Convert.ToUInt64(payerSignable.Interaction.Message.ComputeLimit),
-            //              Payer = new FlowAddress(payer.Addr),
-            //              ProposalKey = new FlowProposalKey
-            //                            {
-            //                                Address = new FlowAddress(signable.Voucher.ProposalKey.Address.ToString()),
-            //                                KeyId = Convert.ToUInt32(signable.Voucher.ProposalKey.KeyId),
-            //                                SequenceNumber = Convert.ToUInt64(signable.Voucher.ProposalKey.SequenceNum)
-            //                            },
-            //              ReferenceBlockId = signable.Interaction.Message.RefBlock,
-            //              Arguments = new List<ICadence>
-            //                          {
-            //                              new CadenceNumber(CadenceNumberType.UFix64, "7.50000000"),
-            //                              new CadenceAddress("068606b2acddc1ca")
-            //                          }
-            //          };
-            //
-            // tx.Authorizers.Add(new FlowAddress(authorizer.Addr));
-            // tx.SignerList.Add(authorizer.Addr, 1);
-            // tx.PayloadSignatures.Add(
-            //     new FlowSignature
-            //     {
-            //         Address = new FlowAddress(authorizer.Addr),
-            //         KeyId = Convert.ToUInt32(authorizer.KeyId),
-            //         Signature = signature.StringToBytes().ToArray()
-            //     });
-            // var canonicalAuthorizationEnvelope = Rlp.EncodedCanonicalAuthorizationEnvelope(tx);
-            // var message = DomainTag.AddTransactionDomainTag(canonicalAuthorizationEnvelope);
-            // payerSignable.Message = message.BytesToHex();
             return payerSignable; 
         }
         
@@ -406,15 +377,31 @@ namespace Flow.FCL.Utility
             var datas = new List<object>();
             datas.Add(Encoding.UTF8.GetBytes(signable.Cadence).ToList());
             
-            var tmp = arguments.Select(item => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item)).ToList())
+            var tmp = arguments.Select(item => {
+                                           $"Arg: {JsonConvert.SerializeObject(item)}".ToLog();
+                                           return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item)).ToList();
+                                       })
                                             .ToList();
             datas.Add(tmp);
+            $"RefBlock: {signable.Interaction.Message.RefBlock}".ToLog();
             datas.Add(signable.Interaction.Message.RefBlock.HexToBytes().ToList());
+            
+            $"ComputeLimit: {signable.Interaction.Message.ComputeLimit}".ToLog();
             datas.Add(RLPUtility.GetBytes(signable.Interaction.Message.ComputeLimit));
+            
+            $"ProposalKey addr: {signable.Voucher.ProposalKey.Address}".ToLog();
             datas.Add(signable.Voucher.ProposalKey.Address.ToString().HexToBytes().ToList());
+            
+            $"ProposalKey keyId: {signable.Voucher.ProposalKey.KeyId}".ToLog();
             datas.Add(RLPUtility.GetBytes(signable.Voucher.ProposalKey.KeyId).ToList());
+            
+            $"ProposalKey seqNum: {signable.Voucher.ProposalKey.SequenceNum}".ToLog();
             datas.Add(RLPUtility.GetBytes(signable.Voucher.ProposalKey.SequenceNum).ToList());
+            
+            $"Payer addr: {signable.Voucher.Payer}".ToLog();
             datas.Add(signable.Voucher.Payer.ToString().HexToBytes().ToList());
+            
+            $"authorizers: {authorizer}".ToLog();
             datas.Add(new List<List<byte>> { authorizer.HexToBytes().ToList() });
 
             return datas;
@@ -438,7 +425,9 @@ namespace Flow.FCL.Utility
                                                                                 };
                                                                      return sign;
                                                                  }).ToList();
+            $"before collect signers".ToLog();
             var signers = CollectSigners(signable);
+            $"after collect signers".ToLog();
             var authEnvelopeElements = new List<object>
                                        {
                                            EncodeTransaction(signable, authorizer),
@@ -457,6 +446,7 @@ namespace Flow.FCL.Utility
                           {
                               {signable.Interaction.Proposer.Split("-")[0],  0},
                           };
+            
             var payerAddr = signable.Interaction.Payer.Split("-")[0];
             if(!signers.ContainsKey(payerAddr))
             {
@@ -466,7 +456,10 @@ namespace Flow.FCL.Utility
             foreach (var authorization in signable.Interaction.Authorizations.Where(authorization => !signers.ContainsKey(authorization)))
             {
                 var addr = authorization.Split("-")[0];
-                signers.Add(addr, signers.Count);
+                if(!signers.ContainsKey(addr))
+                {
+                    signers.Add(addr, signers.Count);
+                }
             }
             
             return signers;
@@ -509,7 +502,7 @@ namespace Flow.FCL.Utility
         {
             signable.F_Type = "Signable";
             signable.Addr = authorizations.First().Addr;
-            signable.KeyId = authorizations.First().KeyId;
+            signable.KeyId = Convert.ToUInt32(authorizations.First().KeyId);
             signable.Roles = new JObject
                              {
                                  new JProperty("proposer", false),

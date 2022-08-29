@@ -27,6 +27,13 @@ namespace Flow.FCL.Utility
             return result.ToList();
         } 
         
+        public static List<byte> GetBytes(ulong item)
+        {
+            var hex = RLPUtility.UlongToHex(item);
+            var result = HexToByte(hex);
+            return result.ToList();
+        } 
+        
         public static List<byte> GetBytes(uint item)
         {
             var hex = IntToHex(item);
@@ -131,6 +138,12 @@ namespace Flow.FCL.Utility
         }
 
         private static string IntToHex(int number)
+        {
+            var hex = number.ToString("x");
+            return hex.Length % 2 == 0 ? hex : hex.PadLeft(hex.Length + 1, '0');
+        }
+        
+        private static string UlongToHex(ulong number)
         {
             var hex = number.ToString("x");
             return hex.Length % 2 == 0 ? hex : hex.PadLeft(hex.Length + 1, '0');

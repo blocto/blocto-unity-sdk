@@ -2,12 +2,21 @@
 using Flow.Net.Sdk.Core.Exceptions;
 using Newtonsoft.Json;
 using System.Linq;
+using Flow.FCL.Utility;
 
 namespace Flow.Net.Sdk.Core.Cadence
 {
     public abstract class Cadence : ICadence
     {
+        protected Cadence()
+        {
+            TempId = KeyGenerator.GetUniqueKey(10);
+        }
+
         public virtual string Type { get; set; }
+        
+        [JsonIgnore]
+        public virtual string TempId { get; }
 
         /// <summary>
         /// Encodes <see cref="ICadence"/>.

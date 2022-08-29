@@ -3,6 +3,8 @@
     public interface ICadence
     {
         string Type { get; }
+        
+        string TempId { get; }
 
         string Encode(ICadence cadence);
         ICadence CompositeField(CadenceComposite cadenceComposite, string fieldName);
