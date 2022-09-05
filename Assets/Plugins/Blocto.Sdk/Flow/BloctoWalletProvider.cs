@@ -9,6 +9,7 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
+using Plugins.Blocto.Sdk.Core.Model;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -27,6 +28,10 @@ namespace Blocto.Flow
         
         [DllImport ("__Internal")]
         private static extern void CloseWindow();
+        
+        private AndroidJavaObject _unityActivity = null;
+    
+        private AndroidJavaObject _pluginInstance = null;
         
         private WebRequestUtility _webRequestUtility;
         
@@ -124,8 +129,8 @@ namespace Blocto.Flow
             {
                 if (Application.platform == RuntimePlatform.Android)
                 {
-                    var tmpUrl = url.Replace("https://wallet-testnet.blocto.app/", "https://staging.blocto.app/");
-                    // _pluginInstance.Call("openSDK", "com.portto.blocto.staging", url, tmpUrl, new AndroidCallback(), "MainController", "DeeplinkHandler");
+                    Debug.Log($"Url: {url}, AppSDK url: {url}");
+                    _pluginInstance.Call("openSDK", "com.portto.blocto.staging", url, url, new AndroidCallback(), "MainController", "DeeplinkHandler");
                 }
                 
                 
@@ -145,11 +150,23 @@ namespace Blocto.Flow
         }
         
         
-        
-        private IEnumerator Wait(float time)
+        private void InitializePlugins(string pluginName)
         {
-            Debug.Log($"In Wait.");
-            yield return new WaitForSecondsRealtime(time);
+            try
+            {
+                _pluginInstance = new AndroidJavaObject(pluginName);
+                if (_pluginInstance != null)
+                {
+                    return;
+                }
+
+                return;
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.Message);
+                throw;
+            }
         }
     }
 }

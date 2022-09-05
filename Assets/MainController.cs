@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Blocto.Sdk.Core.Utility;
 using Flow.FCL;
 using Flow.FCL.Config;
 using Flow.FCL.Models;
@@ -38,6 +39,8 @@ public class MainController : MonoBehaviour
     
     private IResolveUtils _resolveUtils;
     
+    private ResolveUtility _resolveUtility;
+    
     private void Awake()
     {
         Debug.Log("Start Debug.");
@@ -68,6 +71,7 @@ public class MainController : MonoBehaviour
         config.Put("testnet", "https://rest-testnet.onflow.org/v1")
               .Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn");
         _resolveUtils = gameObject.AddComponent<UtilFactory>().CreateResolveUtils();
+        _resolveUtility = gameObject.AddComponent<UtilFactory>().CreateResolveUtility();
         _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, config, "testnet", _resolveUtils);
     }
     
@@ -110,37 +114,15 @@ public class MainController : MonoBehaviour
         var tx = new FlowTransaction
                  {
                      Script = _script,
-                     GasLimit = 9999,
+                     GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
                                      new CadenceNumber(CadenceNumberType.UFix64, "7.5"),
-                                     new CadenceAddress("068606b2acddc1ca")
+                                     new CadenceAddress("0xe2c2f0fd9fdec656")
                                  },
                  };
         
         var preSignable = _resolveUtils.ResolvePreSignable(arguments, MainController._script, 1000);
-        // var payer = new Account
-        //                {
-        //                    Addr = "f086a545ce3c552d",
-        //                    KeyId = 1071,
-        //                    TempId = $"f086a545ce3c552d-1071",
-        //                    SequenceNum = 417 
-        //                };
-        // var payers = new List<Account>{payer};
-        // var authorization = new List<Account>()
-        //                     {
-        //                         new Account
-        //                         {
-        //                             Addr = "068606b2acddc1ca",
-        //                             KeyId = 1,
-        //                             TempId = "068606b2acddc1ca-1",
-        //                             SequenceNum = 0
-        //                         }
-        //                     };
-        // var proposer = authorization.First();
-        // var signable = _resolveUtils.ResolveAuthorizerSignable(proposer, payers.First(), authorization);
-        // var payerSignable = _resolveUtils.ResolvePayerSignable(payers.First(), authorization.First(), signable, "bc226d9495c99260f4daf592a79ec545fe9f80effd2371918c766fc7532096791c89a3f166d263485aec1fb0de530d6c938942acd3b7c8ce7dc35917580d5a46");
-
         $"PreSignabel f_type: {preSignable.F_Type}".ToLog();
         _fcl.PreAuthz(preSignable, tx, () => {
                                        _resultTxt.text = _fcl.CurrentUser().GetLastTxId();

@@ -119,6 +119,18 @@ namespace Flow.FCL
             _coreModule.PreAuthz(preSignable, service, tx, () => {}, callback);
         }
         
+        public void SendTransaction(PreSignable preSignable, FlowTransaction tx, Action callback)
+        {
+            var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(service.Endpoint.AbsoluteUri + "?")
+                      .Append(Uri.EscapeUriString("sessionId") + "=")
+                      .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
+            
+            Debug.Log($"Pre authz url: {urlBuilder.ToString()}");
+            tx = _coreModule.PreAuthz(preSignable, service, tx, () => {}, callback);
+        }
+        
         /// <summary>
         /// Logs out the current user and sets the values on the current user object to null.
         /// </summary>

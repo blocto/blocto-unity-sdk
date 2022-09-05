@@ -14,7 +14,9 @@ using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
+using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Math.EC.Endo;
 using UnityEngine;
 using KeyGenerator = Flow.FCL.Utility.KeyGenerator;
 
@@ -25,8 +27,6 @@ namespace Flow.FCL
         private IWalletProvider _walletProvider;
         
         private IWebRequestUtils _webRequestUtils;
-        
-        private IResolveUtils _resolveUtils;
         
         private ResolveUtility _bloctoResolveUtility;
         
@@ -42,7 +42,6 @@ namespace Flow.FCL
         {
             _walletProvider = walletProvider;
             _flowClient = flowClient;
-            _resolveUtils = resolveUtils;
             _webRequestUtils = utilFactory.CreateWebRequestUtil();
             _bloctoResolveUtility = utilFactory.CreateResolveUtility();
         }
@@ -67,10 +66,6 @@ namespace Flow.FCL
             
             var authnResponse = _webRequestUtils.GetResponse<AuthnResponse>(url, "POST", "application/json", parameters);
             _authnParams = authnResponse.AuthnLocal.Params;
-            
-            var jsonStr = JsonConvert.SerializeObject(parameters);
-            Debug.Log(jsonStr);
-            
             var authnUrlBuilder = new StringBuilder();
             authnUrlBuilder.Append(authnResponse.AuthnLocal.Endpoint + "?")
                            .Append(Uri.EscapeDataString("channel") + "=")
@@ -96,7 +91,62 @@ namespace Flow.FCL
             _walletProvider.Login(authnUrl, pollingUri, internalCallback, callback);
         } 
         
-        public void PreAuthz(PreSignable preSignable, FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action callback = null)
+        public void SendTransaction(FlowTransaction tx, FclService fclServices, Action internalCallback, Action callback)
+        {
+            
+        }
+        
+        public PreAuthzResponse PreAuth(FlowTransaction tx, FclService service, Action internalCallback = null)
+        {
+            var preAuthzUrlBuilder = new StringBuilder();
+            preAuthzUrlBuilder.Append(service.Endpoint.AbsoluteUri + "?")
+                              .Append(Uri.EscapeDataString("sessionId") + "=")
+                              .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
+            
+            var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+            tx.ReferenceBlockId = lastBlock.Header.Id;
+            
+            var preSignableJObj = _bloctoResolveUtility.ResolvePreSignable(ref tx);
+            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
+            
+            return preAuthzResponse;
+        }
+        
+        // public AuthzResponse Authz(FlowTransaction tx, PreAuthzData data)
+        // {
+        //     var authzUrlBuilder = new StringBuilder();
+        //     authzUrlBuilder.Append(data..Endpoint + "?")
+        //                    .Append(Uri.EscapeDataString("sessionId") + "=")
+        //                    .Append(Uri.EscapeDataString(authz.Params.SessionId));
+        //     
+        //     var postUrl = authzUrlBuilder.ToString();
+        //     var authorize = new FlowAccount
+        //                     {
+        //                         Address = new FlowAddress(authz.Identity.Address),
+        //                         Keys = new List<FlowAccountKey>
+        //                                {
+        //                                    new FlowAccountKey
+        //                                    {
+        //                                        Index = authz.Identity.KeyId
+        //                                    }
+        //                                }
+        //                     };
+        //     var signableJObj = _bloctoResolveUtility.ResolveSignable(ref tx, preAuthzResponse.PreAuthzData, authorize);
+        //     var authzResponse = _webRequestUtils.GetResponse<AuthzResponse>(postUrl, "POST", "application/json", signableJObj);
+        //     var authzGetUrlBuilder = new StringBuilder();
+        //     authzGetUrlBuilder.Append(authzResponse.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
+        //                        .Append(Uri.EscapeDataString("sessionId") + "=")
+        //                        .Append(Uri.EscapeDataString(authzResponse.AuthorizationUpdates.Params.SessionId) + "&")
+        //                        .Append(Uri.EscapeDataString("authorizationId") + "=")
+        //                        .Append(Uri.EscapeDataString(authzResponse.AuthorizationUpdates.Params.AuthorizationId));
+        //                         
+        //     var authzGetUri = new Uri(authzGetUrlBuilder.ToString());
+        //     var authzIframeUrl = authzResponse.Local.First().Endpoint.AbsoluteUri;
+        //     _walletProvider.Authz(authzIframeUrl, 
+        //                           authzGetUri, 
+        // }
+        
+        public FlowTransaction PreAuthz(PreSignable preSignable, FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action callback = null)
         {
             var preAuthzUrlBuilder = new StringBuilder();
             preAuthzUrlBuilder.Append(preAuthzService.Endpoint.AbsoluteUri + "?")
@@ -104,80 +154,35 @@ namespace Flow.FCL
                               .Append(Uri.EscapeDataString(preAuthzService.PollingParams.SessionId));
             
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-            preSignable.Voucher.RefBlock = lastBlock.Header.Id;
-            preSignable.Interaction.Message.RefBlock = lastBlock.Header.Id;
             tx.ReferenceBlockId = lastBlock.Header.Id;
             
-            var preSignableJObj = _bloctoResolveUtility.ResolvePreSignable(tx);
-            var jsonStr = JsonConvert.SerializeObject(preSignable);
-            $"preSignable json str: {jsonStr}".ToLog();
-            $"preSignable json obj: {preSignableJObj}".ToLog();
+            var preSignableJObj = _bloctoResolveUtility.ResolvePreSignable(ref tx);
+            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
             
-            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj.SignabelTemplate);
-            
-            var preAuthzJsonStr = JsonConvert.SerializeObject(preAuthzResponse);
-            $"PreauthzResponse json str: {preAuthzJsonStr}".ToLog();
-            
-            var proposalKey = GetProposerKey(preAuthzResponse.PreAuthzData.Proposer.Identity.Address, preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId).ConfigureAwait(false).GetAwaiter().GetResult();
-            var proposer = new Account
-                           {
-                               Addr = preAuthzResponse.PreAuthzData.Proposer.Identity.Address,
-                               KeyId = Convert.ToUInt32(preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId),
-                               TempId = $"{preAuthzResponse.PreAuthzData.Proposer.Identity.Address}-{preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId}",
-                               SequenceNum = proposalKey.SequenceNum
-                           };
-            
-            var payers = preAuthzResponse.PreAuthzData.Payer
-                                         .Select(payer => {
-                                                     var tmp = GetAccount(payer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
-                                                     var seqNum = tmp.Keys.First(p => p.Index == Convert.ToUInt32(payer.Identity.KeyId)).SequenceNumber;
-                                                     var account = new Account
-                                                                     {
-                                                                         Addr = payer.Identity.Address,
-                                                                         KeyId = Convert.ToUInt32(payer.Identity.KeyId),
-                                                                         TempId = $"{payer.Identity.Address}-{payer.Identity.KeyId}",
-                                                                         SequenceNum = seqNum
-                                                                     };
-                                                     return account;
-                                                 })
-                                         .ToList();
-            var authorizations = preAuthzResponse.PreAuthzData.Authorization
-                                                 .Select(authorizer => {
-                                                             var tmp = GetAccount(authorizer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
-                                                             var seqNum = tmp.Keys.First(p => p.Index == Convert.ToUInt32(authorizer.Identity.KeyId)).SequenceNumber;
-                                                             var account = new Account
-                                                                                 {
-                                                                                     Addr = authorizer.Identity.Address,
-                                                                                     KeyId = Convert.ToUInt32(authorizer.Identity.KeyId),
-                                                                                     TempId = $"{authorizer.Identity.Address}-{authorizer.Identity.KeyId}",
-                                                                                     SequenceNum = seqNum
-                                                                                 };
-                                                             return account;
-                                                         })
-                                                 .ToList();
+            var tmpAccount = GetAccount(preAuthzResponse.PreAuthzData.Proposer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
+            tx.ProposalKey = GetProposerKey(tmpAccount, preAuthzResponse.PreAuthzData.Proposer.Identity.KeyId);
 
-            $"Create Authz Url".ToLog();
-            foreach (var authzItem in preAuthzResponse.PreAuthzData.Authorization)
+            foreach (var authorization in preAuthzResponse.PreAuthzData.Authorization)
             {
                 var authzUrlBuilder = new StringBuilder();
-                authzUrlBuilder.Append(authzItem.Endpoint + "?")
+                authzUrlBuilder.Append(authorization.Endpoint + "?")
                                .Append(Uri.EscapeDataString("sessionId") + "=")
-                               .Append(Uri.EscapeDataString(authzItem.Params.SessionId));
+                               .Append(Uri.EscapeDataString(authorization.Params.SessionId));
                 
                 var postUrl = authzUrlBuilder.ToString();
-                var postUri = new Uri(postUrl);
-                
-                
-                var signable = _resolveUtils.ResolveAuthorizerSignable(proposer, payers.First(), authorizations);
-                var tmpAccount = GetAccount(proposer.Addr).ConfigureAwait(false).GetAwaiter().GetResult();
-                var signableJObj = _bloctoResolveUtility.ResolveSignable(tx, preAuthzResponse.PreAuthzData, tmpAccount);
-                $"Signable json str: {JsonConvert.SerializeObject(signable)}".ToLog();
-                $"Signable jobject str: {signableJObj}".ToLog();
-                
-                Debug.Log($"postUrl: {postUrl}");
+                var authorize = new FlowAccount
+                                {
+                                    Address = new FlowAddress(authorization.Identity.Address),
+                                    Keys = new List<FlowAccountKey>
+                                           {
+                                               new FlowAccountKey
+                                               {
+                                                   Index = authorization.Identity.KeyId
+                                               }
+                                           }
+                                };
+                var signableJObj = _bloctoResolveUtility.ResolveSignable(ref tx, preAuthzResponse.PreAuthzData, authorize);
                 var authzResponse = _webRequestUtils.GetResponse<AuthzResponse>(postUrl, "POST", "application/json", signableJObj);
-                $"Authz response json: {JsonConvert.SerializeObject(authzResponse)}".ToLog();
-                
                 var authzGetUrlBuilder = new StringBuilder();
                 authzGetUrlBuilder.Append(authzResponse.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
                                    .Append(Uri.EscapeDataString("sessionId") + "=")
@@ -190,10 +195,15 @@ namespace Flow.FCL
                 _walletProvider.Authz(authzIframeUrl, 
                                       authzGetUri,
                                       () => {
-                                                            Debug.Log("In authz callback.");
                                                             var signature =_walletProvider.AuthzResponse.CompositeSignature.GetValue("signature");
                                                             var addr = _walletProvider.AuthzResponse.CompositeSignature.GetValue("addr");
-                                                            Debug.Log($"Authorizer addr: {addr}, signature: {signature}");
+                                                            if(signature != null)
+                                                            {
+                                                                var payloadStr = string.Join(",", tx.PayloadSignatures.Select(p => p.Address.Address));
+                                                                var payloadSignature = tx.PayloadSignatures.First(p => p.Address.Address == addr.ToString().RemoveHexPrefix());
+                                                                payloadSignature.Signature = signature?.ToString().StringToBytes().ToArray();
+                                                            }
+                                                            
                                                             var payerPostUrlBuilder = new StringBuilder();
                                                             var item = preAuthzResponse.PreAuthzData.Payer.First();
                                                             payerPostUrlBuilder.Append(item.Endpoint + "?")
@@ -203,54 +213,22 @@ namespace Flow.FCL
                                                                                .Append(Uri.EscapeDataString(item.Params.PayerId));
                                                             var payerUri = new Uri(payerPostUrlBuilder.ToString());
                                                             
-                                                            $"Payer addr: {payers.First().Addr}".ToLog();
-                                                            $"Authorizer addr: {authorizations.First().Addr}".ToLog();
-                                                            var payerSignable = _resolveUtils.ResolvePayerSignable(payers.First(), authorizations.First(), signable, signature?.ToString());
-                                                            var jsonStr = JsonConvert.SerializeObject(payerSignable);
-                                                            $"Payer signable json: {jsonStr}".ToLog();
-                                                            
+                                                            var payerSignable = _bloctoResolveUtility.ResolvePayerSignable(ref tx, signableJObj);
                                                             var payerSignResponse = _webRequestUtils.GetResponse<PayerSignResponse>(payerUri.AbsoluteUri, "POST", "application/json", payerSignable);
+                                                            signature = payerSignResponse.Data.GetValue("signature");
+                                                            addr = payerSignResponse.Data.GetValue("addr");
+                                                            if(signature != null && addr != null)
+                                                            {
+                                                                var envelopeSignature = tx.EnvelopeSignatures.First(p => p.Address.Address == addr.ToString().RemoveHexPrefix());
+                                                                envelopeSignature.Signature = signature?.ToString().StringToBytes().ToArray(); 
+                                                            }
                                                             
-                                                            var tx = new FlowTransaction
-                                                                     {
-                                                                         Script = payerSignable.Cadence,
-                                                                         GasLimit = Convert.ToUInt64(payerSignable.Interaction.Message.ComputeLimit),
-                                                                         Payer = new FlowAddress(payers.First().Addr),
-                                                                         ProposalKey = new FlowProposalKey
-                                                                                       {
-                                                                                           Address = new FlowAddress(signable.Voucher.ProposalKey.Address.ToString()),
-                                                                                           KeyId = Convert.ToUInt32(signable.Voucher.ProposalKey.KeyId),
-                                                                                           SequenceNumber = Convert.ToUInt64(signable.Voucher.ProposalKey.SequenceNum)
-                                                                                       },
-                                                                         ReferenceBlockId = signable.Interaction.Message.RefBlock,
-                                                                         Arguments = new List<ICadence>
-                                                                                     {
-                                                                                         new CadenceNumber(CadenceNumberType.UFix64, "7.5"),
-                                                                                         new CadenceAddress("068606b2acddc1ca")
-                                                                                     }
-                                                                     };
-                                                            
-                                                            tx.Authorizers.Add(new FlowAddress(authorizations.First().Addr));
-                                                            tx.SignerList.Add(authorizations.First().Addr, 1);
-                                                            tx.PayloadSignatures.Add(
-                                                                new FlowSignature
-                                                                {
-                                                                    Address = new FlowAddress(authorizations.First().Addr),
-                                                                    KeyId = Convert.ToUInt32(authorizations.First().KeyId),
-                                                                    Signature = signature?.ToString().StringToBytes().ToArray()
-                                                                });
-                                                            tx.EnvelopeSignatures.Add(new FlowSignature
-                                                                                      {
-                                                                                          Address = new FlowAddress(payerSignResponse.Data.GetValue("addr")?.ToString()),
-                                                                                          KeyId = Convert.ToUInt32(payerSignResponse.Data.GetValue("keyId")),
-                                                                                          Signature = payerSignResponse.Data.GetValue("signature")?.ToString().StringToBytes().ToArray()
-                                                                                      });
-                                                            
-                                                            $"Tx cadence: {Encoding.UTF8.GetBytes(tx.Script).BytesToHex()}".ToLog();
                                                             var txResponse = _flowClient.SendTransactionAsync(tx).ConfigureAwait(false).GetAwaiter().GetResult();
                                                             $"TxId: {txResponse.Id}".ToLog();
                                                          }, null);
             }
+            
+            return tx;
         }
         
         public string GetLastTxId()
@@ -264,6 +242,11 @@ namespace Flow.FCL
             return await account;
         }
         
+        private void Payer(FlowTransaction tx)
+        {
+            
+        }
+        
         private async Task<ProposalKey> GetProposerKey(string addr, int keyId)
         {
             $"Get Proposer key from addr: {addr}".ToLog();
@@ -275,6 +258,17 @@ namespace Flow.FCL
                 KeyId = Convert.ToUInt32(keyId),
                 SequenceNum = Convert.ToUInt64(proposalKey.SequenceNumber)
             };
+        }
+        
+        private FlowProposalKey GetProposerKey(FlowAccount account, uint keyId)
+        {
+            var proposalKey = account.Keys.First(p => p.Index == keyId);
+            return new FlowProposalKey
+                   {
+                       Address = account.Address,
+                       KeyId = keyId,
+                       SequenceNumber = proposalKey.SequenceNumber
+                   };
         }
     }
 }

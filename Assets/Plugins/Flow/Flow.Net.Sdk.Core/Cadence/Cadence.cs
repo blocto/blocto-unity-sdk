@@ -10,7 +10,7 @@ namespace Flow.Net.Sdk.Core.Cadence
     {
         protected Cadence()
         {
-            TempId = KeyGenerator.GetUniqueKey(10);
+            TempId = KeyGenerator.GetUniqueKey(10).ToLower();
         }
 
         public virtual string Type { get; set; }

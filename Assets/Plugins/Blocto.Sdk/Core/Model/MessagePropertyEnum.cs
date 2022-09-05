@@ -6,8 +6,8 @@ namespace Plugins.Blocto.Sdk.Core.Model
         refBlock,
         computeLimit,
         arguments,
-        proposalKey,
+        proposer,
         payer,
-        authorizers,
+        authorizations,
     }
 }

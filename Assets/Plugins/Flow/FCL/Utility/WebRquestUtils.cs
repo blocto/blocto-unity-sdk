@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
+using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -60,6 +61,8 @@ namespace Flow.FCL.Utility
             var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
             client.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
             var jsonStr = default(string);
+            
+            $"Parameter is JObject:{parameter is JObject}".ToLog();
             jsonStr = parameter is JObject
                           ? parameter.ToString()
                           : JsonConvert.SerializeObject(parameter);
@@ -109,6 +112,8 @@ namespace Flow.FCL.Utility
             }
             else
             {
+                using var streamReader = new System.IO.StreamReader(new MemoryStream(unityWebRequest.downloadHandler.data));
+                streamReader.ReadToEnd().ToLog();
                 throw new ApiException("The HTTP status code of the response was not expected (" + (int)unityWebRequest.responseCode + ").", (int)unityWebRequest.responseCode, "", null); 
             } 
             

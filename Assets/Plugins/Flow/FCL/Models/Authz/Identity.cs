@@ -8,6 +8,6 @@ namespace Flow.FCL.Models.Authz
         public string Address { get; set; }
         
         [JsonProperty("keyId")]
-        public int KeyId { get; set; }
+        public uint KeyId { get; set; }
     }
 }

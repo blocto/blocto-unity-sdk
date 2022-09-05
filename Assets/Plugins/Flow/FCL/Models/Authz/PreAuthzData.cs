@@ -12,12 +12,12 @@ namespace Flow.FCL.Models.Authz
         public string F_Vsn { get; set; }
         
         [JsonProperty("proposer")]
-        public AuthzItem Proposer { get; set; }
+        public AuthzInformation Proposer { get; set; }
         
         [JsonProperty("payer")]
-        public List <AuthzItem> Payer { get; set; }
+        public List <AuthzInformation> Payer { get; set; }
         
         [JsonProperty("authorization")]
-        public List <AuthzItem> Authorization { get; set; }
+        public List <AuthzInformation> Authorization { get; set; }
     }
 }

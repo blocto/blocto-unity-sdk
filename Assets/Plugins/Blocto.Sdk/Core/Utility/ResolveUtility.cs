@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Flow.FCL.Models.Authz;
+using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.SDK.Extensions;
+using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Plugins.Blocto.Sdk.Core.Model;
@@ -15,25 +19,16 @@ namespace Blocto.Sdk.Core.Utility
     public class ResolveUtility
     {
         private IFlowClient _flowClient;
+        
         public ResolveUtility(IFlowClient flowClient)
         {
             _flowClient = flowClient;
         }
         
-        public (FlowTransaction Tx, JObject SignabelTemplate) ResolvePreSignable(FlowTransaction tx)
+        public JObject ResolvePreSignable(ref FlowTransaction tx)
         {
             var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
-            var interactionArg = new JObject();
-            var argTempIds = new List<string>();
-            foreach (var cadence in tx.Arguments)
-            {
-                var tmpJObj = CreateInteractionArg(cadence);
-                argTempIds.Add(tmpJObj.GetValue("tempId")!.ToString());
-                interactionArg.Add(tmpJObj.GetValue("tempId")!.ToString(), tmpJObj);
-            }
-            
-            var message = ResolveUtility.CreateMessage(tx, argTempIds);
-            var interaction = ResolveUtility.CreateInteraction(interactionArg, message);
+            var interaction = ResolveUtility.CreateInteraction(tx);
             var voucher = ResolveUtility.CreateVoucher(tx, args);
             var tmp = new JObject
                       {
@@ -52,47 +47,102 @@ namespace Blocto.Sdk.Core.Utility
                                                                         new JProperty("payer", true),
                                                                     })
                       };
-            return (tx, tmp);
+            return tmp;
         }
         
-        public (FlowTransaction Tx, JObject SignabelTemplate) ResolveSignable(FlowTransaction tx, PreAuthzData preAuthzData, FlowAccount account)
+        public JObject ResolveSignable(ref FlowTransaction tx, PreAuthzData preAuthzData, FlowAccount authorizer)
         {
-            var item = ResolvePreSignable(tx);
-            item.SignabelTemplate.Remove("voucher");
-            item.SignabelTemplate.Remove("addr");
-            item.SignabelTemplate.Remove("keyId");
-            item.SignabelTemplate.Remove("roles");
-            item.SignabelTemplate.Remove("f_type");
-            item.SignabelTemplate.Add(new JProperty("f_type", "Signable"));
+            var item = ResolvePreSignable(ref tx);
+            item.Remove(SignablePropertyEnum.voucher.ToString());
+            item.Remove(SignablePropertyEnum.addr.ToString());
+            item.Remove(SignablePropertyEnum.keyId.ToString());
+            item.Remove(SignablePropertyEnum.roles.ToString());
+            item.Remove(SignablePropertyEnum.f_type.ToString());
+            item.Remove(SignablePropertyEnum.interaction.ToString());
+            item.Add(new JProperty("f_type", "Signable"));
             
-            tx.ProposalKey = GetProposerKey(account, Convert.ToUInt32(preAuthzData.Proposer.Identity.KeyId)).ConfigureAwait(false).GetAwaiter().GetResult();
             var participators = ResolveUtility.GetAllAccount(preAuthzData, tx.ProposalKey);
             if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
             {
                 tx.SignerList.Add(participators.Proposer.Addr, 0);
+                if(participators.Proposer.Addr != participators.Payer.Addr)
+                {
+                    var payloadSignature = new FlowSignature
+                                    {
+                                       Address = new FlowAddress(participators.Proposer.Addr.AddHexPrefix()),
+                                       KeyId = participators.Proposer.KeyId,
+                                       Signature = participators.Proposer.Signature == null ? 
+                                                       Array.Empty<byte>() :
+                                                       Encoding.UTF8.GetBytes(participators.Proposer.Signature)
+                                    };
+                    
+                    ResolveUtility.AddPayloadSignature(tx, payloadSignature);
+                }
+                
+                var envelopSignature = new FlowSignature
+                                    {
+                                        Address = new FlowAddress(participators.Payer.Addr.AddHexPrefix()),
+                                        KeyId = participators.Payer.KeyId,
+                                        Signature = participators.Payer.Signature == null ?
+                                                        Array.Empty<byte>() :
+                                                        Encoding.UTF8.GetBytes(participators.Payer.Signature)
+                                    };
+                
+                ResolveUtility.AddEnvelopSignature(tx, envelopSignature);
             }
+            
             
             if(!tx.SignerList.ContainsKey(participators.Payer.Addr))
             {
-                tx.SignerList.Add(participators.Payer.Addr, 1);
+                tx.SignerList.Add(participators.Payer.Addr, tx.SignerList.Count);
+            }
+
+            var transaction = tx;
+            foreach (var authorization in participators.Authorizations.Where(authorization => !transaction.SignerList.ContainsKey(authorization.Addr)))
+            {
+                tx.SignerList.Add(authorization.Addr, tx.SignerList.Count);
+                var flowSignature = new FlowSignature
+                                    {
+                                        Address = new FlowAddress(authorization.Addr.AddHexPrefix()),
+                                        KeyId = authorization.KeyId,
+                                        Signature = authorization.Signature == null ?
+                                                        Array.Empty<byte>() :
+                                                        Encoding.UTF8.GetBytes(authorization.Signature)
+                                    };
+                
+                ResolveUtility.AddPayloadSignature(tx, flowSignature);
             }
             
-            AddInteractionAccounts(item.SignabelTemplate, participators);
             tx.Payer = new FlowAddress(participators.Payer.Addr);
-            foreach (var authorization in participators.Authorizations)
-            {
-                tx.Authorizers.Add(new FlowAddress(authorization.Addr));
-            }
+            tx.Authorizers = new List<FlowAddress>
+                             {
+                                 new FlowAddress(authorizer.Address.Address)
+                             };
             
             var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
+            
+            $"Tx payload signature count: {tx.PayloadSignatures.Count}".ToLog();
+            $"Tx envelop signature count: {tx.EnvelopeSignatures.Count}".ToLog();
             var voucher = CreateVoucher(tx, args, "signable");
-            item.SignabelTemplate.Add("voucher", voucher);
-            item.SignabelTemplate.Add(SignablePropertyEnum.addr.ToString(), participators.Proposer.Addr);
-            item.SignabelTemplate.Add(SignablePropertyEnum.keyId.ToString(), participators.Proposer.KeyId);
+            item.Add("voucher", voucher);
+            item.Add(SignablePropertyEnum.addr.ToString(), authorizer.Address.Address);
+            item.Add(SignablePropertyEnum.keyId.ToString(), authorizer.Keys.First().Index);
+            
+            var propertys = new List<JProperty>
+                            {
+                                new JProperty(InteractionPropertyEnum.proposer.ToString(), $"{participators.Proposer.Addr}-{participators.Proposer.KeyId}"),
+                                new JProperty(InteractionPropertyEnum.payer.ToString(), $"{participators.Payer.Addr}-{participators.Payer.KeyId}"),
+                                new JProperty(InteractionPropertyEnum.authorizations.ToString(), 
+                                              participators.Authorizations.Select(p => $"{p.Addr}-{p.KeyId}").ToList())
+                            };
+            
+            var interaction = CreateInteraction(tx, propertys);
+            interaction.Add(InteractionPropertyEnum.accounts.ToString(), AddInteractionAccounts(participators));
+            item.Add(SignablePropertyEnum.interaction.ToString(), interaction);
             
             if(participators.Proposer.Addr == participators.Payer.Addr)
             {
-                item.SignabelTemplate.Add(SignablePropertyEnum.roles.ToString(), new JObject
+                item.Add(SignablePropertyEnum.roles.ToString(), new JObject
                                                                         {
                                                                             new JProperty("proposer", false),
                                                                             new JProperty("authorizer", true),
@@ -100,26 +150,85 @@ namespace Blocto.Sdk.Core.Utility
                                                                         });
             }
             
+            var message = RLP.GetEncodeMessage(tx);
+            item.Add("message", message);
             
-            return (tx, item.SignabelTemplate);
+            $"Tx: {JsonConvert.SerializeObject(tx)}".ToLog();
+            return item;
         }
 
-        private static JObject CreateInteraction(JObject interactionArg, JObject message)
+        public JObject ResolvePayerSignable(ref FlowTransaction tx, JObject signable)
         {
+            var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
+            var voucher = CreateVoucher(tx, args, "payersignable");
+            signable.Remove(SignablePropertyEnum.voucher.ToString());
+            signable.Add(SignablePropertyEnum.voucher.ToString(), voucher);
+            
+            var message = RLP.EncodedCanonicalAuthorizationEnvelope(tx);
+            signable.Remove(SignablePropertyEnum.message.ToString());
+            signable.Add(SignablePropertyEnum.message.ToString(), message);
+            $"Payer signable: {signable}".ToLog();
+            return signable;
+        }
+        
+        private static void AddPayloadSignature(FlowTransaction tx, FlowSignature flowSignature)
+        {
+            if(tx.PayloadSignatures.All(p => p.Address.Address != flowSignature.Address.Address))
+            {
+                tx.PayloadSignatures.Add(flowSignature);
+            }
+        }
+        
+        private static void AddEnvelopSignature(FlowTransaction tx, FlowSignature flowSignature)
+        {
+            if(tx.EnvelopeSignatures.All(p => p.Address.Address != flowSignature.Address.Address))
+            {
+                tx.EnvelopeSignatures.Add(flowSignature);
+            }
+        }
+
+        private static JObject CreateInteraction(FlowTransaction tx, List<JProperty> jPropertys = null)
+        {
+            var interactionArg = new JObject();
+            var argTempIds = new List<string>();
+            foreach (var cadence in tx.Arguments)
+            {
+                var tmpJObj = CreateInteractionArg(cadence);
+                argTempIds.Add(tmpJObj.GetValue("tempId")!.ToString());
+                interactionArg.Add(tmpJObj.GetValue("tempId")!.ToString(), tmpJObj);
+            }
+            var message = ResolveUtility.CreateMessage(tx, argTempIds);
             var interaction = new JObject
                               {
                                   new JProperty(InteractionPropertyEnum.tag.ToString(), "TRANSACTION"),
+                                  new JProperty(InteractionPropertyEnum.assigns.ToString(), new JObject()),
+                                  new JProperty(InteractionPropertyEnum.reason.ToString(), null),
                                   new JProperty(InteractionPropertyEnum.status.ToString(), "OK"),
                                   new JProperty(InteractionPropertyEnum.arguments.ToString(), interactionArg),
                                   new JProperty(InteractionPropertyEnum.message.ToString(), message),
+                                  new JProperty(InteractionPropertyEnum.events.ToString(), null),
+                                  new JProperty(InteractionPropertyEnum.account.ToString(), new JObject(new JProperty("addr", null))),
+                                  new JProperty(InteractionPropertyEnum.collection.ToString(), null),
+                                  new JProperty(InteractionPropertyEnum.transaction.ToString(), null),
+                                  new JProperty(InteractionPropertyEnum.block.ToString(), null),
+                                  new JProperty("params", new JObject())
                               };
+            
+            if(jPropertys == null)
+            {
+                return interaction;
+            }
 
+            foreach (var property in jPropertys)
+            {
+                interaction.Add(property);
+            }
+            
             return interaction;
         }
-
-        private static JObject AddInteractionAccounts(JObject jTx, (Account Proposer, Account Payer, List<Account> Authoriaztions) participartors)
+        
+        private static JObject AddInteractionAccounts((Account Proposer, Account Payer, List<Account> Authoriaztions) participartors)
         {
-            var interaction = jTx.SelectToken("interaction");
             var accounts = new Dictionary<string, JObject>();
             var proposerJObject = CreateInteractionAccounts(participartors.Proposer, 
                                                             participartors.Proposer.Role.Proposer,
@@ -155,9 +264,13 @@ namespace Blocto.Sdk.Core.Utility
                 accounts.Add(key, authorizerJObject);
             }
             
-            var account = new JProperty("accounts", accounts.Values);
-            interaction!.Last!.AddAfterSelf(account);
-            return jTx;
+            var tmp = new JObject();
+            foreach (var item in accounts)
+            {
+                tmp.Add(item.Key, item.Value);
+            }
+            
+            return tmp;
         }
         
         private static JObject CreateMessage(FlowTransaction tx, List<string> argTempIds)
@@ -167,7 +280,11 @@ namespace Blocto.Sdk.Core.Utility
                               new JProperty(MessagePropertyEnum.cadence.ToString(), tx.Script),
                               new JProperty(MessagePropertyEnum.refBlock.ToString(), tx.ReferenceBlockId),
                               new JProperty(MessagePropertyEnum.computeLimit.ToString(), tx.GasLimit),
+                              new JProperty(MessagePropertyEnum.proposer.ToString(), null),
+                              new JProperty(MessagePropertyEnum.payer.ToString(), null),
+                              new JProperty(MessagePropertyEnum.authorizations.ToString(), new List<JObject>()),
                               new JProperty(MessagePropertyEnum.arguments.ToString(), argTempIds),
+                              new JProperty("params", new List<JObject>())
                           };
             
             return message;
@@ -209,7 +326,7 @@ namespace Blocto.Sdk.Core.Utility
                                      new JProperty("tempId", arg.TempId),
                                      new JProperty("value", tmp.GetValue("value")),
                                      new JProperty("asArgument", tmp),
-                                     new JProperty("xfoorm", new JObject
+                                     new JProperty("xform", new JObject
                                                              {
                                                                  new JProperty("label", tmp.GetValue("type"))
                                                              })
@@ -231,8 +348,13 @@ namespace Blocto.Sdk.Core.Utility
                                                    new JProperty("payer", isPayer),
                                                    new JProperty("authorizer", isAuthorizer),
                                                }),
-                         new JProperty("signature", account.Signature)
                      };
+            
+            $"Account signatore: {account.Signature}".ToLog();
+            if(account.Signature != null)
+            {
+                tmp.Add(new JProperty("signature", account.Signature));
+            }
             
             return tmp;
         }
@@ -249,17 +371,50 @@ namespace Blocto.Sdk.Core.Utility
                                             ResolveUtility.CreateProposerKey()),
                           };
 
-            if (step != "signable")
+            if (step == "presignable")
             {
                 return voucher;
             }
 
+            var envelopObjs = new List<JObject>();
+            var envelopObj = new JObject
+                             {
+                                 new JProperty("address", tx.EnvelopeSignatures.First().Address.Address),
+                                 new JProperty("keyId", tx.EnvelopeSignatures.First().KeyId)
+                             };
+            
+            if(tx.EnvelopeSignatures.First().Signature.Length > 0)
+            {
+                envelopObj.Add("sig", tx.EnvelopeSignatures.First().Signature.ToHex());
+            }
+            
+            envelopObjs.Add(envelopObj);
+            
+            var payloadJObj = new List<JObject>();
+            foreach (var item in tx.PayloadSignatures)
+            {
+                var tmpObj = new JObject
+                             {
+                                 new JProperty("address", item.Address.Address),
+                                 new JProperty("keyId", item.KeyId)
+                             };
+                
+                if(item.Signature.Length > 0)
+                {
+                    tmpObj.Add("sig", item.Signature.ToHex());
+                }
+                
+                payloadJObj.Add(tmpObj);
+            }
+            
+            voucher.Add(new JProperty(VoucherPropertyEnum.payloadSigs.ToString(), payloadJObj));
+            voucher.Add(new JProperty(VoucherPropertyEnum.envelopeSigs.ToString(), envelopObjs));
             voucher.Add(VoucherPropertyEnum.payer.ToString(), tx.Payer.Address);
-            voucher.Add(VoucherPropertyEnum.authorizers.ToString(),
-                        JsonConvert.SerializeObject(new List<string>
-                                                    {
-                                                        string.Join(",", tx.Authorizers.Select(p => p.Address))
-                                                    }));
+            var newProperty = new JProperty(VoucherPropertyEnum.authorizers.ToString(), new List<string>
+                                                                                        {
+                                                                                            tx.Authorizers.First().Address
+                                                                                        });
+            voucher.Add(newProperty);
             
             var token = voucher.SelectToken(VoucherPropertyEnum.proposalKey.ToString());
             var proposerKey = ResolveUtility.CreateProposerKey(tx.ProposalKey.Address.Address,

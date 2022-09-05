@@ -257,7 +257,6 @@ namespace Flow.FCL.Utility
             }
             
             var signable = _preSignable.DeepCopy();
-            $"Create Signable".ToLog();
             CreateSignable(signable, proposer, payer, authorizations, accountDict, payloadSigs);
             signable!.Message = GetEncodeMessage(signable, authorizations.First().Addr, signable.Interaction.Message.RefBlock);
             

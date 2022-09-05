@@ -9,22 +9,21 @@ using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
-using Plugins.Blocto.Sdk.Core.Extension;
 
 namespace Blocto.Sdk.Core.Utility
 {
     public static class RLP
     {
-        public static string GetEncodeMessage(FlowTransaction tx, string authorizer)
+        public static string GetEncodeMessage(FlowTransaction tx)
         {
-            var data = RLP.EncodeTransaction(tx, authorizer);
+            var data = RLP.EncodeTransaction(tx);
             var encodeBytes = RLPUtility.RlpEncode(data);
             var message = RLP.CreateEncodeMessage(encodeBytes);
 
             return message;
         }
 
-        private static List<object> EncodeTransaction(FlowTransaction tx, string authorizer)
+        private static List<object> EncodeTransaction(FlowTransaction tx)
         {
             var datas = new List<object>();
             datas.Add(Encoding.UTF8.GetBytes(tx.Script).ToList());
@@ -35,29 +34,13 @@ namespace Blocto.Sdk.Core.Utility
                                                   })
                                                .ToList();
             datas.Add(tmp);
-            $"RefBlock: {tx.ReferenceBlockId}".ToLog();
             datas.Add(tx.ReferenceBlockId.HexToBytes().ToList());
-            
-            $"ComputeLimit: {tx.GasLimit}".ToLog();
             datas.Add(RLPUtility.GetBytes(tx.GasLimit));
-            
-            $"ProposalKey addr: {tx.ProposalKey.Address.Address}".ToLog();
             datas.Add(tx.ProposalKey.Address.Address.HexToBytes().ToList());
-            
-            $"ProposalKey keyId: {tx.ProposalKey.KeyId}".ToLog();
             datas.Add(RLPUtility.GetBytes(tx.ProposalKey.KeyId).ToList());
-            
-            $"ProposalKey seqNum: {tx.ProposalKey.SequenceNumber}".ToLog();
-            var seqNumBytes = RLPUtility.GetBytes(tx.ProposalKey.SequenceNumber).ToList();
-            
-            $"ProposalKey seqNum hex: {seqNumBytes.ToHex()}".ToLog();
             datas.Add(RLPUtility.GetBytes(tx.ProposalKey.SequenceNumber).ToList());
-            
-            $"Payer addr: {tx.Payer.Address}".ToLog();
             datas.Add(tx.Payer.Address.ToString().HexToBytes().ToList());
-            
-            $"authorizers: {authorizer}".ToLog();
-            datas.Add(new List<List<byte>> { authorizer.HexToBytes().ToList() });
+            datas.Add(new List<List<byte>> { tx.Authorizers.First().Address.HexToBytes().ToList() });
 
             return datas;
         }
@@ -66,32 +49,21 @@ namespace Blocto.Sdk.Core.Utility
         {
             var messageBytes = DomainTag.AddTransactionDomainTag(encodeBytes.ToArray());
             var message = messageBytes.ToHex();
-            $"Message: {message}".ToLog();
             return message;
         }
 
-        public static string EncodedCanonicalAuthorizationEnvelope(FlowTransaction tx, Signable signable, string authorizer)
+        public static string EncodedCanonicalAuthorizationEnvelope(FlowTransaction tx)
         {
-            var signatures = signable.Voucher.PayloadSigs.Select(p => {
-                                                                     var sign = new FlowSignature {
-                                                                                    Address = new FlowAddress(p.GetValue("address")!.ToString()),
-                                                                                    KeyId = Convert.ToUInt32(p.GetValue("keyId")),
-                                                                                    Signature = p.GetValue("sig")!.ToString().HexToBytes()
-                                                                                };
-                                                                     return sign;
-                                                                 }).ToList();
-            $"before collect signers".ToLog();
-            var signers = CollectSigners(signable);
-            $"after collect signers".ToLog();
+            var tmp = tx.PayloadSignatures as List<FlowSignature>;
             var authEnvelopeElements = new List<object>
                                        {
-                                           EncodeTransaction(tx, authorizer),
-                                           EncodedSignatures(signatures, signers)
+                                           EncodeTransaction(tx),
+                                           EncodedSignatures(tmp, tx.SignerList)
                                        };
+            
             var bytes = RLPUtility.RlpEncode(authEnvelopeElements);
             var messageBytes = DomainTag.AddTransactionDomainTag(bytes.ToArray());
             var message = messageBytes.ToHex();
-            message.ToLog();
             return message;
         }
         
