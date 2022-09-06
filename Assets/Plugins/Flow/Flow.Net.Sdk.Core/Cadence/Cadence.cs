@@ -1,4 +1,5 @@
-﻿using Flow.Net.Sdk.Core.Cadence.Types;
+﻿using System;
+using Flow.Net.Sdk.Core.Cadence.Types;
 using Flow.Net.Sdk.Core.Exceptions;
 using Newtonsoft.Json;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace Flow.Net.Sdk.Core.Cadence
 
             return cadenceCompositeValue ?? throw new FlowException($"Failed to find fieldName: {fieldName}");
         }
-
+        
         /// <summary>
         /// Filters <see cref="CadenceCompositeItem.Fields"/> where <see cref="CadenceCompositeItemValue.Name"/> is equal to <paramref name="fieldName"/> and returns the <see cref="CadenceCompositeItemValue.Value"/> as <typeparamref name="T"/>.
         /// </summary>

@@ -229,7 +229,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transactions");
 
             var bodyJsonStr = JsonConvert.SerializeObject(body);
-            $"SendTransaction-{bodyJsonStr}".ToLog();
             var uploadHandler = CreateUploadHandler(bodyJsonStr, "application/json");
             var client = CreateUnityWebRequest(urlBuilder, "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
             try
@@ -346,7 +345,9 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             IsAppendQueryWithBlockHeight(block_height, urlBuilder);
             urlBuilder.Length--;
 
-            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            var bodyJsonStr = JsonConvert.SerializeObject(body);
+            var uploadHandler = CreateUploadHandler(bodyJsonStr, "application/json");
+            var client = CreateUnityWebRequest(urlBuilder, "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
             try
             {
                 var result = ProcessWebRequest<Response>(client);
@@ -524,6 +525,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             StartCoroutine(SendRequest(unityWebRequest));
             while (!unityWebRequest.isDone)
             {
+                $"Task.Yield return.".ToLog();
                 Task.Yield();
             }
                 
@@ -538,7 +540,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             {
                 var tmp = unityWebRequest.downloadHandler.data;
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
-                // Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
                 return objectResponse_.Object;  
             }
                 
@@ -804,7 +805,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
         
         private IEnumerator SendRequest(UnityWebRequest unityRequest)
         {
-            // Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
             yield return unityRequest.SendWebRequest();
         }
         

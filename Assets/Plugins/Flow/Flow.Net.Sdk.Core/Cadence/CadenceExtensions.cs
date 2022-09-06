@@ -64,7 +64,7 @@ namespace Flow.Net.Sdk.Core.Cadence
         public static T CompositeFieldAs<T>(this CadenceComposite cadenceComposite, string fieldName)
             where T : ICadence
         {
-            return cadenceComposite.CompositeFieldAs<T>(cadenceComposite, fieldName);
+            return cadenceComposite.CompositeFieldAs<T>(cadenceComposite, fieldName.ToLower());
         }
 
         /// <summary>

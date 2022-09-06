@@ -31,6 +31,8 @@ public class MainController : MonoBehaviour
     
     private Button _signBtn;
     
+    private Button _queryBtn;
+    
     private InputField _resultTxt;
     
     private FlowUnityWebRequest _flowWebRequest;
@@ -50,7 +52,7 @@ public class MainController : MonoBehaviour
         
         tmp = GameObject.Find("SendTransactionBtn");
         _sendTransaction = tmp.GetComponent<Button>();
-        _sendTransaction.onClick.AddListener(PreAuthz);
+        _sendTransaction.onClick.AddListener(SendTransaction);
         
         tmp = GameObject.Find("SignBtn");
         _signBtn = tmp.GetComponent<Button>();
@@ -62,6 +64,12 @@ public class MainController : MonoBehaviour
         
         tmp = GameObject.Find("ResultTxt");
         _resultTxt = tmp.GetComponent<InputField>();
+        
+        tmp = GameObject.Find("QueryBtn");
+        _queryBtn = tmp.GetComponent<Button>();
+        // _queryBtn.onClick.AddListener(ExecuteQuery);
+        
+        _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
     }
 
     // Start is called before the first frame update
@@ -95,7 +103,7 @@ public class MainController : MonoBehaviour
                           });
     }
     
-    private void PreAuthz()
+    private void SendTransaction()
     {
         var arguments = new List<BaseArgument>
                         {
@@ -122,11 +130,62 @@ public class MainController : MonoBehaviour
                                  },
                  };
         
-        var preSignable = _resolveUtils.ResolvePreSignable(arguments, MainController._script, 1000);
-        $"PreSignabel f_type: {preSignable.F_Type}".ToLog();
-        _fcl.PreAuthz(preSignable, tx, () => {
+        _fcl.Mutate(tx, () => {
                                        _resultTxt.text = _fcl.CurrentUser().GetLastTxId();
                                    });
+    }
+    
+    public async Task ExecuteQuery()
+    {
+        var complexScript = @"
+                            pub struct User {
+                                pub var balance: UFix64
+                                pub var address: Address
+                                pub var name: String
+                                
+
+                                init(name: String, address: Address, balance: UFix64) {
+                                    self.name = name
+                                    self.address = address
+                                    self.balance = balance
+                                }
+                            }
+
+                            pub fun main(name: String): User {
+                                return User(
+                                    name: name,
+                                    address: 0x1,
+                                    balance: 10.0
+                                )
+                            }";
+        var simpleScript = @"pub fun main(): Int { return 1 + 2 }";
+        var flowScript = new FlowScript
+                         {
+                             Script = simpleScript,
+                             // Arguments = new List<ICadence>
+                             //             {
+                             //                 new CadenceString("Jamis")
+                             //             }
+                         };
+        
+        var result = await _fcl.Query(flowScript);
+        $"Result isSuccessed: {result.IsSuccessed}".ToLog();
+        if(result.IsSuccessed)
+        {
+            //// complexScript result parser
+            // var name = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceString>("name").Value;
+            // var balance = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceNumber>("balance").Value;
+            // var address = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceAddress>("address").Value;
+            // _resultTxt.text = $"Name: {name}, Address: {address}";
+            
+            //// simplexScript result parser
+            var value = result.Data.As<CadenceNumber>().Value;
+            _resultTxt.text = $"Value: {value}";
+        }
+        else
+        {
+            _resultTxt.text = result.Message;
+        }
     }
     
     private void SignUserMessage()

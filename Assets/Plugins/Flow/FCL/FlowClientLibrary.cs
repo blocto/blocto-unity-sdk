@@ -1,15 +1,24 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Blocto.Flow;
 using Flow.FCL.Models;
-using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
 using Flow.Net.SDK.Client.Unity.Unity;
+using Flow.Net.Sdk.Core.Cadence;
+using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.SDK.Extensions;
+using Newtonsoft.Json;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Flow.FCL
 {
@@ -23,9 +32,17 @@ namespace Flow.FCL
         
         private IWebRequestUtils _webRequestUtils;
         
+        private IResolveUtils _resolveUtils;
+        
+        private IFlowClient _flowClient;
+        
         private CoreModule _coreModule;
         
-        private IResolveUtils _resolveUtils;
+        private ICadence _response;
+        
+        private string _errorMessage;
+        
+        private bool _isSuccessed;
         
         public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, Config.Config config, string mode, IResolveUtils resolveUtils)
         {
@@ -35,6 +52,7 @@ namespace Flow.FCL
             var factory = UtilFactory.CreateUtilFactory(gameObject, flowClient);
             
             fcl._resolveUtils = resolveUtils;
+            fcl._flowClient = flowClient;
             fcl._walletProvider = tmpWalletProvider;
             fcl._webRequestUtils = factory.CreateWebRequestUtil();
             fcl._coreModule = new CoreModule(
@@ -49,6 +67,9 @@ namespace Flow.FCL
         public FlowClientLibrary()
         {
            Config = new Config.Config();
+           _response = default(Cadence);
+           _errorMessage = string.Empty;
+           _isSuccessed = false;
         }
 
         public CurrentUser CurrentUser()
@@ -107,7 +128,7 @@ namespace Flow.FCL
                                                        }, callback);
         }
         
-        public void PreAuthz(PreSignable preSignable, FlowTransaction tx, Action callback)
+        public void PreAuthz(FlowTransaction tx, Action callback)
         {
             var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
             var urlBuilder = new StringBuilder();
@@ -116,19 +137,95 @@ namespace Flow.FCL
                       .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
             
             Debug.Log($"Pre authz url: {urlBuilder.ToString()}");
-            _coreModule.PreAuthz(preSignable, service, tx, () => {}, callback);
+            _coreModule.SendTransaction(service, tx, () => {}, callback);
         }
         
-        public void SendTransaction(PreSignable preSignable, FlowTransaction tx, Action callback)
+        public void Mutate(FlowTransaction tx, Action callback)
         {
             var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
-            var urlBuilder = new StringBuilder();
-            urlBuilder.Append(service.Endpoint.AbsoluteUri + "?")
-                      .Append(Uri.EscapeUriString("sessionId") + "=")
-                      .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
-            
-            Debug.Log($"Pre authz url: {urlBuilder.ToString()}");
-            tx = _coreModule.PreAuthz(preSignable, service, tx, () => {}, callback);
+            tx = _coreModule.SendTransaction(service, tx, () => {}, callback);
+        }
+        
+        public async Task<QueryResult> Query(FlowScript flowScript)
+        {
+            await ExecuteScript(flowScript);
+            var result = new QueryResult
+                         {
+                             Data = _response,
+                             IsSuccessed = _isSuccessed,
+                             Message = _errorMessage
+                         };
+            _isSuccessed = false;
+            _errorMessage = string.Empty;
+            _response = default(Cadence);
+            return result;
+        }
+        
+        private List<(string Type, string Value, string Name)> GetValue(ICadence cadence, string fieldName = "")
+        {
+            var fields = new List<(string Type, string Value, string Name)>();
+            switch (cadence.Type)
+            {
+                case "Struct":
+                case "Resource":
+                case "Event":
+                case "Contract":
+                case "Enum":
+                    var tmp =  new CadenceComposite((CadenceCompositeType)Enum.Parse(typeof(CadenceCompositeType), cadence.Type));
+                    foreach (var temp in tmp.Value.Fields)
+                    {
+                         fields.AddRange(GetValue(temp.Value, temp.Name));
+                    }
+                    
+                    return fields;
+                    break;
+                case "Int":
+                case "UInt":
+                case "Int8":
+                case "UInt8":
+                case "Int16":
+                case "UInt16":
+                case "Int32":
+                case "UInt32":
+                case "Int64":
+                case "UInt64":
+                case "Int128":
+                case "UInt128":
+                case "Int256":
+                case "UInt256":
+                case "Word8":
+                case "Word16":
+                case "Word32":
+                case "Word64":
+                case "Fix64":
+                case "UFix64":
+                    return new List<(string Type, string Value, string Name)>
+                           {
+                                          (cadence.Type, cadence.As<CadenceNumber>().Value, fieldName)
+                                      };
+                case "Address":
+                    return new List<(string Type, string Value, string Name)>
+                           {
+                                          (cadence.Type, cadence.As<CadenceAddress>().Value, fieldName)
+                                      };
+                case "String":
+                    return new List<(string Type, string Value, string Name)>
+                           {
+                                          (cadence.Type, cadence.As<CadenceString>().Value, fieldName)
+                                      };
+                case "Bool":
+                    return new List<(string Type, string Value, string Name)>
+                           {
+                                          (cadence.Type, cadence.As<CadenceBool>().Value.ToString(), fieldName)
+                                      };
+                default:
+                    var cadenceType = _response.GetType();
+                    var realTypeName = cadenceType.FullName;
+                    var realType = Type.GetType(realTypeName!);
+                    var item = Convert.ChangeType(_response, realType!);
+                    return new List<(string Type, string Value, string Name)>();
+                    break;
+            }
         }
         
         /// <summary>
@@ -139,6 +236,25 @@ namespace Flow.FCL
         {
             this._currentUser = null;
             callback?.Invoke();
+        }
+        
+        private async Task ExecuteScript(FlowScript flowScript)
+        {
+            try
+            {
+                _response = await _flowClient.ExecuteScriptAtLatestBlockAsync(flowScript); 
+                _isSuccessed = true;
+            }
+            catch (Exception e)
+            {
+                $"Execute script error: {e.Message}".ToLog();
+                _errorMessage = e.Message;
+            }
+        }
+        
+        private IEnumerator WaitForSeconds(float time)
+        {
+            yield return new WaitForSeconds(time);
         }
         
         public async Task<FlowAccount> GetAccount(string address)

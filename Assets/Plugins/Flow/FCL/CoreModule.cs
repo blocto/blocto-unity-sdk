@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,9 +15,6 @@ using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Flow.Net.Sdk.Utility.NEthereum.Hex;
-using Newtonsoft.Json;
-using Org.BouncyCastle.Math.EC.Endo;
 using UnityEngine;
 using KeyGenerator = Flow.FCL.Utility.KeyGenerator;
 
@@ -37,6 +35,7 @@ namespace Flow.FCL
         private string _txId;
         
         private AuthnParams _authnParams;
+        
 
         public CoreModule(IWalletProvider walletProvider, IFlowClient flowClient, IResolveUtils resolveUtils, UtilFactory utilFactory)
         {
@@ -112,41 +111,7 @@ namespace Flow.FCL
             return preAuthzResponse;
         }
         
-        // public AuthzResponse Authz(FlowTransaction tx, PreAuthzData data)
-        // {
-        //     var authzUrlBuilder = new StringBuilder();
-        //     authzUrlBuilder.Append(data..Endpoint + "?")
-        //                    .Append(Uri.EscapeDataString("sessionId") + "=")
-        //                    .Append(Uri.EscapeDataString(authz.Params.SessionId));
-        //     
-        //     var postUrl = authzUrlBuilder.ToString();
-        //     var authorize = new FlowAccount
-        //                     {
-        //                         Address = new FlowAddress(authz.Identity.Address),
-        //                         Keys = new List<FlowAccountKey>
-        //                                {
-        //                                    new FlowAccountKey
-        //                                    {
-        //                                        Index = authz.Identity.KeyId
-        //                                    }
-        //                                }
-        //                     };
-        //     var signableJObj = _bloctoResolveUtility.ResolveSignable(ref tx, preAuthzResponse.PreAuthzData, authorize);
-        //     var authzResponse = _webRequestUtils.GetResponse<AuthzResponse>(postUrl, "POST", "application/json", signableJObj);
-        //     var authzGetUrlBuilder = new StringBuilder();
-        //     authzGetUrlBuilder.Append(authzResponse.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
-        //                        .Append(Uri.EscapeDataString("sessionId") + "=")
-        //                        .Append(Uri.EscapeDataString(authzResponse.AuthorizationUpdates.Params.SessionId) + "&")
-        //                        .Append(Uri.EscapeDataString("authorizationId") + "=")
-        //                        .Append(Uri.EscapeDataString(authzResponse.AuthorizationUpdates.Params.AuthorizationId));
-        //                         
-        //     var authzGetUri = new Uri(authzGetUrlBuilder.ToString());
-        //     var authzIframeUrl = authzResponse.Local.First().Endpoint.AbsoluteUri;
-        //     _walletProvider.Authz(authzIframeUrl, 
-        //                           authzGetUri, 
-        // }
-        
-        public FlowTransaction PreAuthz(PreSignable preSignable, FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action callback = null)
+        public FlowTransaction SendTransaction(FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action callback = null)
         {
             var preAuthzUrlBuilder = new StringBuilder();
             preAuthzUrlBuilder.Append(preAuthzService.Endpoint.AbsoluteUri + "?")
@@ -231,6 +196,8 @@ namespace Flow.FCL
             return tx;
         }
         
+        
+        
         public string GetLastTxId()
         {
             return _txId;
@@ -270,5 +237,7 @@ namespace Flow.FCL
                        SequenceNumber = proposalKey.SequenceNumber
                    };
         }
+        
+        
     }
 }

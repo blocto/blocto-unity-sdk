@@ -117,8 +117,6 @@ namespace Blocto.Flow
             BloctoWalletProvider.CloseWindow();
 
             internalCallback.Invoke();
-            Debug.Log($"Complete internal callback");
-            
             callback?.Invoke();
         }
         
@@ -148,7 +146,6 @@ namespace Blocto.Flow
             
             yield return new WaitForSeconds(0.2f);
         }
-        
         
         private void InitializePlugins(string pluginName)
         {
