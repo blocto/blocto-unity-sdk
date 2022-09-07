@@ -37,6 +37,6 @@ namespace Flow.FCL
             return _resolveUtility;
         }
         
-        public virtual AppUtils CreateAppUtil() => new AppUtils(_flowClient);
+        public virtual AppUtils CreateAppUtil(string env) => new AppUtils(_flowClient, env);
     }
 }

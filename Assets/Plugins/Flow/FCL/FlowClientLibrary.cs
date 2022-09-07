@@ -39,7 +39,7 @@ namespace Flow.FCL
             var tmpWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject, config.Get("testnet"));
             var flowClient = new FlowUnityWebRequest(gameObject, config.Get(env)); 
             var factory = UtilFactory.CreateUtilFactory(gameObject, flowClient);
-            var appUtil = factory.CreateAppUtil();
+            var appUtil = factory.CreateAppUtil(env);
             var currentUser = new CurrentUser(tmpWalletProvider, factory.CreateWebRequestUtil(), resolveUtility, appUtil);
             
             fcl._flowClient = flowClient;
