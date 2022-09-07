@@ -62,7 +62,6 @@ namespace Flow.FCL.Utility
                         throw new Exception("Type is invalided.");
                     }
                     
-                    $"input: {tmpInput.ToHex()}".ToLog();
                     if(tmpInput.Count == 1 && tmpInput[0] < 128)
                     {
                         outputs.Add(tmpInput);

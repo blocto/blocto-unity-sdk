@@ -17,7 +17,6 @@ using UnityEngine.Networking;
 
 namespace Flow.FCL.Utility
 {
-    // 我們前端 API 之後會從 header 辨認 App id
     // 再打 wallet webapp 的時候請帶上 Blocto-Application-Identifier 這個 Header
     public class WebRequestUtils : MonoBehaviour, IWebRequestUtils
     {
@@ -62,7 +61,6 @@ namespace Flow.FCL.Utility
             client.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
             var jsonStr = default(string);
             
-            $"Parameter is JObject:{parameter is JObject}".ToLog();
             jsonStr = parameter is JObject
                           ? parameter.ToString()
                           : JsonConvert.SerializeObject(parameter);

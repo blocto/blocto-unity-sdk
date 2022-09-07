@@ -13,10 +13,11 @@ using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Plugins.Blocto.Sdk.Core.Model;
+using Unity.VisualScripting.FullSerializer;
 
 namespace Blocto.Sdk.Core.Utility
 {
-    public class ResolveUtility
+    public class ResolveUtility : IResolveUtility
     {
         private IFlowClient _flowClient;
         
@@ -120,9 +121,6 @@ namespace Blocto.Sdk.Core.Utility
                              };
             
             var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
-            
-            $"Tx payload signature count: {tx.PayloadSignatures.Count}".ToLog();
-            $"Tx envelop signature count: {tx.EnvelopeSignatures.Count}".ToLog();
             var voucher = CreateVoucher(tx, args, "signable");
             item.Add("voucher", voucher);
             item.Add(SignablePropertyEnum.addr.ToString(), authorizer.Address.Address);
@@ -169,6 +167,36 @@ namespace Blocto.Sdk.Core.Utility
             signable.Add(SignablePropertyEnum.message.ToString(), message);
             $"Payer signable: {signable}".ToLog();
             return signable;
+        }
+        
+        public JObject ResolveSignMessage(string message, string sessionId)
+        {
+            var service = new JObject
+                          {
+                              new JProperty("params", new JObject
+                                                      {
+                                                          new JProperty("sessionId", sessionId)
+                                                      }),
+                              new JProperty("type", "user-signature")
+                          };
+            
+            var config = new JObject
+                         {
+                             new JProperty("services", new JObject
+                                                       {
+                                                           new JProperty("OpenID.scopes", "email!")
+                                                       }),
+                             new JProperty("app", new JObject())
+                         };
+            var result = new JObject
+                         {
+                             new JProperty(SignablePropertyEnum.service.ToString(), service),
+                             new JProperty(SignablePropertyEnum.config.ToString(), config),
+                             new JProperty(SignablePropertyEnum.f_vsn.ToString(), "1.0.1"),
+                             new JProperty("fclVersion", "1.0.1"),
+                             new JProperty("message", message)
+                         };
+            return result;
         }
         
         private static void AddPayloadSignature(FlowTransaction tx, FlowSignature flowSignature)

@@ -2,9 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
+using Flow.Net.Sdk.Core;
+using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -45,8 +48,8 @@ namespace Blocto.Sdk.Core.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
+                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
-                // Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  
             }
@@ -115,7 +118,6 @@ namespace Blocto.Sdk.Core.Utility
         
         private IEnumerator SendRequest(UnityWebRequest unityRequest)
         {
-            // Debug.Log($"DEBUG Send Request: {DateTime.Now:HH:mm:ss.fff}");
             yield return unityRequest.SendWebRequest();
         }
         

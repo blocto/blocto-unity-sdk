@@ -525,7 +525,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             StartCoroutine(SendRequest(unityWebRequest));
             while (!unityWebRequest.isDone)
             {
-                $"Task.Yield return.".ToLog();
                 Task.Yield();
             }
                 
@@ -782,7 +781,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
         private UnityWebRequest CreateUnityWebRequest(StringBuilder urlBuilder, string method, string contentType, DownloadHandlerBuffer downloadHandlerBuffer, UploadHandlerRaw uploadHandlerRaw = null)
         {
             var uri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
-            $"SendTransaction url: {uri}".ToLog();
             var unityWebRequest = new UnityWebRequest(uri, method);
             unityWebRequest.SetRequestHeader("Content-Type", contentType);
             if(uploadHandlerRaw != null)

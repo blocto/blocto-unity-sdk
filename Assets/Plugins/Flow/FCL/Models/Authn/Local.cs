@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Flow.FCL.Models.Authn
 {
-    public partial class AuthnUpdates
+    public partial class Local
     {
         [JsonProperty("f_type")]
         public string FType { get; set; }

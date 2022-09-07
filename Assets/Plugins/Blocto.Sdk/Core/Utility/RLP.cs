@@ -9,6 +9,7 @@ using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
+using Plugins.Blocto.Sdk.Core.Extension;
 
 namespace Blocto.Sdk.Core.Utility
 {
@@ -18,8 +19,20 @@ namespace Blocto.Sdk.Core.Utility
         {
             var data = RLP.EncodeTransaction(tx);
             var encodeBytes = RLPUtility.RlpEncode(data);
-            var message = RLP.CreateEncodeMessage(encodeBytes);
+            var message = RLP.CreateEncodeMessageWithDomainTag(encodeBytes);
 
+            return message;
+        }
+        
+        public static string GetEncodeMessage(string appIdentifier, string address, string nonce)
+        {
+            var datas = new List<object>(); 
+            var leftPaddedhexAddress = address.PadLeft(16, '0');
+            datas.Add(Encoding.UTF8.GetBytes(appIdentifier).ToList());
+            datas.Add(leftPaddedhexAddress.HexToBytes().ToList());
+            datas.Add(nonce.HexToBytes().ToList());
+            var enocdeBytes = RLPUtility.RlpEncode(datas);
+            var message = enocdeBytes.ToHex();
             return message;
         }
 
@@ -45,7 +58,7 @@ namespace Blocto.Sdk.Core.Utility
             return datas;
         }
 
-        private static string CreateEncodeMessage(List<byte> encodeBytes)
+        private static string CreateEncodeMessageWithDomainTag(List<byte> encodeBytes)
         {
             var messageBytes = DomainTag.AddTransactionDomainTag(encodeBytes.ToArray());
             var message = messageBytes.ToHex();
@@ -91,6 +104,7 @@ namespace Blocto.Sdk.Core.Utility
             
             return signers;
         }
+        
         private static List<List<List<byte>>> EncodedSignatures(IReadOnlyList<FlowSignature> signatures, Dictionary<string, int> signers)
         {
             var signatureElements = new List<List<List<byte>>>();

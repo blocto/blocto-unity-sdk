@@ -26,18 +26,6 @@ namespace Flow.FCL
         
         public virtual IWebRequestUtils CreateWebRequestUtil() => _webRequestUtils;
         
-        public virtual IResolveUtils CreateResolveUtils()
-        {
-            if(_resolveUtils != null)
-            {
-                $"ResolveUtils not null return exist ResolveUtils".ToLog();
-                return _resolveUtils;
-            }
-            
-            _resolveUtils = new ResolveUtils();
-            return _resolveUtils;
-        }
-        
         public virtual ResolveUtility CreateResolveUtility()
         {
             if(_resolveUtility != null)
@@ -48,5 +36,7 @@ namespace Flow.FCL
             _resolveUtility = new ResolveUtility(_flowClient);
             return _resolveUtility;
         }
+        
+        public virtual AppUtils CreateAppUtil() => new AppUtils(_flowClient);
     }
 }

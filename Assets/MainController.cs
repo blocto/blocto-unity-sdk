@@ -39,7 +39,7 @@ public class MainController : MonoBehaviour
     
     private FlowClientLibrary _fcl;
     
-    private IResolveUtils _resolveUtils;
+    private IResolveUtility _resolveUtils;
     
     private ResolveUtility _resolveUtility;
     
@@ -67,8 +67,6 @@ public class MainController : MonoBehaviour
         
         tmp = GameObject.Find("QueryBtn");
         _queryBtn = tmp.GetComponent<Button>();
-        // _queryBtn.onClick.AddListener(ExecuteQuery);
-        
         _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
     }
 
@@ -77,10 +75,10 @@ public class MainController : MonoBehaviour
     {
         var config = new Config();
         config.Put("testnet", "https://rest-testnet.onflow.org/v1")
-              .Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn");
-        _resolveUtils = gameObject.AddComponent<UtilFactory>().CreateResolveUtils();
+              .Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
+              .Put("appIdentifier", "jamisdeapp");
         _resolveUtility = gameObject.AddComponent<UtilFactory>().CreateResolveUtility();
-        _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, config, "testnet", _resolveUtils);
+        _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, config, "testnet", _resolveUtility);
     }
     
     
@@ -95,12 +93,12 @@ public class MainController : MonoBehaviour
         Debug.Log("In ConnectWallet.");
         $"Get address url : {_url}".ToLog();
         
-        _fcl.Authenticate(() => {
-                              var currentUser = _fcl.CurrentUser().Snapshot();
-                              var data = currentUser.Services.First(p => p.Type == ServiceTypeEnum.AccountProof);
-                              var signature = data.Data.Signatures.First().SignatureStr;
+        _fcl.Authenticate(currentUser => {
+                              var service = currentUser.Services.FirstOrDefault(p => p.Type == ServiceTypeEnum.AccountProof);
+                              var signature = service.Data.Signatures.First().SignatureStr;
                               _resultTxt.text = $"Addr: {currentUser.Addr.Address}, Signature: {signature}";
                           });
+        
     }
     
     private void SendTransaction()
@@ -130,8 +128,8 @@ public class MainController : MonoBehaviour
                                  },
                  };
         
-        _fcl.Mutate(tx, () => {
-                                       _resultTxt.text = _fcl.CurrentUser().GetLastTxId();
+        _fcl.Mutate(tx, txId => {
+                                       _resultTxt.text = txId;
                                    });
     }
     
@@ -190,7 +188,11 @@ public class MainController : MonoBehaviour
     
     private void SignUserMessage()
     {
-        // _fcl.SignUserMessage();    
+        _fcl.SignUserMessage("IamJamis", response => {
+                                             var signature = response.Data.First().GetValue("signature").ToString();
+                                             var keyId = response.Data.First().GetValue("keyId").ToString();
+                                             _resultTxt.text = $"KeyId: {keyId}, Signature: {signature}";
+                                         });    
     }
     
     private async void GetAccount()

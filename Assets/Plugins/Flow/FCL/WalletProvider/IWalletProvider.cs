@@ -13,10 +13,12 @@ namespace Flow.FCL.WalletProvider
         public AuthzResponse AuthzResponse { get; set; }
 
         public PreAuthzResponse PreAuthzResponse { get; set; }
+
+        public SignMessageResponse SignMessageResponse { get; set; }
         
-        public void Login(string authnUrl, Uri pollingUri, Action internalCallback, Action callback = null);
+        public void Login(string authnUrl, Uri pollingUri, Action internalCallback);
         public void Authz(string iframeUrl, Uri updateUri, Action internalCallback, Action callback = null);
-        public void SignMessage(string iframeUrl, string pollingUrl, Action internalCallback = null);
+        public void SignMessage(string iframeUrl, Uri pollingUrl, Action internalCallback ,Action callback = null);
         public string SendTransaction(FlowTransaction transaction, Action intervalCallback);
     }
 }

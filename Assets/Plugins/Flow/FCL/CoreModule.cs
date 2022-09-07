@@ -26,7 +26,7 @@ namespace Flow.FCL
         
         private IWebRequestUtils _webRequestUtils;
         
-        private ResolveUtility _bloctoResolveUtility;
+        private IResolveUtility _resolveUtility;
         
         private IFlowClient _flowClient;
         
@@ -37,58 +37,13 @@ namespace Flow.FCL
         private AuthnParams _authnParams;
         
 
-        public CoreModule(IWalletProvider walletProvider, IFlowClient flowClient, IResolveUtils resolveUtils, UtilFactory utilFactory)
+        public CoreModule(IWalletProvider walletProvider, IFlowClient flowClient, IResolveUtility resolveUtility, UtilFactory utilFactory)
         {
             _walletProvider = walletProvider;
             _flowClient = flowClient;
             _webRequestUtils = utilFactory.CreateWebRequestUtil();
-            _bloctoResolveUtility = utilFactory.CreateResolveUtility();
+            _resolveUtility = utilFactory.CreateResolveUtility();
         }
-        
-        /// <summary>
-        /// Calling this method will authenticate the current user via any wallet that supports FCL.
-        /// Once called, FCL will initiate communication with the configured discovery.wallet endpoint which lets the user select a wallet to authenticate with.
-        /// Once the wallet provider has authenticated the user,
-        /// FCL will set the values on the current user object for future use and authorization.
-        /// </summary>
-        /// <param name="url">Authn url</param>
-        /// <param name="internalCallback">internal callback</param>
-        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(string url, Action internalCallback, Action callback = null)
-        {
-            Debug.Log($"Get AuthnResponse, url: {url}");
-            var parameters = new Dictionary<string, object>
-                             {
-                                 { "accountProofIdentifier", "jamisdeapp"},
-                                 { "accountProofNonce", KeyGenerator.GetUniqueKey(33).StringToHex() }
-                             };
-            
-            var authnResponse = _webRequestUtils.GetResponse<AuthnResponse>(url, "POST", "application/json", parameters);
-            _authnParams = authnResponse.AuthnLocal.Params;
-            var authnUrlBuilder = new StringBuilder();
-            authnUrlBuilder.Append(authnResponse.AuthnLocal.Endpoint + "?")
-                           .Append(Uri.EscapeDataString("channel") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.AuthnLocal.Params.Channel) + "&")
-                           .Append(Uri.EscapeDataString("appId") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.AuthnLocal.Params.AppId) + "&")
-                           .Append(Uri.EscapeDataString("authenticationId") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.AuthnLocal.Params.AuthenticationId) + "&")
-                           .Append(Uri.EscapeDataString("fclVersion") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.AuthnLocal.Params.FclVersion) + "&")
-                           .Append(Uri.EscapeDataString("accountProofIdentifier") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.AuthnLocal.Params.AccountProofIdentifier) + "&")
-                           .Append(Uri.EscapeDataString("accountProofNonce") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.AuthnLocal.Params.AccountProofNonce));
-            
-            var pollingUrlBuilder = new StringBuilder();
-            pollingUrlBuilder.Append(authnResponse.AuthnUpdates.Endpoint + "?")
-                             .Append(Uri.EscapeDataString("authenticationId") + "=")
-                             .Append(Uri.EscapeDataString(authnResponse.AuthnUpdates.Params.AuthenticationId));
-            var authnUrl = authnUrlBuilder.ToString();
-            var pollingUrl = pollingUrlBuilder.ToString();
-            var pollingUri = new Uri(pollingUrl.ToString());
-            _walletProvider.Login(authnUrl, pollingUri, internalCallback, callback);
-        } 
         
         public void SendTransaction(FlowTransaction tx, FclService fclServices, Action internalCallback, Action callback)
         {
@@ -105,13 +60,13 @@ namespace Flow.FCL
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
             
-            var preSignableJObj = _bloctoResolveUtility.ResolvePreSignable(ref tx);
+            var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
             var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
             
             return preAuthzResponse;
         }
         
-        public FlowTransaction SendTransaction(FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action callback = null)
+        public FlowTransaction SendTransaction(FclService preAuthzService, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
         {
             var preAuthzUrlBuilder = new StringBuilder();
             preAuthzUrlBuilder.Append(preAuthzService.Endpoint.AbsoluteUri + "?")
@@ -121,7 +76,7 @@ namespace Flow.FCL
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
             
-            var preSignableJObj = _bloctoResolveUtility.ResolvePreSignable(ref tx);
+            var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
             var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
             
             var tmpAccount = GetAccount(preAuthzResponse.PreAuthzData.Proposer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -146,7 +101,7 @@ namespace Flow.FCL
                                                }
                                            }
                                 };
-                var signableJObj = _bloctoResolveUtility.ResolveSignable(ref tx, preAuthzResponse.PreAuthzData, authorize);
+                var signableJObj = _resolveUtility.ResolveSignable(ref tx, preAuthzResponse.PreAuthzData, authorize);
                 var authzResponse = _webRequestUtils.GetResponse<AuthzResponse>(postUrl, "POST", "application/json", signableJObj);
                 var authzGetUrlBuilder = new StringBuilder();
                 authzGetUrlBuilder.Append(authzResponse.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
@@ -178,7 +133,7 @@ namespace Flow.FCL
                                                                                .Append(Uri.EscapeDataString(item.Params.PayerId));
                                                             var payerUri = new Uri(payerPostUrlBuilder.ToString());
                                                             
-                                                            var payerSignable = _bloctoResolveUtility.ResolvePayerSignable(ref tx, signableJObj);
+                                                            var payerSignable = _resolveUtility.ResolvePayerSignable(ref tx, signableJObj);
                                                             var payerSignResponse = _webRequestUtils.GetResponse<PayerSignResponse>(payerUri.AbsoluteUri, "POST", "application/json", payerSignable);
                                                             signature = payerSignResponse.Data.GetValue("signature");
                                                             addr = payerSignResponse.Data.GetValue("addr");
@@ -190,7 +145,8 @@ namespace Flow.FCL
                                                             
                                                             var txResponse = _flowClient.SendTransactionAsync(tx).ConfigureAwait(false).GetAwaiter().GetResult();
                                                             $"TxId: {txResponse.Id}".ToLog();
-                                                         }, null);
+                                                            callback?.Invoke(txResponse.Id);
+                                                         });
             }
             
             return tx;

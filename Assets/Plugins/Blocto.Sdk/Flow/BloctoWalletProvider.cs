@@ -22,6 +22,8 @@ namespace Blocto.Flow
         public AuthzResponse AuthzResponse { get; set; }
         
         public PreAuthzResponse PreAuthzResponse { get; set; }
+
+        public SignMessageResponse SignMessageResponse { get; set; }
         
         [DllImport ("__Internal")]
         private static extern void OpenUrl(string goName, string callFnName, string webUrl, string appUrl);
@@ -35,7 +37,7 @@ namespace Blocto.Flow
         
         private WebRequestUtility _webRequestUtility;
         
-        private AuthnResponse _authnResponse;
+        private InitResponse _initResponse;
         
         private GameObject _gameObject;
         
@@ -49,12 +51,10 @@ namespace Blocto.Flow
             return provider;
         }
         
-        public void Login(string authnUrl, Uri pollingUri, Action internalCallback, Action callback = null)
+        public void Login(string authnUrl, Uri pollingUri, Action internalCallback)
         {
-            Debug.Log($"Authn Url: {authnUrl}, Polling Url:{pollingUri}");
-            
             StartCoroutine(OpenUrl(authnUrl));
-            StartCoroutine(GetService<PollingResponse>(pollingUri, internalCallback, callback));
+            StartCoroutine(GetService<PollingResponse>(pollingUri, internalCallback));
         }
         
         public void Authz(string iframeUrl, Uri updateUri, Action internalCallback, Action callback = null)
@@ -68,14 +68,10 @@ namespace Blocto.Flow
             return "";
         }
         
-        public void Payer(string url, Action internalCallback)
-        {
-            
-        }
-        
-        public void SignMessage(string iframeUrl, string pollingUrl, Action internalCallback = null)
+        public void SignMessage(string iframeUrl, Uri pollingUrl, Action internalCallback, Action callback = null)
         {
             StartCoroutine(OpenUrl(iframeUrl));
+            StartCoroutine(GetService<SignMessageResponse>(pollingUrl, internalCallback, callback));
         }
         
         private IEnumerator GetService<TResponse>(Uri pollingUri, Action internalCallback, Action callback = null) where TResponse : IResponse
@@ -90,12 +86,19 @@ namespace Blocto.Flow
                 switch (pollingUrl)
                 {
                     case "/api/flow/authn":
+                        // var mockUrl = "https://run.mocky.io/v3/43a9707f-d396-41cb-9372-2eed1a23bf63";
+                        // webRequest = _webRequestUtility.CreateUnityWebRequest(mockUrl, "GET", "application/json", new DownloadHandlerBuffer());
                         response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                         PollingResponse = response as PollingResponse;
                         break;
                     case "/api/flow/authz":
                          response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                          AuthzResponse = response as AuthzResponse;
+                        break;
+                    case "/api/flow/user-signature":
+                        response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
+                        SignMessageResponse = response as SignMessageResponse;
+                        $"Response: {JsonConvert.SerializeObject(response)}".ToLog();
                         break;
                     default:
                         Debug.Log("Get service url path not match.");
@@ -114,10 +117,12 @@ namespace Blocto.Flow
 
             var jsonStr = JsonConvert.SerializeObject(response);
             jsonStr.ToLog();
+            
+            #if UNITY_IOS && !UNITY_EDITOR
             BloctoWalletProvider.CloseWindow();
+            #endif
 
             internalCallback.Invoke();
-            callback?.Invoke();
         }
         
         private IEnumerator OpenUrl(string url)
