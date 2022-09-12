@@ -19,6 +19,5 @@ namespace Flow.FCL.WalletProvider
         public void Login(string authnUrl, Uri pollingUri, Action internalCallback);
         public void Authz(string iframeUrl, Uri updateUri, Action internalCallback, Action callback = null);
         public void SignMessage(string iframeUrl, Uri pollingUrl, Action internalCallback ,Action callback = null);
-        public string SendTransaction(FlowTransaction transaction, Action intervalCallback);
     }
 }

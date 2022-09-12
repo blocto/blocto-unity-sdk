@@ -2,9 +2,9 @@ using Flow.FCL.Models.Authz;
 using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json.Linq;
 
-namespace Blocto.Sdk.Core.Utility
+namespace Flow.FCL.Utility
 {
-    public interface IResolveUtility
+    public interface IResolveUtil
     {
         JObject ResolvePreSignable(ref FlowTransaction tx);
 

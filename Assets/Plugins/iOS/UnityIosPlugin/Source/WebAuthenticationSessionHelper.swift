@@ -45,6 +45,7 @@ import AuthenticationServices
                 let startsSuccessfully = self.session?.start()
                 if startsSuccessfully == false {
                     // handle error
+                    self.log(enable: true, message: "star is failed.")
                     completion?(nil, BloctoError.startFailed)
                 }
             }

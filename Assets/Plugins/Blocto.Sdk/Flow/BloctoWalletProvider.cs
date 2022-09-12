@@ -1,15 +1,13 @@
 using System;
 using System.Collections;
 using System.Runtime.InteropServices;
+using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.WalletProvider;
-using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Newtonsoft.Json;
-using Plugins.Blocto.Sdk.Core.Model;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -39,14 +37,15 @@ namespace Blocto.Flow
         
         private InitResponse _initResponse;
         
-        private GameObject _gameObject;
-        
+        private bool _isCancelRequest;
         
         public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, string serverUrl)
         {
             var provider = gameObject.AddComponent<BloctoWalletProvider>();
+            provider.gameObject.name = "bloctowalletprovider";
             provider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
             provider.PollingResponse = default(PollingResponse);
+            provider._isCancelRequest = false;
             
             return provider;
         }
@@ -63,11 +62,6 @@ namespace Blocto.Flow
             StartCoroutine(GetService<AuthzResponse>(updateUri, internalCallback, callback));
         }
         
-        public string SendTransaction(FlowTransaction transaction, Action internalCallback)
-        {
-            return "";
-        }
-        
         public void SignMessage(string iframeUrl, Uri pollingUrl, Action internalCallback, Action callback = null)
         {
             StartCoroutine(OpenUrl(iframeUrl));
@@ -76,18 +70,17 @@ namespace Blocto.Flow
         
         private IEnumerator GetService<TResponse>(Uri pollingUri, Action internalCallback, Action callback = null) where TResponse : IResponse
         {
+            $"GetService url: {pollingUri.AbsoluteUri}".ToLog();
             var response = default(TResponse);
             var isApprove = false;
+            _isCancelRequest = false;
             var pollingUrl = pollingUri.AbsolutePath.Split("%3F")[0];
-            Debug.Log($"PollingUri url: {pollingUri.AbsoluteUri}, pollingUrl: {pollingUrl}");
-            while (!isApprove)
+            while (isApprove == false && _isCancelRequest == false)
             {
                 var webRequest = _webRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
                 switch (pollingUrl)
                 {
                     case "/api/flow/authn":
-                        // var mockUrl = "https://run.mocky.io/v3/43a9707f-d396-41cb-9372-2eed1a23bf63";
-                        // webRequest = _webRequestUtility.CreateUnityWebRequest(mockUrl, "GET", "application/json", new DownloadHandlerBuffer());
                         response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                         PollingResponse = response as PollingResponse;
                         break;
@@ -98,7 +91,6 @@ namespace Blocto.Flow
                     case "/api/flow/user-signature":
                         response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                         SignMessageResponse = response as SignMessageResponse;
-                        $"Response: {JsonConvert.SerializeObject(response)}".ToLog();
                         break;
                     default:
                         Debug.Log("Get service url path not match.");
@@ -106,18 +98,14 @@ namespace Blocto.Flow
                 }
                 
                 isApprove = response!.Status == PollingStatusEnum.APPROVED ? true : false;
-                Debug.Log($"Response status: {response.Status}");
                 yield return new WaitForSeconds(1f);
             }
 
-            if (response.Status == PollingStatusEnum.PENDING)
+            if (response.Status == PollingStatusEnum.PENDING || _isCancelRequest)
             {
                 yield break;
             }
 
-            var jsonStr = JsonConvert.SerializeObject(response);
-            jsonStr.ToLog();
-            
             #if UNITY_IOS && !UNITY_EDITOR
             BloctoWalletProvider.CloseWindow();
             #endif
@@ -141,7 +129,7 @@ namespace Blocto.Flow
                 // var appSdkUrl = url.Replace("https://wallet-testnet.blocto.app/", "https://staging.blocto.app/");
                 var appSdkUrl = "";
                 Debug.Log($"Url: {url}, AppSDK url: {url}");
-                OpenUrl("MainController", "DeeplinkHandler", url, url);
+                OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
                 #endif
             }
             catch (Exception e)
@@ -150,6 +138,16 @@ namespace Blocto.Flow
             } 
             
             yield return new WaitForSeconds(0.2f);
+        }
+        
+        private void FailedHandler(string message)
+        {
+            _isCancelRequest = true;
+        }
+        
+        private void CloseWebView()
+        {
+            
         }
         
         private void InitializePlugins(string pluginName)

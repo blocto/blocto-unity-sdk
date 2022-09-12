@@ -9,13 +9,13 @@ extern "C" {
 #pragma mark - Functions
      WebAuthenticationSessionHelper *sessionHelper = [WebAuthenticationSessionHelper sharedInstance];
      void OpenUrl(const char* goName, const char* callFnName, const char* webUrl, const char* appUrl){
-         NSLog(@"%s", "In SendRequest");
           NSString* go = [NSString stringWithUTF8String:goName]; // c 字符串 转成 oc 字符串, 这里一定要先转成 oc, 不然 const char* 调用后就会释放掉栈内存, 会导致 UnitySendMessage 回传 unity 失败
           NSString* fn = [NSString stringWithUTF8String:callFnName];
+          NSString* failedFn = [NSString stringWithUTF8String:"FailedHandler"];
           NSString* tmpWebUrl = [NSString stringWithUTF8String:webUrl];
           NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl];
          
-          NSLog(@"%@", fn);
+          NSLog(@"%@", failedFn);
           
           UIWindow *keyWindow = nil;
           
@@ -38,6 +38,7 @@ extern "C" {
                    if (error) {
                         // handle error here.
                         NSLog(@"In Error.");
+                        UnitySendMessage([go UTF8String], [failedFn UTF8String], "Swift failed.");
                    }
                    if (url) {
                         // handle url here.

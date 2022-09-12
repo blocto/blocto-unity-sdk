@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Blocto.Sdk.Core.Utility;
+using Flow.FCL.Extension;
 using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
@@ -11,7 +11,6 @@ using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Newtonsoft.Json;
 using UnityEngine;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
 
@@ -19,7 +18,7 @@ namespace Flow.FCL.Models
 {
     public class CurrentUser : User
     {
-        public CurrentUser(IWalletProvider walletProvider, IWebRequestUtils webRequestUtils, IResolveUtility resolveUtility, AppUtils appUtils)
+        public CurrentUser(IWalletProvider walletProvider, IWebRequestUtils webRequestUtils, IResolveUtil resolveUtility, IFlowClient flowClient, AppUtils appUtils)
         {
             LoggedIn = false;
             Services = new List<FclService>();
@@ -27,6 +26,7 @@ namespace Flow.FCL.Models
             _webRequestUtils = webRequestUtils;
             _resolveUtility = resolveUtility;
             _appUtils = appUtils;
+            _flowClient = flowClient;
             _appIdentifier = FlowClientLibrary.Config.Get("appIdentifier");
         }
         
@@ -38,7 +38,7 @@ namespace Flow.FCL.Models
         
         private IFlowClient _flowClient;
         
-        private IResolveUtility _resolveUtility;
+        private IResolveUtil _resolveUtility;
         
         private AppUtils _appUtils;
         
@@ -62,7 +62,7 @@ namespace Flow.FCL.Models
         /// <param name="url">Authn url</param>
         /// <param name="internalCallback">internal callback</param>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(string url, Action<CurrentUser> callback = null)
+        public void Authenticate(string url, Action<CurrentUser, FlowAccount> callback = null)
         {
             var nonce = KeyGenerator.GetUniqueKey(33).ToLower();
             var parameters = new Dictionary<string, object>
@@ -72,30 +72,9 @@ namespace Flow.FCL.Models
                              };
             
             var authnResponse = _webRequestUtils.GetResponse<InitResponse>(url, "POST", "application/json", parameters);
-            var authnUrlBuilder = new StringBuilder();
-            authnUrlBuilder.Append(authnResponse.Local.Endpoint + "?")
-                           .Append(Uri.EscapeDataString("channel") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.Local.Params.Channel) + "&")
-                           .Append(Uri.EscapeDataString("appId") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.Local.Params.AppId) + "&")
-                           .Append(Uri.EscapeDataString("authenticationId") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.Local.Params.AuthenticationId) + "&")
-                           .Append(Uri.EscapeDataString("fclVersion") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.Local.Params.FclVersion) + "&")
-                           .Append(Uri.EscapeDataString("accountProofIdentifier") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.Local.Params.AccountProofIdentifier) + "&")
-                           .Append(Uri.EscapeDataString("accountProofNonce") + "=")
-                           .Append(Uri.EscapeDataString(authnResponse.Local.Params.AccountProofNonce));
+            var endpoint = authnResponse.AuthnEndpoint();
             
-            var pollingUrlBuilder = new StringBuilder();
-            pollingUrlBuilder.Append(authnResponse.Updates.Endpoint + "?")
-                             .Append(Uri.EscapeDataString("authenticationId") + "=")
-                             .Append(Uri.EscapeDataString(authnResponse.Updates.Params.AuthenticationId));
-            var authnUrl = authnUrlBuilder.ToString();
-            var pollingUrl = pollingUrlBuilder.ToString();
-            var pollingUri = new Uri(pollingUrl.ToString());
-            
-            _walletProvider.Login(authnUrl, pollingUri, () => {
+            _walletProvider.Login(endpoint.IframeUrl, endpoint.PollingUrl, () => {
                                                switch (_walletProvider.PollingResponse.Status)
                                                {
                                                    case PollingStatusEnum.APPROVED:
@@ -121,14 +100,19 @@ namespace Flow.FCL.Models
                                                var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
                                                var nonce = service?.Data.Nonce;
                                                var address = service?.Data.Address;
+                                               var keyId = service?.Data.Signatures.First().KeyId.ToString();
                                                
-                                               var isLegal = _appUtils.VerifyAccountProofSignature(_appIdentifier, address, nonce, service?.Data.Signatures.First().SignatureStr);
+                                               var isLegal = _appUtils.VerifyAccountProofSignature(_appIdentifier, address, keyId, nonce, service?.Data.Signatures.First().SignatureStr);
                                                if(!isLegal)
                                                {
                                                    throw new Exception("Account proof failed");
                                                }
                                                
-                                               callback?.Invoke(this);
+                                               $"Addr: {this.Addr.Address}".ToLog();
+                                               $"FlowClient is null: {_flowClient is null}".ToLog();
+                                               var account = _flowClient.GetAccountAtLatestBlockAsync(this.Addr.Address).ConfigureAwait(false).GetAwaiter().GetResult();
+                                               
+                                               callback?.Invoke(this, account);
                                            });
         } 
         
@@ -150,9 +134,9 @@ namespace Flow.FCL.Models
         
         public void SignUserMessage(string message, Action<SignMessageResponse> callback = null)
         {
-            foreach (var service in Services)
+            if(Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
             {
-                Debug.Log($"Type: {service.Type}, endpoint: {service.Endpoint}");
+                throw new Exception("Please connect wallet first.");
             }
             
             var signService = Services.First(p => p.Type == ServiceTypeEnum.USERSIGNATURE);
@@ -164,33 +148,12 @@ namespace Flow.FCL.Models
             
             var hexMessage = message.StringToHex();
             var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId);
-            $"Hex message: {hexMessage}".ToLog();
-            $"Payload: {JsonConvert.SerializeObject(payload)}".ToLog();
-            signUrl.ToLog();
-            
             var response = _webRequestUtils.GetResponse<InitResponse>(signUrl, "POST", "application/json", payload);
-            $"Response: {JsonConvert.SerializeObject(response)}".ToLog();
             
-            var iframeUrlBuilder = new StringBuilder();
-            iframeUrlBuilder.Append(response.Local.Endpoint + "?")
-                            .Append(Uri.EscapeDataString("channel") + "=")
-                            .Append(Uri.EscapeDataString(response.Local.Params.Channel) + "&")
-                            .Append(Uri.EscapeDataString("signatureId") + "=")
-                            .Append(Uri.EscapeDataString(response.Local.Params.SignatureId));
+            var endpoint = response.SignMessageEndpoint();
+            Debug.Log($"iframe url: {endpoint.IframeUrl}, polling url: {endpoint.PollingUrl.AbsoluteUri}");
             
-            var pollingUrlBuilder = new StringBuilder();
-            pollingUrlBuilder.Append(response.Updates.Endpoint + "?")
-                             .Append(Uri.EscapeDataString("signatureId") + "=")
-                             .Append(Uri.EscapeDataString(response.Updates.Params.SignatureId) + "&")
-                             .Append(Uri.EscapeDataString("sessionId") + "=") 
-                             .Append(Uri.EscapeDataString(response.Updates.Params.SessionId));
-            
-            var iframeUrl = iframeUrlBuilder.ToString();
-            var pollingUrl =pollingUrlBuilder.ToString();
-            var pollingUri = new Uri(pollingUrlBuilder.ToString());
-            Debug.Log($"iframe url: {iframeUrl}, polling url: {pollingUrl}");
-            
-            _walletProvider.SignMessage(iframeUrl, pollingUri, () => {
+            _walletProvider.SignMessage(endpoint.IframeUrl, endpoint.PollingUrl, () => {
                                                                    callback.Invoke(_walletProvider.SignMessageResponse);
                                                                });
         }

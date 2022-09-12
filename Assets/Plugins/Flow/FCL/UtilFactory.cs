@@ -8,7 +8,7 @@ namespace Flow.FCL
 {
     public class UtilFactory : MonoBehaviour
     {
-        private IResolveUtils _resolveUtils;
+        private IResolveUtil _resolveUtils;
         
         private IFlowClient _flowClient;
         
@@ -37,6 +37,6 @@ namespace Flow.FCL
             return _resolveUtility;
         }
         
-        public virtual AppUtils CreateAppUtil(string env) => new AppUtils(_flowClient, env);
+        public virtual AppUtils CreateAppUtil(string env) => new AppUtils(_flowClient);
     }
 }

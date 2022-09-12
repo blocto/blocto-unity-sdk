@@ -1,9 +1,8 @@
 using System;
-using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
 using Blocto.Flow;
-using Blocto.Sdk.Core.Utility;
+using Flow.FCL.Extension;
 using Flow.FCL.Models;
 using Flow.FCL.WalletProvider;
 using Flow.Net.SDK.Client.Unity.Unity;
@@ -19,8 +18,6 @@ namespace Flow.FCL
     {
         public static Config.Config Config { get; private set; }
 
-        private IWalletProvider _walletProvider;
-        
         private CurrentUser _currentUser;
         
         private IFlowClient _flowClient;
@@ -33,37 +30,46 @@ namespace Flow.FCL
         
         private bool _isSuccessed;
         
-        public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, Config.Config config, string env, IResolveUtility resolveUtility)
+        public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, IWalletProvider walletProvider, Config.Config config = null)
         {
+            Config = config;
+            FlowClientLibrary.ConfigSetDefaultValue();
+            
+            var env = Config.Get("flow.network");
             var fcl = gameObject.AddComponent<FlowClientLibrary>();
-            var tmpWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject, config.Get("testnet"));
-            var flowClient = new FlowUnityWebRequest(gameObject, config.Get(env)); 
+            var flowClient = new FlowUnityWebRequest(gameObject, config.Get("accessNode.api")); 
             var factory = UtilFactory.CreateUtilFactory(gameObject, flowClient);
             var appUtil = factory.CreateAppUtil(env);
-            var currentUser = new CurrentUser(tmpWalletProvider, factory.CreateWebRequestUtil(), resolveUtility, appUtil);
+            var resolveUtility = factory.CreateResolveUtility();
+            var currentUser = new CurrentUser(walletProvider, factory.CreateWebRequestUtil(), resolveUtility, flowClient, appUtil);
             
             fcl._flowClient = flowClient;
-            fcl._walletProvider = tmpWalletProvider;
             fcl._coreModule = new CoreModule(
-                tmpWalletProvider,
+                walletProvider,
                 flowClient,
                 resolveUtility,
                 factory);
             fcl._currentUser = currentUser;
-            Config = config;
             
-            FlowClientLibrary.ConfigSetDefaultValue();
             return fcl;
+        }
+        
+        static FlowClientLibrary()
+        {
+            Config = new Config.Config();
         }
         
         private FlowClientLibrary()
         {
-           Config = new Config.Config();
            _response = default(Cadence);
            _errorMessage = string.Empty;
            _isSuccessed = false;
         }
 
+        /// <summary>
+        /// Get CurrentUser
+        /// </summary>
+        /// <returns>CurrentUser</returns>
         public CurrentUser CurrentUser()
         {
             return _currentUser;
@@ -76,16 +82,21 @@ namespace Flow.FCL
         /// FCL will set the values on the current user object for future use and authorization.
         /// </summary>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(Action<CurrentUser> callback = null)
+        public void Authenticate(Action<CurrentUser, FlowAccount> callback = null)
         {
             var url = Config.Get("discovery.wallet");
             _currentUser.Authenticate(url, callback);
         }
         
+        /// <summary>
+        /// As the current user Mutate the Flow Blockchain
+        /// </summary>
+        /// <param name="tx">FlowTransaction</param>
+        /// <param name="callback"></param>
         public void Mutate(FlowTransaction tx, Action<string> callback)
         {
             var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
-            tx = _coreModule.SendTransaction(service, tx, () => {}, callback);
+            _coreModule.SendTransaction(service.PreAuthzEndpoint(), tx, () => {}, callback);
         }
         
         public void SignUserMessage(string message, Action<SignMessageResponse> callback = null)
@@ -93,6 +104,11 @@ namespace Flow.FCL
             _currentUser.SignUserMessage(message, callback);
         }
         
+        /// <summary>
+        /// Query the Flow Blockchain
+        /// </summary>
+        /// <param name="flowScript">Flow cadence script and arguments</param>
+        /// <returns>QueryResult</returns>
         public async Task<QueryResult> Query(FlowScript flowScript)
         {
             await ExecuteScript(flowScript);
@@ -114,8 +130,17 @@ namespace Flow.FCL
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
         public void UnAuthenticate(Action callback = null)
         {
-            this._currentUser = null;
+            this._currentUser.Services = null;
+            this._currentUser.LoggedIn = false;
+            this._currentUser.ExpiresAt = default;
             callback?.Invoke();
+        }
+        
+        public async Task<(string BlockId, string Status)> GetTransactionReuslt(string transactionId)
+        {
+            var result = await _coreModule.GetTransactionResultAsync(transactionId);
+            $"Get TxId result".ToLog();
+            return result;
         }
         
         public async Task<FlowAccount> GetAccount(string address)
@@ -136,11 +161,6 @@ namespace Flow.FCL
                 $"Execute script error: {e.Message}".ToLog();
                 _errorMessage = e.Message;
             }
-        }
-        
-        private IEnumerator WaitForSeconds(float time)
-        {
-            yield return new WaitForSeconds(time);
         }
         
         private static void ConfigSetDefaultValue()

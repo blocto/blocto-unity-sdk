@@ -242,8 +242,9 @@ namespace Flow.Net.SDK.Client.Unity.Unity
         {
             try
             {
-                var response = _flowApiV1.Transactions(transactionId, new List<string> { "result" }, null, cancellationToken);
-                return await Task.FromResult(response.ToFlowTransactionResult());
+                $"Flow api v1 base url: {_flowApiV1.BaseUrl}".ToLog();
+                var response = _flowApiV1.TransactionsResult(transactionId);
+                return await Task.FromResult(response);
             }
             catch (Exception ex)
             {

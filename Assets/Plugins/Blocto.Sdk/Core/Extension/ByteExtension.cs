@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Plugins.Blocto.Sdk.Core.Extension
+namespace Blocto.Sdk.Core.Extension
 {
     public static class ByteExtension
     {

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Plugins.Blocto.Sdk.Core.Model
+namespace Blocto.Sdk.Core.Model
 {
     public class AndroidCallback : AndroidJavaProxy 
     {

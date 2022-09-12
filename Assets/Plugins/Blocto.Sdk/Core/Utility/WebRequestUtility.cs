@@ -2,11 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
-using Flow.Net.Sdk.Core;
 using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -48,7 +46,6 @@ namespace Blocto.Sdk.Core.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
-                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  
@@ -60,6 +57,7 @@ namespace Blocto.Sdk.Core.Utility
             }
             else
             {
+                $"Url: {unityWebRequest.url}".ToLog();
                 throw new ApiException("The HTTP status code of the response was not expected (" + (int)unityWebRequest.responseCode + ").", (int)unityWebRequest.responseCode, "", null); 
             } 
             

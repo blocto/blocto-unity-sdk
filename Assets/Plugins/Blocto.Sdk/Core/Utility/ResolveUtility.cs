@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Blocto.Sdk.Core.Flow.Model;
 using Flow.FCL.Models.Authz;
+using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
@@ -12,18 +14,16 @@ using Flow.Net.SDK.Extensions;
 using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Plugins.Blocto.Sdk.Core.Model;
-using Unity.VisualScripting.FullSerializer;
 
 namespace Blocto.Sdk.Core.Utility
 {
-    public class ResolveUtility : IResolveUtility
+    public class ResolveUtility : IResolveUtil
     {
-        private IFlowClient _flowClient;
+        // private IFlowClient _flowClient;
         
         public ResolveUtility(IFlowClient flowClient)
         {
-            _flowClient = flowClient;
+            // _flowClient = flowClient;
         }
         
         public JObject ResolvePreSignable(ref FlowTransaction tx)

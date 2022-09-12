@@ -1,4 +1,4 @@
-namespace Plugins.Blocto.Sdk.Core.Model
+namespace Blocto.Sdk.Core.Flow.Model
 {
     public enum SignablePropertyEnum
     {

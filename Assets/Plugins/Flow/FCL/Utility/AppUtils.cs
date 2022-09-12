@@ -16,24 +16,26 @@ namespace Flow.FCL.Utility
         private readonly string _verifyUserSignatureScript = @"import FCLCrypto from {address} pub fun main( address: Address, message: String, keyIndices: [Int], signatures: [String] ): Bool { return FCLCrypto.verifyUserSignatures(address: address, message: message, keyIndices: keyIndices, signatures: signatures) }";
         private IFlowClient _flowClient;
 
-        public AppUtils(IFlowClient flowClient, string env)
+        public AppUtils(IFlowClient flowClient)
         {
             _flowClient = flowClient;
+            var env = FlowClientLibrary.Config.Get("flow.network");
             var contractAddress = FlowClientLibrary.Config.Get($"{env}.fclcrypto");
             _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", contractAddress);
             _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", contractAddress);
         }
         
-        public AppUtils(GameObject gameObject, string env)
+        public AppUtils(GameObject gameObject)
         {
-            _flowClient = new FlowUnityWebRequest(gameObject, FlowClientLibrary.Config.Get(env)); 
+            _flowClient = new FlowUnityWebRequest(gameObject, FlowClientLibrary.Config.Get("accessNode.api")); 
             
+            var env = FlowClientLibrary.Config.Get("flow.network");
             var contractAddress = FlowClientLibrary.Config.Get($"{env}.fclcrypto");
             _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", contractAddress);
             _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", contractAddress);
         }
         
-        public bool VerifyUserSignatures(string message, string address, string signature)
+        public bool VerifyUserSignatures(string message, string address, string keyId, string signature)
         {
             $"Account proof message: {message}, signature: {signature}".ToLog();
             
@@ -46,7 +48,7 @@ namespace Flow.FCL.Utility
             var signatureIndexes = new CadenceArray(
                 new List<ICadence>
                 {
-                    new CadenceNumber(CadenceNumberType.Int, "1")
+                    new CadenceNumber(CadenceNumberType.Int, keyId)
                 });
             
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(
@@ -66,7 +68,7 @@ namespace Flow.FCL.Utility
             return true;
         }
         
-        public bool VerifyAccountProofSignature(string appIdentifier, string address, string nonce, string signature)
+        public bool VerifyAccountProofSignature(string appIdentifier, string address, string keyId, string nonce, string signature)
         {
             var message = RLP.GetEncodeMessage(appIdentifier, address, nonce);
             $"Account proof message: {message}, nonce: {nonce}, signature: {signature}".ToLog();
@@ -80,7 +82,7 @@ namespace Flow.FCL.Utility
             var signatureIndexes = new CadenceArray(
                 new List<ICadence>
                 {
-                    new CadenceNumber(CadenceNumberType.Int, "1")
+                    new CadenceNumber(CadenceNumberType.Int, keyId)
                 });
             
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(

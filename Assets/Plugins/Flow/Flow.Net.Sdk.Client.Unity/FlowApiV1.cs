@@ -9,10 +9,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
+using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
 using UnityEngine;
+using ArgumentNullException = System.ArgumentNullException;
+
 // ReSharper disable TooManyArguments
 // ReSharper disable MethodTooLong
 
@@ -178,6 +181,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             return Transactions(id, expand, select, System.Threading.CancellationToken.None);
         }
         
+        
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>Get a Transaction by ID.</summary>
         /// <param name="id">The ID of the transaction to get.</param>
@@ -208,6 +212,32 @@ namespace Flow.Net.SDK.Client.Unity.Unity
                 client?.Dispose();
             }
         }
+        
+        /// <summary>Get a Transaction by ID.</summary>
+        /// <param name="id">The ID of the transaction to get.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public FlowTransactionResult TransactionsResult(string id)
+        {
+            if (id == null)
+                throw new ArgumentNullException("id");
+
+            var urlBuilder = new StringBuilder();
+            urlBuilder.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/transaction_results/{id}?");
+            urlBuilder.Replace("{id}", Uri.EscapeDataString(ConvertToString(id, CultureInfo.InvariantCulture)));
+            urlBuilder.Length--;
+
+            var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
+            try
+            {
+                var result = ProcessWebRequest<FlowTransactionResult>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            } 
+        } 
         
         /// <summary>Submit a Transaction</summary>
         /// <param name="body">The transaction to submit.</param>
@@ -533,11 +563,11 @@ namespace Flow.Net.SDK.Client.Unity.Unity
                 throw new ApiException<Error>("Bad Request", (int)unityWebRequest.responseCode, "", null, null);
             }
                 
-            var headers_ = unityWebRequest.GetResponseHeaders();
             var status = ((int)unityWebRequest.responseCode).ToString();
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
+                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 return objectResponse_.Object;  
             }
