@@ -150,7 +150,7 @@ public class MainController : MonoBehaviour
     {
         _fcl.Authenticate((currentUser, account) => {
                               var service = currentUser.Services.FirstOrDefault(p => p.Type == ServiceTypeEnum.AccountProof);
-                              _signature = service!.Data.Signatures.First().SignatureStr;
+                              _signature = service!.Data.Signatures.First().SignatureStr();
                               _address = currentUser.Addr.Address;
                               
                               var balance = (account.Balance / 100000000);

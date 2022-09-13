@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Blocto.Flow;
 using Flow.FCL.Extension;
 using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
@@ -10,8 +11,6 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
-using UnityEngine;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
 
 namespace Flow.FCL.Models
@@ -71,14 +70,14 @@ namespace Flow.FCL.Models
                                  { "accountProofNonce", nonce.StringToHex() }
                              };
             
-            var authnResponse = _webRequestUtils.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
+            var authnResponse = _webRequestUtils.GetResponse<Authn.AuthnAdapterResponse>(url, "POST", "application/json", parameters);
             var endpoint = authnResponse.AuthnEndpoint();
             
             _walletProvider.Login(endpoint.IframeUrl, endpoint.PollingUrl, item => {
-                                               var response = item as PollingResponse;
-                                               switch (response?.Status)
+                                               var response = item as AuthenticateResponse;
+                                               switch (response?.ResponseStatus)
                                                {
-                                                   case PollingStatusEnum.APPROVED:
+                                                   case ResponseStatusEnum.APPROVED:
                                                        Addr = new FlowAddress(response.Data.Addr); 
                                                        LoggedIn = true;
                                                        F_type = "USER";
@@ -87,14 +86,14 @@ namespace Flow.FCL.Models
                                                        ExpiresAt = response.Data.Expires;
                                                        ExpiresAt = response.Data.Expires;
                                                        break;
-                                                   case PollingStatusEnum.DECLINED:
+                                                   case ResponseStatusEnum.DECLINED:
                                                        LoggedIn = false;
                                                        F_type = "USER";
                                                        F_vsn = response.FVsn;
                                                        break;
-                                                   case PollingStatusEnum.PENDING:
-                                                   case PollingStatusEnum.REDIRECT:
-                                                   case PollingStatusEnum.NONE:
+                                                   case ResponseStatusEnum.PENDING:
+                                                   case ResponseStatusEnum.REDIRECT:
+                                                   case ResponseStatusEnum.NONE:
                                                    default:
                                                        break;
                                                }
@@ -102,9 +101,9 @@ namespace Flow.FCL.Models
                                                var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
                                                var nonce = service?.Data.Nonce;
                                                var address = service?.Data.Address;
-                                               var keyId = service?.Data.Signatures.First().KeyId.ToString();
+                                               var keyId = service?.Data.Signatures.First().KeyId();
                                                
-                                               var isLegal = _appUtils.VerifyAccountProofSignature(_appIdentifier, address, keyId, nonce, service?.Data.Signatures.First().SignatureStr);
+                                               var isLegal = _appUtils.VerifyAccountProofSignature(_appIdentifier, address, keyId, nonce, service?.Data.Signatures.First().SignatureStr());
                                                if(!isLegal)
                                                {
                                                    throw new Exception("Account proof failed");
@@ -117,16 +116,11 @@ namespace Flow.FCL.Models
         
         public PreAuthzAdapterResponse PreAuth(FlowTransaction tx, FclService service, Action internalCallback = null)
         {
-            var preAuthzUrlBuilder = new StringBuilder();
-            preAuthzUrlBuilder.Append(service.Endpoint.AbsoluteUri + "?")
-                              .Append(Uri.EscapeDataString("sessionId") + "=")
-                              .Append(Uri.EscapeDataString(service.PollingParams.SessionId));
-            
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
             
             var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
-            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzAdapterResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
+            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzAdapterResponse>(service.PreAuthAdapterEndpoint(), "POST", "application/json", preSignableJObj);
             
             return preAuthzResponse;
         }
@@ -139,15 +133,11 @@ namespace Flow.FCL.Models
             }
             
             var signService = Services.First(p => p.Type == ServiceTypeEnum.USERSIGNATURE);
-            var signUrlBuilder = new StringBuilder();
-            signUrlBuilder.Append(signService.Endpoint + "?")
-                   .Append(Uri.EscapeDataString("sessionId") + "=")
-                   .Append(Uri.EscapeDataString(signService.PollingParams.SessionId));
-            var signUrl = signUrlBuilder.ToString();
+            var signUrl = signService.SignMessageAdapterEndpoint();
             
             var hexMessage = message.StringToHex();
-            var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId);
-            var response = _webRequestUtils.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
+            var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
+            var response = _webRequestUtils.GetResponse<Authn.AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
             
             var endpoint = response.SignMessageEndpoint();
             _walletProvider.SignMessage(endpoint.IframeUrl, endpoint.PollingUrl, item => {

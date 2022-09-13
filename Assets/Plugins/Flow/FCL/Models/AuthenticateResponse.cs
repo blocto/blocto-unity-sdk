@@ -6,7 +6,7 @@ using Flow.FCL.Models.Authz;
 
 namespace Flow.FCL.Models
 {
-    public partial class PollingResponse : IResponse
+    public partial class AuthenticateResponse : IResponse
     {
         [JsonProperty("f_type")]
         public string FType { get; set; }
@@ -15,12 +15,12 @@ namespace Flow.FCL.Models
         public string FVsn { get; set; }
 
         [JsonProperty("status")]
-        public PollingStatusEnum Status { get; set; }
+        public ResponseStatusEnum ResponseStatus { get; set; }
 
         [JsonProperty("data")]
-        public PollingData Data { get; set; }
+        public AuthenticateData Data { get; set; }
         
-        public static PollingResponse FromJson(string json) => JsonConvert.DeserializeObject<PollingResponse>(json, PollingResponse.Settings);
+        public static AuthenticateResponse FromJson(string json) => JsonConvert.DeserializeObject<AuthenticateResponse>(json, AuthenticateResponse.Settings);
 
         private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
                                                                   {

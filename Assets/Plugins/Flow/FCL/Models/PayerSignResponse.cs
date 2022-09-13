@@ -6,7 +6,7 @@ namespace Flow.FCL.Models
     public class PayerSignResponse
     {
         [JsonProperty("status")]
-        public PollingStatusEnum Status { get; set; }
+        public ResponseStatusEnum ResponseStatus { get; set; }
         
         [JsonProperty("data")]
         public JObject Data { get; set; }

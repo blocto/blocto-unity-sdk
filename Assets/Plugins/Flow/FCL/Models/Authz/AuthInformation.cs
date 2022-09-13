@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models.Authz
 {
@@ -8,7 +9,7 @@ namespace Flow.FCL.Models.Authz
         public string id { get; set; }
         
         [JsonProperty("identity")]
-        public PreAuthzIdentity Identity { get; set; }
+        public Identity Identity { get; set; }
         
         [JsonProperty("method")]
         public string Method { get; set; }
@@ -17,6 +18,6 @@ namespace Flow.FCL.Models.Authz
         public string Endpoint { get; set; }
         
         [JsonProperty("params")]
-        public SignableParameter Params { get; set; }
+        public JObject Params { get; set; }
     }
 }

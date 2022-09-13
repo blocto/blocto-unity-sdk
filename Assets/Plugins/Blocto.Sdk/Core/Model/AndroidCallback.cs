@@ -5,7 +5,7 @@ namespace Blocto.Sdk.Core.Model
     public class AndroidCallback : AndroidJavaProxy 
     {
     
-        public AndroidCallback() : base("com.example.unitykotlin.IAlertCallback")
+        public AndroidCallback() : base("com.blocto.unity.IAlertCallback")
         {
         } 
     

@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json;
 using Flow.FCL.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models
 {
@@ -22,13 +23,13 @@ namespace Flow.FCL.Models
         public string Id { get; set; }
 
         [JsonProperty("identity", NullValueHandling = NullValueHandling.Ignore)]
-        public PollingIdentity PollingIdentity { get; set; }
+        public Identity Identity { get; set; }
 
         [JsonProperty("scoped", NullValueHandling = NullValueHandling.Ignore)]
-        public PollingScoped PollingScoped { get; set; }
+        public JObject PollingScoped { get; set; }
 
         [JsonProperty("provider", NullValueHandling = NullValueHandling.Ignore)]
-        public PollingServiceProvider PollingServiceProvider { get; set; }
+        public JObject PollingServiceProvider { get; set; }
 
         [JsonProperty("authn", NullValueHandling = NullValueHandling.Ignore)]
         public Uri Authn { get; set; }
@@ -49,9 +50,9 @@ namespace Flow.FCL.Models
         public Uri Endpoint { get; set; }
 
         [JsonProperty("params", NullValueHandling = NullValueHandling.Ignore)]
-        public PollingParams PollingParams { get; set; }
+        public JObject PollingParams { get; set; }
 
         [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
-        public PollingServiceData Data { get; set; }
+        public FclServiceData Data { get; set; }
     }
 }

@@ -14,7 +14,7 @@ namespace Flow.FCL.Models
         public string FVsn { get; set; }
         
         [JsonProperty("status")]
-        public PollingStatusEnum Status { get; set; }
+        public ResponseStatusEnum ResponseStatus { get; set; }
 
         [JsonProperty("reason")]
         public string Reason { get; set; }

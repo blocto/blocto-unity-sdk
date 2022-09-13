@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Flow.FCL.Models
 {
-    public partial class PollingData
+    public partial class AuthenticateData
     {
         [JsonProperty("addr")]
         public string Addr { get; set; }

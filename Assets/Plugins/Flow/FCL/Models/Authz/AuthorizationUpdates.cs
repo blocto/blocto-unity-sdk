@@ -1,5 +1,6 @@
 using System;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models.Authz
 {
@@ -12,6 +13,6 @@ namespace Flow.FCL.Models.Authz
         public Uri Endpoint { get; set; }
 
         [JsonProperty("params")]
-        public AuthorizationUpdatesParams Params { get; set; }
+        public JObject Params { get; set; }
     }
 }

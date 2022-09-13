@@ -1,6 +1,6 @@
 namespace Flow.FCL.Models
 {
-    public enum PollingStatusEnum
+    public enum ResponseStatusEnum
     {
         APPROVED,
         DECLINED,

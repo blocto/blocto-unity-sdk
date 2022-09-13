@@ -47,13 +47,13 @@ namespace Flow.FCL.Models.Authz
         public string Payer { get; set; }
         
         [JsonProperty("events")]
-        public Event Events { get; set; }
+        public JObject Events { get; set; }
         
         [JsonProperty("account")]
         public BaseAccount Account { get; set; }
         
         [JsonProperty("collection")]
-        public Collection Collection { get; set; }
+        public JObject Collection { get; set; }
         
         [JsonProperty("transaction")]
         public JObject Transaction { get; set; }

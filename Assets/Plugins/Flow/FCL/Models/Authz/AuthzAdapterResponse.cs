@@ -7,7 +7,7 @@ namespace Flow.FCL.Models.Authz
     public partial class AuthzAdapterResponse : IResponse
     {
         [JsonProperty("status")]
-        public PollingStatusEnum Status { get; set; }
+        public ResponseStatusEnum ResponseStatus { get; set; }
 
         [JsonProperty("reason")]
         public object Reason { get; set; }

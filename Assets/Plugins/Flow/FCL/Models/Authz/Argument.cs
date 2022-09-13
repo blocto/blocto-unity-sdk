@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models.Authz
 {
@@ -17,6 +18,6 @@ namespace Flow.FCL.Models.Authz
         public BaseArgument AsBaseArgument { get; set; }
         
         [JsonProperty("xform")]
-        public XForm XForm { get; set; }
+        public JObject XForm { get; set; }
     }
 }

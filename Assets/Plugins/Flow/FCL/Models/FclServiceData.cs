@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models
 {
-    public partial class PollingServiceData
+    public partial class FclServiceData
     {
         [JsonProperty("f_type")]
         public string FType { get; set; }
@@ -12,10 +13,10 @@ namespace Flow.FCL.Models
         public string FVsn { get; set; }
 
         [JsonProperty("email", NullValueHandling = NullValueHandling.Ignore)]
-        public PollingEmail PollingEmail { get; set; }
+        public JObject PollingEmail { get; set; }
 
         [JsonProperty("signatures", NullValueHandling = NullValueHandling.Ignore)]
-        public List<CompositeSignature> Signatures { get; set; }
+        public List<JObject> Signatures { get; set; }
 
         [JsonProperty("address", NullValueHandling = NullValueHandling.Ignore)]
         public string Address { get; set; }

@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Models;
-using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
 using Flow.Net.SDK.Extensions;
 using UnityEngine;
@@ -14,16 +13,28 @@ namespace Blocto.Flow
 {
     public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider
     {
-        // public PreAuthzResponse PreAuthzResponse { get; set; }
-
+        /// <summary>
+        /// iOS swift open ASWebAuthenticationSession method
+        /// </summary>
+        /// <param name="goName">swift complete event then callback class name of unity</param>
+        /// <param name="callFnName">swift complete event then callback method name of unity</param>
+        /// <param name="webUrl">open page url</param>
+        /// <param name="appUrl">open app url</param>
         [DllImport ("__Internal")]
         private static extern void OpenUrl(string goName, string callFnName, string webUrl, string appUrl);
         
+        /// <summary>
+        /// Close ASWebAuthenticationSession
+        /// </summary>
+        [DllImport ("__Internal")]
+        private static extern void CloseWindow();
+        
+        /// <summary>
+        /// Android instance
+        /// </summary>
         private AndroidJavaObject _pluginInstance = null;
         
         private WebRequestUtility _webRequestUtility;
-        
-        private AuthnAdapterResponse _authnAdapterResponse;
         
         private bool _isCancelRequest;
         
@@ -41,7 +52,7 @@ namespace Blocto.Flow
             
             if(Application.platform == RuntimePlatform.Android)
             {
-                provider.InitializePlugins("com.example.unitykotlin.PluginActivity");
+                provider.InitializePlugins("com.blocto.unity.PluginActivity");
             }
             
             return provider;
@@ -56,7 +67,7 @@ namespace Blocto.Flow
         public void Login(string iframeUrl, Uri pollingUri, Action<object> internalCallback)
         {
             StartCoroutine(OpenUrl(iframeUrl));
-            StartCoroutine(GetService<PollingResponse>(pollingUri, internalCallback));
+            StartCoroutine(GetService<AuthenticateResponse>(pollingUri, internalCallback));
         }
         
         /// <summary>
@@ -100,11 +111,11 @@ namespace Blocto.Flow
             {
                 var webRequest = _webRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
                 response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
-                isApprove = response!.Status is PollingStatusEnum.APPROVED or PollingStatusEnum.DECLINED ? true : false;
-                yield return new WaitForSeconds(0.5f);
+                isApprove = response!.ResponseStatus is ResponseStatusEnum.APPROVED or ResponseStatusEnum.DECLINED ? true : false;
+                yield return new WaitForSeconds(0.2f);
             }
 
-            if (response!.Status == PollingStatusEnum.PENDING || _isCancelRequest)
+            if (response!.ResponseStatus == ResponseStatusEnum.PENDING || _isCancelRequest)
             {
                 yield break;
             }
@@ -144,7 +155,6 @@ namespace Blocto.Flow
                 else if(Application.platform == RuntimePlatform.IPhonePlayer)
                 {
                     // var appSdkUrl = url.Replace("https://wallet-testnet.blocto.app/", "https://staging.blocto.app/");
-                    var appSdkUrl = "";
                     OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
                 }
             }
@@ -153,7 +163,7 @@ namespace Blocto.Flow
                 Debug.Log($"Ex: {e.Message}");
             } 
             
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.01f);
         }
         
         /// <summary>
@@ -170,11 +180,13 @@ namespace Blocto.Flow
         /// </summary>
         public void CloseWebView()
         {
-            if(Application.platform == RuntimePlatform.Android)
+            if (Application.platform != RuntimePlatform.Android)
             {
-                _isCancelRequest = true;
-                _pluginInstance.Call("onBackPressed");
+                return;
             }
+
+            _isCancelRequest = true;
+            _pluginInstance.Call("onBackPressed");
         }
         
         /// <summary>
