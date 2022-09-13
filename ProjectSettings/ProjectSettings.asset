@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 0
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: Flow-unity-sdk
+  companyName: Portto
+  productName: com.blocto.flow.demo
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -155,6 +155,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
+    Android: com.blocto.flow.demo
     Standalone: com.DefaultCompany.2DProject
     iPhone: com.blocto.flow.sdk
   buildNumber:
@@ -163,7 +164,7 @@ PlayerSettings:
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
-  AndroidMinSdkVersion: 22
+  AndroidMinSdkVersion: 30
   AndroidTargetSdkVersion: 0
   AndroidPreferredInstallLocation: 1
   aotOptions: 
@@ -177,7 +178,7 @@ PlayerSettings:
   keepLoadedShadersAlive: 0
   StripUnusedMeshComponents: 0
   VertexChannelCompressionMask: 4054
-  iPhoneSdkVersion: 989
+  iPhoneSdkVersion: 988
   iOSTargetOSVersionString: 14.0
   tvOSSdkVersion: 0
   tvOSRequireExtendedGameController: 0
@@ -239,26 +240,26 @@ PlayerSettings:
   clonedFromGUID: 10ad67313f4034357812315f3c407484
   templatePackageId: com.unity.template.2d@6.1.1
   templateDefaultScene: Assets/Scenes/SampleScene.unity
-  useCustomMainManifest: 0
+  useCustomMainManifest: 1
   useCustomLauncherManifest: 0
-  useCustomMainGradleTemplate: 0
+  useCustomMainGradleTemplate: 1
   useCustomLauncherGradleManifest: 0
   useCustomBaseGradleTemplate: 0
-  useCustomGradlePropertiesTemplate: 0
+  useCustomGradlePropertiesTemplate: 1
   useCustomProguardFile: 0
   AndroidTargetArchitectures: 1
-  AndroidTargetDevices: 0
+  AndroidTargetDevices: 1
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
-  AndroidKeystoreName: 
-  AndroidKeyaliasName: 
+  AndroidKeystoreName: '{dedicated}: user.keystore'
+  AndroidKeyaliasName: local build
   AndroidBuildApkPerCpuArchitecture: 0
   AndroidTVCompatibility: 0
   AndroidIsGame: 1
   AndroidEnableTango: 0
   androidEnableBanner: 1
   androidUseLowAccuracyLocation: 0
-  androidUseCustomKeystore: 0
+  androidUseCustomKeystore: 1
   m_AndroidBanners:
   - width: 320
     height: 180
@@ -799,7 +800,8 @@ PlayerSettings:
   scriptingDefineSymbols: {}
   additionalCompilerArguments: {}
   platformArchitecture: {}
-  scriptingBackend: {}
+  scriptingBackend:
+    Android: 0
   il2cppCompilerConfiguration: {}
   managedStrippingLevel: {}
   incrementalIl2cppBuild: {}
@@ -810,7 +812,7 @@ PlayerSettings:
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1
   gcIncremental: 1
-  assemblyVersionValidation: 0
+  assemblyVersionValidation: 1
   gcWBarrierValidation: 0
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
