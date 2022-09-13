@@ -75,3 +75,7 @@ flow-unity-sdk/Logs
 flow-unity-sdk/obj
 flow-unity-sdk/Temp
 ios install
+android install_BurstDebugInformation_DoNotShip
+ios install_BurstDebugInformation_DoNotShip
+UserSettings
+UserSettings
