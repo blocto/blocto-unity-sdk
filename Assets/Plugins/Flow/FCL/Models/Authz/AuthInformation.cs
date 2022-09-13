@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Flow.FCL.Models.Authz
 {
-    public class AuthzInformation
+    public class AuthInformation
     {
         [JsonProperty("id")]
         public string id { get; set; }

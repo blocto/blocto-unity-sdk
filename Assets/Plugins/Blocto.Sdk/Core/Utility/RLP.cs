@@ -79,7 +79,6 @@ namespace Blocto.Sdk.Core.Utility
             datas.Add(Encoding.UTF8.GetBytes(tx.Script).ToList());
             
             var tmp = tx.Arguments.Select(item => { 
-                                                      $"Arg: {JsonConvert.SerializeObject(item)}".ToLog();
                                                       return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item)).ToList();
                                                   })
                                                .ToList();

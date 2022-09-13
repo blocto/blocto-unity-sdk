@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Flow.FCL.Models.Authz
 {
-    public class PreAuthzData
+    public class AuthorizerData
     {
         [JsonProperty("f_type")]
         public string F_Type { get; set; }
@@ -12,12 +12,12 @@ namespace Flow.FCL.Models.Authz
         public string F_Vsn { get; set; }
         
         [JsonProperty("proposer")]
-        public AuthzInformation Proposer { get; set; }
+        public AuthInformation Proposer { get; set; }
         
         [JsonProperty("payer")]
-        public List <AuthzInformation> Payer { get; set; }
+        public List <AuthInformation> Payers { get; set; }
         
         [JsonProperty("authorization")]
-        public List <AuthzInformation> Authorization { get; set; }
+        public List <AuthInformation> Authorizations { get; set; }
     }
 }

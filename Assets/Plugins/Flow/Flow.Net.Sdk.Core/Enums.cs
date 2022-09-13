@@ -1,4 +1,6 @@
-﻿namespace Flow.Net.Sdk.Core
+﻿using System.Runtime.Serialization;
+
+namespace Flow.Net.Sdk.Core
 {
     public enum SignatureAlgo
     {
@@ -23,10 +25,22 @@
     /// <summary>This value indicates the state of the transaction execution. Only sealed and expired are final and immutable states.</summary>
     public enum TransactionStatus
     {
+        [EnumMember(Value = "Pending")]
         Pending = 0,
+        
+        [EnumMember(Value = "Finalized")]
         Finalized = 1,
+        
+        [EnumMember(Value = "Executed")]
         Executed = 2,
+        
+        [EnumMember(Value = "Sealed")]
         Sealed = 3,
-        Expired = 4
+        
+        [EnumMember(Value = "Expired")]
+        Expired = 4,
+        
+        [EnumMember(Value = "")]
+        None = 5
     }
 }

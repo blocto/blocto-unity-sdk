@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models.Authz
 {
-    public partial class AuthzResponse : IResponse
+    public partial class AuthzAdapterResponse : IResponse
     {
         [JsonProperty("status")]
         public PollingStatusEnum Status { get; set; }

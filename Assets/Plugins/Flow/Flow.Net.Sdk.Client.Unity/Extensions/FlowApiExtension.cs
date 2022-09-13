@@ -148,7 +148,6 @@ namespace Flow.Net.SDK.Extensions
                 ErrorMessage = transaction.Result.Error_message,
                 Status = (TransactionStatus)Enum.Parse(typeof(TransactionStatus), transaction.Result.Status.ToString()),
                 StatusCode = uint.Parse(transaction.Result.Status_code.ToString()),
-                Events = events
             };
         }
 

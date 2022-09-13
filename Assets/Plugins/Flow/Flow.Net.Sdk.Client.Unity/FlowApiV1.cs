@@ -567,7 +567,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
-                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
+                // $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 return objectResponse_.Object;  
             }

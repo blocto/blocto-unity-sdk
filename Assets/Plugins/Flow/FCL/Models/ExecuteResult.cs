@@ -2,9 +2,9 @@ using Flow.Net.Sdk.Core.Cadence;
 
 namespace Flow.FCL.Models
 {
-    public class QueryResult
+    public class ExecuteResult<TResult>
     {
-        public ICadence Data { get; set; }
+        public TResult Data { get; set; }
 
         public bool IsSuccessed { get; set; }
 

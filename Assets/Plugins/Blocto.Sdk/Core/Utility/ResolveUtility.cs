@@ -51,7 +51,7 @@ namespace Blocto.Sdk.Core.Utility
             return tmp;
         }
         
-        public JObject ResolveSignable(ref FlowTransaction tx, PreAuthzData preAuthzData, FlowAccount authorizer)
+        public JObject ResolveSignable(ref FlowTransaction tx, AuthorizerData authorizerData, FlowAccount authorizer)
         {
             var item = ResolvePreSignable(ref tx);
             item.Remove(SignablePropertyEnum.voucher.ToString());
@@ -62,7 +62,7 @@ namespace Blocto.Sdk.Core.Utility
             item.Remove(SignablePropertyEnum.interaction.ToString());
             item.Add(new JProperty("f_type", "Signable"));
             
-            var participators = ResolveUtility.GetAllAccount(preAuthzData, tx.ProposalKey);
+            var participators = ResolveUtility.GetAllAccount(authorizerData, tx.ProposalKey);
             if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
             {
                 tx.SignerList.Add(participators.Proposer.Addr, 0);
@@ -165,7 +165,6 @@ namespace Blocto.Sdk.Core.Utility
             var message = RLP.EncodedCanonicalAuthorizationEnvelope(tx);
             signable.Remove(SignablePropertyEnum.message.ToString());
             signable.Add(SignablePropertyEnum.message.ToString(), message);
-            $"Payer signable: {signable}".ToLog();
             return signable;
         }
         
@@ -378,7 +377,6 @@ namespace Blocto.Sdk.Core.Utility
                                                }),
                      };
             
-            $"Account signatore: {account.Signature}".ToLog();
             if(account.Signature != null)
             {
                 tmp.Add(new JProperty("signature", account.Signature));
@@ -455,17 +453,17 @@ namespace Blocto.Sdk.Core.Utility
             return voucher;
         }
         
-        private static (Account Proposer, Account Payer, List<Account> Authorizations) GetAllAccount(PreAuthzData preAuthzData, FlowProposalKey proposalKey)
+        private static (Account Proposer, Account Payer, List<Account> Authorizations) GetAllAccount(AuthorizerData authorizerData, FlowProposalKey proposalKey)
         {
             var proposer = new Account
                            {
                                Addr = proposalKey.Address.Address,
-                               KeyId = Convert.ToUInt32(preAuthzData.Proposer.Identity.KeyId),
-                               TempId = $"{preAuthzData.Proposer.Identity.Address}-{preAuthzData.Proposer.Identity.KeyId}",
+                               KeyId = Convert.ToUInt32(authorizerData.Proposer.Identity.KeyId),
+                               TempId = $"{authorizerData.Proposer.Identity.Address}-{authorizerData.Proposer.Identity.KeyId}",
                                SequenceNum = Convert.ToUInt64(proposalKey.SequenceNumber)
                            };
 
-            var payer = preAuthzData.Payer.Select(payer => new Account
+            var payer = authorizerData.Payers.Select(payer => new Account
                                                             {
                                                                 Addr = payer.Identity.Address,
                                                                 KeyId = Convert.ToUInt32(payer.Identity.KeyId),
@@ -474,7 +472,7 @@ namespace Blocto.Sdk.Core.Utility
                                                  .ToList()
                                                  .First();
 
-            var authorizations = preAuthzData.Authorization.Select(p => new Account
+            var authorizations = authorizerData.Authorizations.Select(p => new Account
                                                                         {
                                                                             Addr = p.Identity.Address,
                                                                             KeyId = Convert.ToUInt32(p.Identity.KeyId),

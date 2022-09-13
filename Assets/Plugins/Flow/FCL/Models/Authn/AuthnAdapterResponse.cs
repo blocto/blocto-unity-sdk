@@ -4,7 +4,7 @@ using Newtonsoft.Json.Converters;
 
 namespace Flow.FCL.Models.Authn
 {
-    public partial class InitResponse
+    public partial class AuthnAdapterResponse
     {
         [JsonProperty("f_type")]
         public string FType { get; set; }

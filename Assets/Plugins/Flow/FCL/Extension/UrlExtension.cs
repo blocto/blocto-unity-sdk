@@ -9,7 +9,7 @@ namespace Flow.FCL.Extension
 {
     public static class UrlExtension
     {
-        public static (string IframeUrl, Uri PollingUrl) AuthnEndpoint(this InitResponse response)
+        public static (string IframeUrl, Uri PollingUrl) AuthnEndpoint(this AuthnAdapterResponse response)
         {
             var iframeUrlBuilder = new StringBuilder();
             iframeUrlBuilder.Append(response.Local.Endpoint + "?")
@@ -37,10 +37,10 @@ namespace Flow.FCL.Extension
             return (iframeUrl, pollingUri);
         }
         
-        public static Uri PayerEndpoint(this PreAuthzResponse response)
+        public static Uri PayerEndpoint(this PreAuthzAdapterResponse adapterResponse)
         {
             var payerPostUrlBuilder = new StringBuilder();
-            var item = response.PreAuthzData.Payer.First();
+            var item = adapterResponse.AuthorizerData.Payers.First();
             payerPostUrlBuilder.Append(item.Endpoint + "?")
                                .Append(Uri.EscapeDataString("sessionId") + "=")
                                .Append(Uri.EscapeDataString(item.Params.SessionId) + "&")
@@ -60,22 +60,22 @@ namespace Flow.FCL.Extension
             return preAuthzUrlBuilder.ToString();
         }
         
-        public static (string IframeUrl, Uri PollingUrl) AuthzEndpoint(this AuthzResponse response)
+        public static (string IframeUrl, Uri PollingUrl) AuthzEndpoint(this AuthzAdapterResponse adapterResponse)
         {
             var pollingUrlBuilder = new StringBuilder();
-            pollingUrlBuilder.Append(response.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
+            pollingUrlBuilder.Append(adapterResponse.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
                               .Append(Uri.EscapeDataString("sessionId") + "=")
-                              .Append(Uri.EscapeDataString(response.AuthorizationUpdates.Params.SessionId) + "&")
+                              .Append(Uri.EscapeDataString(adapterResponse.AuthorizationUpdates.Params.SessionId) + "&")
                               .Append(Uri.EscapeDataString("authorizationId") + "=")
-                              .Append(Uri.EscapeDataString(response.AuthorizationUpdates.Params.AuthorizationId));
+                              .Append(Uri.EscapeDataString(adapterResponse.AuthorizationUpdates.Params.AuthorizationId));
                                     
             var pollingUri = new Uri(pollingUrlBuilder.ToString());
-            var authzIframeUrl = response.Local.First().Endpoint.AbsoluteUri;
+            var authzIframeUrl = adapterResponse.Local.First().Endpoint.AbsoluteUri;
             
             return (authzIframeUrl, pollingUri);
         }
         
-        public static (string IframeUrl, Uri PollingUrl) SignMessageEndpoint(this InitResponse response)
+        public static (string IframeUrl, Uri PollingUrl) SignMessageEndpoint(this AuthnAdapterResponse response)
         {
             var iframeUrlBuilder = new StringBuilder();
             iframeUrlBuilder.Append(response.Local.Endpoint + "?")
@@ -96,6 +96,17 @@ namespace Flow.FCL.Extension
             var pollingUri = new Uri(pollingUrlBuilder.ToString());
             
             return (iframeUrl, pollingUri);
+        }
+        
+        public static string AuthzAdapterEndpoint(this AuthInformation data)
+        {
+            var authzUrlBuilder = new StringBuilder();
+            authzUrlBuilder.Append(data.Endpoint + "?")
+                           .Append(Uri.EscapeDataString("sessionId") + "=")
+                           .Append(Uri.EscapeDataString(data.Params.SessionId));
+                
+            var postUrl = authzUrlBuilder.ToString();
+            return postUrl;
         }
     }
 }

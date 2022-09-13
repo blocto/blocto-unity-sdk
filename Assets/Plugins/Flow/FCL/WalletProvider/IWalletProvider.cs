@@ -1,23 +1,33 @@
 using System;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
-using Flow.Net.Sdk.Core.Models;
-using UnityEngine;
 
 namespace Flow.FCL.WalletProvider
 {
     public interface IWalletProvider
     {
-        public PollingResponse PollingResponse { get; set; }
+        /// <summary>
+        /// User connect wallet get account
+        /// </summary>
+        /// <param name="iframeUrl">User approve page</param>
+        /// <param name="pollingUri">Service endpoint url</param>
+        /// <param name="internalCallback">After, get endpoint response internal callback.</param> 
+        public void Login(string iframeUrl, Uri pollingUri, Action<object> internalCallback);
         
-        public AuthzResponse AuthzResponse { get; set; }
-
-        public PreAuthzResponse PreAuthzResponse { get; set; }
-
-        public SignMessageResponse SignMessageResponse { get; set; }
+        /// <summary>
+        /// Get authorizer signature
+        /// </summary>
+        /// <param name="iframeUrl">User approve page</param>
+        /// <param name="pollingUri">Service endpoint url</param>
+        /// <param name="internalCallback">After, get endpoint response internal callback.</param> 
+        public void Authz(string iframeUrl, Uri pollingUri, Action<object> internalCallback);
         
-        public void Login(string authnUrl, Uri pollingUri, Action internalCallback);
-        public void Authz(string iframeUrl, Uri updateUri, Action internalCallback, Action callback = null);
-        public void SignMessage(string iframeUrl, Uri pollingUrl, Action internalCallback ,Action callback = null);
+        /// <summary>
+        /// SignMessage
+        /// </summary>
+        /// <param name="iframeUrl">User approve page</param>
+        /// <param name="pollingUri">Service endpoint url</param>
+        /// <param name="internalCallback">After, get endpoint response internal callback.</param>
+        public void SignMessage(string iframeUrl, Uri pollingUri, Action<object> internalCallback);
     }
 }

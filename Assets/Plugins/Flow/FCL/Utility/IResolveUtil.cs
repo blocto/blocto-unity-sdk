@@ -8,7 +8,7 @@ namespace Flow.FCL.Utility
     {
         JObject ResolvePreSignable(ref FlowTransaction tx);
 
-        JObject ResolveSignable(ref FlowTransaction tx, PreAuthzData preAuthzData, FlowAccount authorizer);
+        JObject ResolveSignable(ref FlowTransaction tx, AuthorizerData authorizerData, FlowAccount authorizer);
 
         JObject ResolvePayerSignable(ref FlowTransaction tx, JObject signable);
 

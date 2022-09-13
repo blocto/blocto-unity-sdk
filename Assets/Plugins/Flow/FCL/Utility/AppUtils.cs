@@ -37,8 +37,6 @@ namespace Flow.FCL.Utility
         
         public bool VerifyUserSignatures(string message, string address, string keyId, string signature)
         {
-            $"Account proof message: {message}, signature: {signature}".ToLog();
-            
             var signatures = new CadenceArray(
                 new List<ICadence>
                 {
@@ -71,7 +69,6 @@ namespace Flow.FCL.Utility
         public bool VerifyAccountProofSignature(string appIdentifier, string address, string keyId, string nonce, string signature)
         {
             var message = RLP.GetEncodeMessage(appIdentifier, address, nonce);
-            $"Account proof message: {message}, nonce: {nonce}, signature: {signature}".ToLog();
             
             var signatures = new CadenceArray(
                 new List<ICadence>

@@ -71,24 +71,26 @@ namespace Flow.FCL.Models
                                  { "accountProofNonce", nonce.StringToHex() }
                              };
             
-            var authnResponse = _webRequestUtils.GetResponse<InitResponse>(url, "POST", "application/json", parameters);
+            var authnResponse = _webRequestUtils.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
             var endpoint = authnResponse.AuthnEndpoint();
             
-            _walletProvider.Login(endpoint.IframeUrl, endpoint.PollingUrl, () => {
-                                               switch (_walletProvider.PollingResponse.Status)
+            _walletProvider.Login(endpoint.IframeUrl, endpoint.PollingUrl, item => {
+                                               var response = item as PollingResponse;
+                                               switch (response?.Status)
                                                {
                                                    case PollingStatusEnum.APPROVED:
-                                                       Addr = new FlowAddress(_walletProvider.PollingResponse.Data.Addr); 
+                                                       Addr = new FlowAddress(response.Data.Addr); 
                                                        LoggedIn = true;
                                                        F_type = "USER";
-                                                       F_vsn = _walletProvider.PollingResponse.FVsn;
-                                                       Services = _walletProvider.PollingResponse.Data.Services.ToList();
-                                                       ExpiresAt = _walletProvider.PollingResponse.Data.Expires;
+                                                       F_vsn = response.FVsn;
+                                                       Services = response.Data.Services.ToList();
+                                                       ExpiresAt = response.Data.Expires;
+                                                       ExpiresAt = response.Data.Expires;
                                                        break;
                                                    case PollingStatusEnum.DECLINED:
                                                        LoggedIn = false;
                                                        F_type = "USER";
-                                                       F_vsn = _walletProvider.PollingResponse.FVsn;
+                                                       F_vsn = response.FVsn;
                                                        break;
                                                    case PollingStatusEnum.PENDING:
                                                    case PollingStatusEnum.REDIRECT:
@@ -108,15 +110,12 @@ namespace Flow.FCL.Models
                                                    throw new Exception("Account proof failed");
                                                }
                                                
-                                               $"Addr: {this.Addr.Address}".ToLog();
-                                               $"FlowClient is null: {_flowClient is null}".ToLog();
                                                var account = _flowClient.GetAccountAtLatestBlockAsync(this.Addr.Address).ConfigureAwait(false).GetAwaiter().GetResult();
-                                               
                                                callback?.Invoke(this, account);
                                            });
         } 
         
-        public PreAuthzResponse PreAuth(FlowTransaction tx, FclService service, Action internalCallback = null)
+        public PreAuthzAdapterResponse PreAuth(FlowTransaction tx, FclService service, Action internalCallback = null)
         {
             var preAuthzUrlBuilder = new StringBuilder();
             preAuthzUrlBuilder.Append(service.Endpoint.AbsoluteUri + "?")
@@ -127,12 +126,12 @@ namespace Flow.FCL.Models
             tx.ReferenceBlockId = lastBlock.Header.Id;
             
             var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
-            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
+            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzAdapterResponse>(preAuthzUrlBuilder.ToString(), "POST", "application/json", preSignableJObj);
             
             return preAuthzResponse;
         }
         
-        public void SignUserMessage(string message, Action<SignMessageResponse> callback = null)
+        public void SignUserMessage(string message, Action<ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>> callback = null)
         {
             if(Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
             {
@@ -148,14 +147,25 @@ namespace Flow.FCL.Models
             
             var hexMessage = message.StringToHex();
             var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId);
-            var response = _webRequestUtils.GetResponse<InitResponse>(signUrl, "POST", "application/json", payload);
+            var response = _webRequestUtils.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
             
             var endpoint = response.SignMessageEndpoint();
-            Debug.Log($"iframe url: {endpoint.IframeUrl}, polling url: {endpoint.PollingUrl.AbsoluteUri}");
-            
-            _walletProvider.SignMessage(endpoint.IframeUrl, endpoint.PollingUrl, () => {
-                                                                   callback.Invoke(_walletProvider.SignMessageResponse);
-                                                               });
+            _walletProvider.SignMessage(endpoint.IframeUrl, endpoint.PollingUrl, item => {
+                                                                                     var response = item as SignMessageResponse;
+                                                                                     var signature = response?.Data.First().GetValue("signature")?.ToString();
+                                                                                     var keyId = Convert.ToInt32(response?.Data.First().GetValue("keyId")?.ToString());
+                                                                                     var result = new ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>
+                                                                                                  {
+                                                                                                      Data = new List<(string Source, string Signature, ulong KeyId)>
+                                                                                                             {
+                                                                                                                 (message, signature, Convert.ToUInt64(keyId))
+                                                                                                             },
+                                                                                                      IsSuccessed = true,
+                                                                                                      Message = string.Empty
+                                                                                                  };
+                                                                                     
+                                                                                     callback?.Invoke(result);
+                                                                                 });
         }
     }
 }

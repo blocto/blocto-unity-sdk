@@ -242,7 +242,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
         {
             try
             {
-                $"Flow api v1 base url: {_flowApiV1.BaseUrl}".ToLog();
                 var response = _flowApiV1.TransactionsResult(transactionId);
                 return await Task.FromResult(response);
             }

@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Blocto.Flow;
 using Flow.FCL.Extension;
 using Flow.FCL.Models;
 using Flow.FCL.WalletProvider;
 using Flow.Net.SDK.Client.Unity.Unity;
+using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
@@ -22,7 +23,7 @@ namespace Flow.FCL
         
         private IFlowClient _flowClient;
         
-        private CoreModule _coreModule;
+        private Transaction _transaction;
         
         private ICadence _response;
         
@@ -44,7 +45,7 @@ namespace Flow.FCL
             var currentUser = new CurrentUser(walletProvider, factory.CreateWebRequestUtil(), resolveUtility, flowClient, appUtil);
             
             fcl._flowClient = flowClient;
-            fcl._coreModule = new CoreModule(
+            fcl._transaction = new Transaction(
                 walletProvider,
                 flowClient,
                 resolveUtility,
@@ -88,6 +89,11 @@ namespace Flow.FCL
             _currentUser.Authenticate(url, callback);
         }
         
+        public void Login(Action<CurrentUser, FlowAccount> callback = null)
+        {
+            Authenticate(callback);
+        }
+        
         /// <summary>
         /// As the current user Mutate the Flow Blockchain
         /// </summary>
@@ -95,11 +101,17 @@ namespace Flow.FCL
         /// <param name="callback"></param>
         public void Mutate(FlowTransaction tx, Action<string> callback)
         {
-            var service = _currentUser.Services.First(p => p.Type == ServiceTypeEnum.PREAUTHZ);
-            _coreModule.SendTransaction(service.PreAuthzEndpoint(), tx, () => {}, callback);
+            var service = _currentUser.Services.FirstOrDefault(p => p.Type == ServiceTypeEnum.PREAUTHZ);
+            if(service is null)
+            {
+                throw new Exception("Please connect wallet first.");
+                
+            }
+            
+            _transaction.SendTransaction(service.PreAuthzEndpoint(), tx, () => {}, callback);
         }
         
-        public void SignUserMessage(string message, Action<SignMessageResponse> callback = null)
+        public void SignUserMessage(string message, Action<ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>> callback = null)
         {
             _currentUser.SignUserMessage(message, callback);
         }
@@ -109,10 +121,10 @@ namespace Flow.FCL
         /// </summary>
         /// <param name="flowScript">Flow cadence script and arguments</param>
         /// <returns>QueryResult</returns>
-        public async Task<QueryResult> Query(FlowScript flowScript)
+        public async Task<ExecuteResult<ICadence>> Query(FlowScript flowScript)
         {
             await ExecuteScript(flowScript);
-            var result = new QueryResult
+            var result = new ExecuteResult<ICadence>
                          {
                              Data = _response,
                              IsSuccessed = _isSuccessed,
@@ -136,16 +148,34 @@ namespace Flow.FCL
             callback?.Invoke();
         }
         
-        public async Task<(string BlockId, string Status)> GetTransactionReuslt(string transactionId)
+        public ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)> GetTransactionReuslt(string transactionId)
         {
-            var result = await _coreModule.GetTransactionResultAsync(transactionId);
-            $"Get TxId result".ToLog();
+            var txr = _transaction.GetTransactionResult(transactionId);
+            var result = txr.Execution switch
+                         {
+                             TransactionExecution.Failure => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
+                                                             {
+                                                                 Data = (TransactionExecution.Failure, TransactionStatus.Sealed, string.Empty), IsSuccessed = true,
+                                                                 Message = txr.ErrorMessage
+                                                             },
+                             TransactionExecution.Success => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
+                                                             {
+                                                                 Data = (TransactionExecution.Success, TransactionStatus.Sealed, txr.BlockId), IsSuccessed = true,
+                                                                 Message = string.Empty
+                                                             },
+                             TransactionExecution.Pending => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
+                                                             {
+                                                                 Data = (TransactionExecution.Pending, TransactionStatus.Pending, string.Empty), IsSuccessed = true,
+                                                                 Message = "Still Pending"
+                                                             },
+                             _ => throw new ArgumentOutOfRangeException()
+                         }; 
             return result;
         }
         
         public async Task<FlowAccount> GetAccount(string address)
         {
-            var account = _coreModule.GetAccount(address);
+            var account = _transaction.GetAccount(address);
             return await account;
         }
 
