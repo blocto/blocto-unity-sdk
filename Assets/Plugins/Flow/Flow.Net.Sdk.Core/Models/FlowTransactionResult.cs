@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Flow.Net.Sdk.Core.Models
@@ -23,6 +24,9 @@ namespace Flow.Net.Sdk.Core.Models
         /// <summary>Provided transaction error in case the transaction wasn't successful.</summary>
         public string ErrorMessage { get; set; }        
 
+        [JsonProperty("events")]
+        public IList<FlowEvent> Events { get; set; }
+        
         [JsonProperty("status_code")]
         public uint StatusCode { get; set; }
     }
