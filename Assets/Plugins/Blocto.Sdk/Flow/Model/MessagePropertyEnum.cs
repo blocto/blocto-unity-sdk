@@ -1,4 +1,4 @@
-namespace Blocto.Sdk.Core.Flow.Model
+namespace Blocto.Sdk.Flow.Model
 {
     public enum MessagePropertyEnum
     {

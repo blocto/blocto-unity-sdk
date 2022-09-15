@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
@@ -28,6 +29,14 @@ namespace Blocto.Sdk.Core.Utility
                         };
         }
         
+        /// <summary>
+        /// Handling unitywebrequest send request and receive response
+        /// </summary>
+        /// <param name="unityWebRequest">UnityWebRequest instance</param>
+        /// <typeparam name="T">Return type</typeparam>
+        /// <returns></returns>
+        /// <exception cref="ApiException{Error}"></exception>
+        /// <exception cref="ApiException"></exception>
         public T ProcessWebRequest<T>(UnityWebRequest unityWebRequest)
         {
             StartCoroutine(SendRequest(unityWebRequest));
@@ -46,6 +55,7 @@ namespace Blocto.Sdk.Core.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
+                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  

@@ -1,11 +1,10 @@
 using System;
 using System.Linq;
 using System.Text;
-using Blocto.Flow;
+using Blocto.SDK.Flow;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
-using AuthnAdapterResponse = Flow.FCL.Models.Authn.AuthnAdapterResponse;
 
 namespace Flow.FCL.Extension
 {
@@ -22,11 +21,16 @@ namespace Flow.FCL.Extension
                            .Append(Uri.EscapeDataString("authenticationId") + "=")
                            .Append(Uri.EscapeDataString(response.Local.Params.AuthenticationId) + "&")
                            .Append(Uri.EscapeDataString("fclVersion") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.FclVersion) + "&")
-                           .Append(Uri.EscapeDataString("accountProofIdentifier") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.AccountProofIdentifier) + "&")
-                           .Append(Uri.EscapeDataString("accountProofNonce") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.AccountProofNonce));
+                           .Append(Uri.EscapeDataString(response.Local.Params.FclVersion));
+                
+            if(response.Local.Params.AccountProofIdentifier != null && response.Local.Params.AccountProofIdentifier != null)
+            {
+                iframeUrlBuilder.Append("&")
+                                .Append(Uri.EscapeDataString("accountProofIdentifier") + "=")
+                                .Append(Uri.EscapeDataString(response.Local.Params.AccountProofIdentifier) + "&")
+                                .Append(Uri.EscapeDataString("accountProofNonce") + "=")
+                                .Append(Uri.EscapeDataString(response.Local.Params.AccountProofNonce));
+            }
             
             var pollingUrlBuilder = new StringBuilder();
             pollingUrlBuilder.Append(response.Updates.Endpoint + "?")

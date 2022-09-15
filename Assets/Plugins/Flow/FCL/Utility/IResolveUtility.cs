@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Utility
 {
-    public interface IResolveUtil
+    public interface IResolveUtility
     {
         JObject ResolvePreSignable(ref FlowTransaction tx);
 

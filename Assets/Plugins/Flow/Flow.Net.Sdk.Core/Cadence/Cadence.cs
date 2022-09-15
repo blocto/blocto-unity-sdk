@@ -1,5 +1,4 @@
-﻿using System;
-using Flow.Net.Sdk.Core.Cadence.Types;
+﻿using Flow.Net.Sdk.Core.Cadence.Types;
 using Flow.Net.Sdk.Core.Exceptions;
 using Newtonsoft.Json;
 using System.Linq;

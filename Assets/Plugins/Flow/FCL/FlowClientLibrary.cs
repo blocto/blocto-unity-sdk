@@ -11,6 +11,7 @@ using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
+using Plugins.Flow.FCL.Models;
 using UnityEngine;
 
 namespace Flow.FCL
@@ -34,7 +35,6 @@ namespace Flow.FCL
         public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, IWalletProvider walletProvider, Config.Config config = null)
         {
             Config = config;
-            FlowClientLibrary.ConfigSetDefaultValue();
             
             var env = Config.Get("flow.network");
             var fcl = gameObject.AddComponent<FlowClientLibrary>();
@@ -42,7 +42,7 @@ namespace Flow.FCL
             var factory = UtilFactory.CreateUtilFactory(gameObject, flowClient);
             var appUtil = factory.CreateAppUtil(env);
             var resolveUtility = factory.CreateResolveUtility();
-            var currentUser = new CurrentUser(walletProvider, factory.CreateWebRequestUtil(), resolveUtility, flowClient, appUtil);
+            var currentUser = new CurrentUser(walletProvider, factory.CreateWebRequestUtil(), resolveUtility, flowClient);
             
             fcl._flowClient = flowClient;
             fcl._transaction = new Transaction(
@@ -83,14 +83,54 @@ namespace Flow.FCL
         /// FCL will set the values on the current user object for future use and authorization.
         /// </summary>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(Action<CurrentUser, FlowAccount> callback = null)
+        public void Authenticate(Action<CurrentUser, AccountProofData> callback = null)
         {
             var url = Config.Get("discovery.wallet");
             _currentUser.Authenticate(url, callback);
         }
         
-        public void Login(Action<CurrentUser, FlowAccount> callback = null)
+        /// <summary>
+        /// Calling this method will authenticate the current user via any wallet that supports FCL.
+        /// Once called, FCL will initiate communication with the configured discovery.wallet endpoint which lets the user select a wallet to authenticate with.
+        /// Once the wallet provider has authenticated the user,
+        /// FCL will set the values on the current user object for future use and authorization.
+        /// </summary>
+        /// <param name="accountProofData">Account proof data</param>
+        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
+        public void Authenticate(AccountProofData accountProofData, Action<CurrentUser, AccountProofData> callback = null)
         {
+            var url = Config.Get("discovery.wallet");
+            _currentUser.Authenticate(url, accountProofData, callback);
+        }
+        
+        /// <summary>
+        /// Logs out the current user and sets the values on the current user object to null.
+        /// </summary>
+        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
+        public void UnAuthenticate(Action callback = null)
+        {
+            this._currentUser.Services = null;
+            this._currentUser.LoggedIn = false;
+            this._currentUser.ExpiresAt = default;
+            callback?.Invoke();
+        }
+        
+        /// <summary>
+        /// Login
+        /// </summary>
+        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
+        public void Login(Action<CurrentUser, AccountProofData> callback = null)
+        {
+            Authenticate(callback);
+        }
+        
+        /// <summary>
+        /// ReLogin
+        /// </summary>
+        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
+        public void ReLogin(Action<CurrentUser, AccountProofData> callback = null)
+        {
+            UnAuthenticate();
             Authenticate(callback);
         }
         
@@ -98,7 +138,7 @@ namespace Flow.FCL
         /// As the current user Mutate the Flow Blockchain
         /// </summary>
         /// <param name="tx">FlowTransaction</param>
-        /// <param name="callback"></param>
+        /// <param name="callback">The callback will be called when the send transaction completed, making it easy to update the UI accordingly.</param>
         public void Mutate(FlowTransaction tx, Action<string> callback)
         {
             var service = _currentUser.Services.FirstOrDefault(p => p.Type == ServiceTypeEnum.PREAUTHZ);
@@ -111,6 +151,11 @@ namespace Flow.FCL
             _transaction.SendTransaction(service.PreAuthzEndpoint(), tx, () => {}, callback);
         }
         
+        /// <summary>
+        /// Sign user message
+        /// </summary>
+        /// <param name="message">Source message</param>
+        /// <param name="callback">Complete sign message then call callback function</param>
         public void SignUserMessage(string message, Action<ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>> callback = null)
         {
             _currentUser.SignUserMessage(message, callback);
@@ -121,7 +166,7 @@ namespace Flow.FCL
         /// </summary>
         /// <param name="flowScript">Flow cadence script and arguments</param>
         /// <returns>QueryResult</returns>
-        public async Task<ExecuteResult<ICadence>> Query(FlowScript flowScript)
+        public async Task<ExecuteResult<ICadence>> QueryAsync(FlowScript flowScript)
         {
             await ExecuteScript(flowScript);
             var result = new ExecuteResult<ICadence>
@@ -137,20 +182,14 @@ namespace Flow.FCL
         }
         
         /// <summary>
-        /// Logs out the current user and sets the values on the current user object to null.
+        /// Get transaction result
         /// </summary>
-        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void UnAuthenticate(Action callback = null)
+        /// <param name="transactionId">Transaction hash code</param>
+        /// <returns>Tuple include Execution, Status, BlockId</returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)> GetTransactionStatus(string transactionId)
         {
-            this._currentUser.Services = null;
-            this._currentUser.LoggedIn = false;
-            this._currentUser.ExpiresAt = default;
-            callback?.Invoke();
-        }
-        
-        public ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)> GetTransactionReuslt(string transactionId)
-        {
-            var txr = _transaction.GetTransactionResult(transactionId);
+            var txr = _transaction.GetTransactionStatus(transactionId);
             var result = txr.Execution switch
                          {
                              TransactionExecution.Failure => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
@@ -173,7 +212,13 @@ namespace Flow.FCL
             return result;
         }
         
-        public async Task<FlowAccount> GetAccount(string address)
+        
+        /// <summary>
+        /// Get account by address
+        /// </summary>
+        /// <param name="address">Address</param>
+        /// <returns></returns>
+        public async Task<FlowAccount> GetAccountAsync(string address)
         {
             var account = _transaction.GetAccount(address);
             return await account;
@@ -191,12 +236,6 @@ namespace Flow.FCL
                 $"Execute script error: {e.Message}".ToLog();
                 _errorMessage = e.Message;
             }
-        }
-        
-        private static void ConfigSetDefaultValue()
-        {
-            FlowClientLibrary.Config.Put("testnet.fclcrypto", "0x5b250a8a85b44a67");
-            FlowClientLibrary.Config.Put("mainnet.fclcrypto", "0xdb6b70764af4ff68");
         }
     }
 }

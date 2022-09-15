@@ -1,14 +1,13 @@
-using Blocto.Sdk.Core.Utility;
+using Blocto.Sdk.Flow.Utility;
 using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core.Client;
-using Flow.Net.SDK.Extensions;
 using UnityEngine;
 
 namespace Flow.FCL
 {
     public class UtilFactory : MonoBehaviour
     {
-        private IResolveUtil _resolveUtils;
+        private IResolveUtility _resolveUtilities;
         
         private IFlowClient _flowClient;
         
@@ -37,6 +36,6 @@ namespace Flow.FCL
             return _resolveUtility;
         }
         
-        public virtual AppUtils CreateAppUtil(string env) => new AppUtils(_flowClient);
+        public virtual AppUtility CreateAppUtil(string env) => new AppUtility(_flowClient);
     }
 }

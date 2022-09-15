@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Blocto.Sdk.Core.Flow.Model;
+using Blocto.Sdk.Flow.Model;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
@@ -15,9 +15,9 @@ using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Blocto.Sdk.Core.Utility
+namespace Blocto.Sdk.Flow.Utility
 {
-    public class ResolveUtility : IResolveUtil
+    public class ResolveUtility : IResolveUtility
     {
         // private IFlowClient _flowClient;
         
@@ -148,7 +148,7 @@ namespace Blocto.Sdk.Core.Utility
                                                                         });
             }
             
-            var message = RLP.GetEncodeMessage(tx);
+            var message = EncodeUtility.GetEncodeMessage(tx);
             item.Add("message", message);
             
             $"Tx: {JsonConvert.SerializeObject(tx)}".ToLog();
@@ -162,7 +162,7 @@ namespace Blocto.Sdk.Core.Utility
             signable.Remove(SignablePropertyEnum.voucher.ToString());
             signable.Add(SignablePropertyEnum.voucher.ToString(), voucher);
             
-            var message = RLP.EncodedCanonicalAuthorizationEnvelope(tx);
+            var message = EncodeUtility.EncodedCanonicalAuthorizationEnvelope(tx);
             signable.Remove(SignablePropertyEnum.message.ToString());
             signable.Add(SignablePropertyEnum.message.ToString(), message);
             return signable;

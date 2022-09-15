@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
 using UnityEngine;
@@ -89,36 +88,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
             try
             {
-                // StartCoroutine(SendRequest(client));
-                // while (!client.isDone)
-                // {
-                //     Task.Yield();
-                // }
-                //
-                // if (client.result == UnityWebRequest.Result.ConnectionError)
-                // {
-                //     throw new ApiException<Error>("Bad Request", (int)client.responseCode, "", null, null);
-                // }
-                //
-                // var headers_ = client.GetResponseHeaders();
-                // var status = ((int)client.responseCode).ToString();
-                // if(status is "200" or "204")
-                // {
-                //     var tmp = client.downloadHandler.data;
-                //     var objectResponse_ = ReadObjectResponseAsync<ICollection<Block>>(client);
-                //     Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
-                //     return objectResponse_.Object;  
-                // }
-                //
-                // if(_handlers.ContainsKey(status))
-                // {
-                //     _handlers[status].Invoke(client);
-                // }
-                // else
-                // {
-                //     throw new ApiException("The HTTP status code of the response was not expected (" + (int)client.responseCode + ").", (int)client.responseCode, "", null); 
-                // }
-                
                 var result = ProcessWebRequest<ICollection<Block>>(client);
                 return result;
             }
@@ -567,7 +536,6 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
-                // $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 return objectResponse_.Object;  
             }
@@ -847,7 +815,8 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             {
                 using var streamReader = new System.IO.StreamReader(new MemoryStream(unityWebRequest.downloadHandler.data));
                 using var jsonTextReader = new JsonTextReader(streamReader);
-                var serializer = JsonSerializer.Create(_jsonSettings.Value);
+                // var serializer = JsonSerializer.Create(_jsonSettings.Value);
+                var serializer = JsonSerializer.Create();
                 var typedBody = serializer.Deserialize<T>(jsonTextReader);
                 return new ObjectResponseResult<T>(typedBody, string.Empty);
             }

@@ -1,47 +1,41 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Blocto.Flow;
+using Blocto.SDK.Flow;
 using Flow.FCL.Extension;
-using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
+using Plugins.Flow.FCL.Models;
 
 namespace Flow.FCL.Models
 {
     public class CurrentUser : User
     {
-        public CurrentUser(IWalletProvider walletProvider, IWebRequestUtils webRequestUtils, IResolveUtil resolveUtility, IFlowClient flowClient, AppUtils appUtils)
+        public CurrentUser(IWalletProvider walletProvider, IWebRequestUtils webRequestUtils, IResolveUtility resolveUtility, IFlowClient flowClient)
         {
             LoggedIn = false;
             Services = new List<FclService>();
             _walletProvider = walletProvider;
             _webRequestUtils = webRequestUtils;
             _resolveUtility = resolveUtility;
-            _appUtils = appUtils;
             _flowClient = flowClient;
-            _appIdentifier = FlowClientLibrary.Config.Get("appIdentifier");
         }
         
         public List<FclService> Services { get; set; }
+
+        public AccountProofData AccountProofData { get; set; }
         
-        private IWalletProvider _walletProvider;
+        private readonly IWalletProvider _walletProvider;
         
-        private IWebRequestUtils _webRequestUtils;
+        private readonly IWebRequestUtils _webRequestUtils;
         
-        private IFlowClient _flowClient;
+        private readonly IFlowClient _flowClient;
         
-        private IResolveUtil _resolveUtility;
-        
-        private AppUtils _appUtils;
-        
-        private string _appIdentifier;
+        private readonly IResolveUtility _resolveUtility;
         
         /// <summary>
         /// Returns the current user object.
@@ -59,60 +53,78 @@ namespace Flow.FCL.Models
         /// FCL will set the values on the current user object for future use and authorization.
         /// </summary>
         /// <param name="url">Authn url</param>
-        /// <param name="internalCallback">internal callback</param>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(string url, Action<CurrentUser, FlowAccount> callback = null)
+        public void Authenticate(string url, Action<CurrentUser, AccountProofData> callback = null)
         {
-            var nonce = KeyGenerator.GetUniqueKey(33).ToLower();
-            var parameters = new Dictionary<string, object>
-                             {
-                                 { "accountProofIdentifier", _appIdentifier },
-                                 { "accountProofNonce", nonce.StringToHex() }
-                             };
+            Authenticate(url, null, callback);
+        } 
+        
+        /// <summary>
+        /// Calling this method will authenticate the current user via any wallet that supports FCL.
+        /// Once called, FCL will initiate communication with the configured discovery.wallet endpoint which lets the user select a wallet to authenticate with.
+        /// Once the wallet provider has authenticated the user,
+        /// FCL will set the values on the current user object for future use and authorization.
+        /// </summary>
+        /// <param name="url">Authn url</param>
+        /// <param name="accountProofData">Flow account proof data</param>
+        /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
+        public void Authenticate(string url, AccountProofData accountProofData = null, Action<CurrentUser, AccountProofData> callback = null)
+        {
+            var parameters = new Dictionary<string, object>();
+            if(accountProofData != null)
+            {
+                parameters = new Dictionary<string, object>
+                                 {
+                                     { "accountProofIdentifier", accountProofData.AppId },
+                                     { "accountProofNonce", accountProofData.Nonce }
+                                 };
+            }
             
             var authnResponse = _webRequestUtils.GetResponse<Authn.AuthnAdapterResponse>(url, "POST", "application/json", parameters);
             var endpoint = authnResponse.AuthnEndpoint();
-            
             _walletProvider.Login(endpoint.IframeUrl, endpoint.PollingUrl, item => {
-                                               var response = item as AuthenticateResponse;
-                                               switch (response?.ResponseStatus)
-                                               {
-                                                   case ResponseStatusEnum.APPROVED:
-                                                       Addr = new FlowAddress(response.Data.Addr); 
-                                                       LoggedIn = true;
-                                                       F_type = "USER";
-                                                       F_vsn = response.FVsn;
-                                                       Services = response.Data.Services.ToList();
-                                                       ExpiresAt = response.Data.Expires;
-                                                       ExpiresAt = response.Data.Expires;
-                                                       break;
-                                                   case ResponseStatusEnum.DECLINED:
-                                                       LoggedIn = false;
-                                                       F_type = "USER";
-                                                       F_vsn = response.FVsn;
-                                                       break;
-                                                   case ResponseStatusEnum.PENDING:
-                                                   case ResponseStatusEnum.REDIRECT:
-                                                   case ResponseStatusEnum.NONE:
-                                                   default:
-                                                       break;
-                                               }
-                                               
-                                               var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
-                                               var nonce = service?.Data.Nonce;
-                                               var address = service?.Data.Address;
-                                               var keyId = service?.Data.Signatures.First().KeyId();
-                                               
-                                               var isLegal = _appUtils.VerifyAccountProofSignature(_appIdentifier, address, keyId, nonce, service?.Data.Signatures.First().SignatureStr());
-                                               if(!isLegal)
-                                               {
-                                                   throw new Exception("Account proof failed");
-                                               }
-                                               
-                                               var account = _flowClient.GetAccountAtLatestBlockAsync(this.Addr.Address).ConfigureAwait(false).GetAwaiter().GetResult();
-                                               callback?.Invoke(this, account);
-                                           });
-        } 
+                                                                              var response = item as AuthenticateResponse;
+                                                                              switch (response?.ResponseStatus)
+                                                                              {
+                                                                                  case ResponseStatusEnum.APPROVED:
+                                                                                      Addr = new FlowAddress(response.Data.Addr); 
+                                                                                      LoggedIn = true;
+                                                                                      F_type = "USER";
+                                                                                      F_vsn = response.FVsn;
+                                                                                      Services = response.Data.Services.ToList();
+                                                                                      ExpiresAt = response.Data.Expires;
+                                                                                      ExpiresAt = response.Data.Expires;
+                                                                                      break;
+                                                                                  case ResponseStatusEnum.DECLINED:
+                                                                                      LoggedIn = false;
+                                                                                      F_type = "USER";
+                                                                                      F_vsn = response.FVsn;
+                                                                                      break;
+                                                                                  case ResponseStatusEnum.PENDING:
+                                                                                  case ResponseStatusEnum.REDIRECT:
+                                                                                  case ResponseStatusEnum.NONE:
+                                                                                  default:
+                                                                                      break;
+                                                                              }
+                                                                               
+                                                                              if(accountProofData != null)
+                                                                              {
+                                                                                  var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
+                                                                                  var nonce = service?.Data.Nonce;
+                                                                                  accountProofData.Signature = new Signature
+                                                                                                               {
+                                                                                                                   Addr = service?.Data.Address,
+                                                                                                                   KeyId = Convert.ToUInt32(service?.Data.Signatures.First().KeyId()),
+                                                                                                                   SignatureStr = service?.Data.Signatures.First().SignatureStr()
+                                                                                                               };
+                                                                                  AccountProofData = accountProofData;
+                                                                                  callback?.Invoke(this, accountProofData);
+                                                                              }else
+                                                                              {
+                                                                                  callback?.Invoke(this, null);
+                                                                              }
+                                                                           });
+        }
         
         public PreAuthzAdapterResponse PreAuth(FlowTransaction tx, FclService service, Action internalCallback = null)
         {

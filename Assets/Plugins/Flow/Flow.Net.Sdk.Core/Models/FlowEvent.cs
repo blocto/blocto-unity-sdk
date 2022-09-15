@@ -1,7 +1,11 @@
 ﻿using Flow.Net.Sdk.Core.Cadence;
+using Newtonsoft.Json;
+using Plugins.Blocto.Sdk.Core.Converts;
 
 namespace Flow.Net.Sdk.Core.Models
 {
+
+    [JsonConverter(typeof(FlowEventConverter))]
     public class FlowEvent
     {
         public uint EventIndex { get; set; }

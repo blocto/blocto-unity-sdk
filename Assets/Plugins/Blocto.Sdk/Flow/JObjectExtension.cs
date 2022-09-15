@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Linq;
 
-namespace Blocto.Flow
+namespace Blocto.SDK.Flow
 {
     public static class JObjectExtension
     {
@@ -8,7 +8,7 @@ namespace Blocto.Flow
         
         public static string AuthorizationId(this JObject jobj) => jobj.GetValue("authorizationId")?.ToString();
         
-        public static string SignatureStr(this JObject jobj) => jobj.GetValue("signaturestr")?.ToString();
+        public static string SignatureStr(this JObject jobj) => jobj.GetValue("signature")?.ToString();
         
         public static string KeyId(this JObject jobj) => jobj.GetValue("keyId")?.ToString();
     }

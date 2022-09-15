@@ -1,31 +1,43 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Blocto.Flow;
-using Blocto.Sdk.Core.Model;
-using Blocto.Sdk.Core.Utility;
+using Blocto.SDK.Flow;
 using Flow.FCL;
 using Flow.FCL.Config;
-using Flow.FCL.Models;
-using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
-using Flow.FCL.WalletProvider;
 using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
+using Plugins.Flow.FCL.Models;
 using UnityEngine;
 using UnityEngine.UI;
+using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
 using Random = System.Random;
 
 [SuppressMessage("ReSharper", "InterpolatedStringExpressionIsNotIFormattable")]
 public class MainController : MonoBehaviour
 {
     static string _script = "import FungibleToken from 0x9a0766d93b6608b7\nimport FlowToken from 0x7e60df042a9c0868\n\ntransaction(amount: UFix64, to: Address) {\n\n    // The Vault resource that holds the tokens that are being transferred\n    let sentVault: @FungibleToken.Vault\n\n    prepare(signer: AuthAccount) {\n\n        // Get a reference to the signer's stored vault\n        let vaultRef = signer.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)\n            ?? panic(\"Could not borrow reference to the owner's Vault!\")\n\n        // Withdraw tokens from the signer's stored vault\n        self.sentVault <- vaultRef.withdraw(amount: amount)\n    }\n\n    execute {\n\n        // Get the recipient's public account object\n        let recipient = getAccount(to)\n\n        // Get a reference to the recipient's Receiver\n        let receiverRef = recipient.getCapability(/public/flowTokenReceiver)\n            .borrow<&{FungibleToken.Receiver}>()\n            ?? panic(\"Could not borrow receiver reference to the recipient's Vault\")\n\n        // Deposit the withdrawn tokens in the recipient's receiver\n        receiverRef.deposit(from: <-self.sentVault)\n    }\n}";
+    
+    static string _queryScript = @"
+    import ValueDapp from {valueDappContract}
+
+    pub fun main(): UFix64 {
+        return ValueDapp.value
+    }";
+    
+    static string _mutateScript = @"
+    import ValueDapp from 0x5a8143da8058740c
+
+    transaction(value: UFix64) {
+        prepare(authorizer: AuthAccount) {
+            ValueDapp.setValue(value)
+        }
+    }";
     
     // static string _script = "transaction {prepare(signer: AuthAccount) { log(signer.address) }}";
 
@@ -63,7 +75,7 @@ public class MainController : MonoBehaviour
     
     private FlowClientLibrary _fcl;
     
-    private IResolveUtil _resolveUtils;
+    private IResolveUtility _resolveUtilities;
     
     private IBloctoWalletProvider _walletProvider;
     
@@ -142,23 +154,33 @@ public class MainController : MonoBehaviour
               .Put("flow.network", "testnet")
               .Put("appIdentifier", "jamisdeapp");
         
-        _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject);
+        _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject: gameObject, bloctoAppIdentifier:Guid.Parse("00868d9f-37ad-42ae-bb05-bbdd829650ba"));
         _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, _walletProvider, config);
     }
     
     private void ConnectWallet()
     {
-        _fcl.Authenticate((currentUser, account) => {
-                              var service = currentUser.Services.FirstOrDefault(p => p.Type == ServiceTypeEnum.AccountProof);
-                              _signature = service!.Data.Signatures.First().SignatureStr();
-                              _address = currentUser.Addr.Address;
-                              
-                              var balance = (account.Balance / 100000000);
-                              $"Balance: {account.Balance}, fix point: {balance:F4}".ToLog();
-
-                              _accountTxt.text = currentUser.Addr.Address.AddHexPrefix();
-                              _balanceTxt.text = balance.ToString("F4");
-                          });
+        var accountProofData = new AccountProofData
+                               {
+                                   AppId = "com.blocto.flow.unitydemo",
+                                   Nonce = KeyGenerator.GetUniqueKey(32).StringToHex()
+                               };
+        
+        _fcl.Authenticate(accountProofData, ((currentUser,  accountProofData) => {
+                                                 _accountTxt.text = currentUser.Addr.Address.AddHexPrefix();
+                                                 if(accountProofData != null)
+                                                 {
+                                                     $"AppId: {accountProofData.AppId}, Nonce: {accountProofData.Nonce}".ToLog();
+                                                     $"Address: {accountProofData.Signature.Addr}, KeyId: {accountProofData.Signature.KeyId}, Signature: {accountProofData.Signature.SignatureStr}".ToLog();
+                                                 }
+                                                 
+                                                 var appUtil = new AppUtility(gameObject);
+                                                 var isVerify = appUtil.VerifyAccountProofSignature(
+                                                     appIdentifier: accountProofData!.AppId,
+                                                     accountProofData: accountProofData,
+                                                     fclCryptoContract: "0x5b250a8a85b44a67");
+                                                 Debug.Log($"User is verify: {isVerify}");
+                                             }));
     }
     
     private void SendTransaction()
@@ -168,28 +190,23 @@ public class MainController : MonoBehaviour
         
         var tx = new FlowTransaction
                  {
-                     Script = _script,
+                     Script = MainController._mutateScript,
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:N8}"),
-                                     new CadenceAddress(receiveAddress.AddHexPrefix())
+                                     new CadenceNumber(CadenceNumberType.UFix64, "123.456"),
                                  },
                  };
 
-        async void SendTransactionCallback(string txId)
-        {
-            $"TxId: {txId}".ToLog();
-            _txId = txId;
-            _resultTxt.text = $"https://testnet.flowscan.org/transaction/{_txId}";
-        }
-
-        _fcl.Mutate(tx, SendTransactionCallback);
+        _fcl.Mutate(tx, txId => {
+                            _txId = txId;
+                            _resultTxt.text = $"https://testnet.flowscan.org/transaction/{_txId}";
+                        });
     }
     
     public void GetTxr()
     {
-        var result = _fcl.GetTransactionReuslt(_txId);
+        var result = _fcl.GetTransactionStatus(_txId);
         if(result.IsSuccessed)
         {
             switch (result.Data.Execution)
@@ -211,50 +228,44 @@ public class MainController : MonoBehaviour
     
     public async Task ExecuteQuery()
     {
-        var complexScript = @"
-                            pub struct User {
-                                pub var balance: UFix64
-                                pub var address: Address
-                                pub var name: String
-                                
+        var script = @" 
+                    pub struct User {
+                        pub var balance: UFix64
+                        pub var address: Address
+                        pub var name: String
+                        
+                        init(name: String, address: Address, balance: UFix64) {
+                            self.name = name
+                            self.address = address
+                            self.balance = balance
+                        }
+                    }
 
-                                init(name: String, address: Address, balance: UFix64) {
-                                    self.name = name
-                                    self.address = address
-                                    self.balance = balance
-                                }
-                            }
-
-                            pub fun main(name: String): User {
-                                return User(
-                                    name: name,
-                                    address: 0x1,
-                                    balance: 10.0
-                                )
-                            }";
+                    pub fun main(name: String): User {
+                        return User(
+                            name: name,
+                            address: 0x1,
+                            balance: 10.0
+                        )
+                    }";
         
-        // var simpleScript = @"pub fun main(): Int { return 1 + 2 }";
         var flowScript = new FlowScript
                          {
-                             Script = complexScript,
+                             Script = MainController._queryScript,
                              Arguments = new List<ICadence>
                                          {
-                                             new CadenceString("Blocto")
+                                             new CadenceString("blocto")
                                          }
                          };
         
-        var result = await _fcl.Query(flowScript);
+        var result = await _fcl.QueryAsync(flowScript);
         if(result.IsSuccessed)
         {
-            //// complexScript result parser
+            //// Composite object parser
             var name = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceString>("name").Value;
             var balance = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceNumber>("balance").Value;
             var address = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceAddress>("address").Value;
             _resultTxt.text = $"Name: {name}, Balance: {balance}, Address: {address}";
-            
-            //// simplexScript result parser
-            // var value = result.Data.As<CadenceNumber>().Value;
-            // _resultTxt.text = $"Value: {value}";
         }
         else
         {
@@ -264,14 +275,14 @@ public class MainController : MonoBehaviour
     
     public void VerifyUserMessage()
     {
-        var appUtil = new AppUtils(this.gameObject);
+        var appUtil = new AppUtility(this.gameObject);
         var result = appUtil.VerifyUserSignatures(_signmessageTxt.text, _address, _keyId.ToString(), _signature);
         _signmessageTxt.text += $"\r\nVerify result: {result}";
     }
     
     private void SignUserMessage()
     {
-        var appUtil = new AppUtils(this.gameObject);
+        var appUtil = new AppUtility(this.gameObject);
         _fcl.SignUserMessage(_signmessageTxt.text, result => {
                                                        if(result.IsSuccessed == false)
                                                        {
@@ -288,7 +299,7 @@ public class MainController : MonoBehaviour
     
     private async void GetAccount()
     {
-        var account = await _fcl.GetAccount("f086a545ce3c552d");
+        var account = await _fcl.GetAccountAsync("f086a545ce3c552d");
         _resultTxt.text = $"Address: {account.Address.Address}, KeyId: {account.Keys.First().Index}, SeqNum: {account.Keys.First().SequenceNumber}";
     }
 
@@ -303,6 +314,7 @@ public class MainController : MonoBehaviour
 
     public void Test()
     {
+        var result = _fcl.GetTransactionStatus("6ec486df690b1938fdfdc0a9ebf5c63fc39ad8202f48164252a57761fe11ee24");
         // _resolveUtils = new ResolveUtility(null);
         // var tx = new FlowTransaction
         //          {

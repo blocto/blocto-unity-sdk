@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.unitykotlin"
+    package="com.blocto.unity"
     xmlns:tools="http://schemas.android.com/tools">
     <application>
-        <activity android:name="com.example.unitykotlin.PluginActivity"
+        <activity android:name="com.blocto.unity.PluginActivity"
                   android:theme="@style/UnityThemeSelector"
                   android:process="e.unity3d"
                   android:configChanges="keyboardHidden|orientation|screenSize"
@@ -18,7 +18,7 @@
         </activity>
         <activity android:exported="true"
                   android:launchMode="singleTop"
-                  android:name="com.example.unitykotlin.CallbackActivity" 
+                  android:name="com.blocto.unity.CallbackActivity" 
                   android:process="e.unity3d">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

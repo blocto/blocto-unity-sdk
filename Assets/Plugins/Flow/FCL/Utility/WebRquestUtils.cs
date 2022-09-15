@@ -98,8 +98,8 @@ namespace Flow.FCL.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
+                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
-                // Debug.Log($"return object: {DateTime.Now:HH:mm:ss.fff}");
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  
             }
@@ -125,8 +125,11 @@ namespace Flow.FCL.Utility
         /// <exception cref="ApiException{Error}"></exception>
         private void BadRequestHandler(UnityWebRequest unityWebRequest)
         {
-            var objectResponse_ = ReadObjectResponseAsync<Error>(unityWebRequest);
-            throw new ApiException<Error>("Bad Request", (int)unityWebRequest.responseCode, objectResponse_.Text, objectResponse_.Object, null); 
+            var objectResponse_ = ReadObjectResponseAsync<string>(unityWebRequest);
+            throw new ApiException<Error>("Bad Request", (int)unityWebRequest.responseCode, objectResponse_.Text, new Error
+                                                                                                                  {
+                                                                                                                      Message = objectResponse_.Text
+                                                                                                                  }, null); 
         }
         
         /// <summary>
@@ -183,16 +186,24 @@ namespace Flow.FCL.Utility
             try
             {
                 using var streamReader = new System.IO.StreamReader(new MemoryStream(unityWebRequest.downloadHandler.data));
-                using var jsonTextReader = new JsonTextReader(streamReader);
-                var ser = new JsonSerializer
-                          {
-                              ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                              NullValueHandling = NullValueHandling.Ignore,
-                          };
-                
-                ser.Converters.Add(new StringEnumConverter());
-                var typedBody = ser.Deserialize<T>(jsonTextReader);
-                return new ObjectResponseResult<T>(typedBody, string.Empty);
+                if(unityWebRequest.responseCode == 200)
+                {
+                    using var jsonTextReader = new JsonTextReader(streamReader);
+                    var ser = new JsonSerializer
+                              {
+                                  ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                                  NullValueHandling = NullValueHandling.Ignore,
+                              };
+                    
+                    ser.Converters.Add(new StringEnumConverter());
+                    var typedBody = ser.Deserialize<T>(jsonTextReader);
+                    return new ObjectResponseResult<T>(typedBody, string.Empty);
+                }
+                else
+                {
+                    var responseTxt = streamReader.ReadToEnd();
+                    return new ObjectResponseResult<T>(default(T), responseTxt);
+                }
             }
             catch (JsonException exception)
             {

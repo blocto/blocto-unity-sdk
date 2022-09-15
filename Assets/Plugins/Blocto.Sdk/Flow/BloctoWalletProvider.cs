@@ -9,7 +9,7 @@ using Flow.Net.SDK.Extensions;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Blocto.Flow
+namespace Blocto.SDK.Flow
 {
     public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider
     {
@@ -38,17 +38,21 @@ namespace Blocto.Flow
         
         private bool _isCancelRequest;
         
+        private Guid _bloctoAppIdentifier;
+        
         /// <summary>
         /// Create blocto wallet provider instance
         /// </summary>
         /// <param name="gameObject">Main gameobject</param>
+        /// <param name="bloctoSDKAppId">Blocto sdk appId</param>
         /// <returns>BloctoWalletProvider</returns>
-        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject)
+        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, Guid bloctoAppIdentifier)
         {
             var provider = gameObject.AddComponent<BloctoWalletProvider>();
             provider.gameObject.name = "bloctowalletprovider";
             provider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
             provider._isCancelRequest = false;
+            provider._bloctoAppIdentifier = bloctoAppIdentifier;
             
             if(Application.platform == RuntimePlatform.Android)
             {

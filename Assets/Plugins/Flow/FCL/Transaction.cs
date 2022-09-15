@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Flow.FCL.Extension;
 using Flow.FCL.Models;
@@ -12,7 +10,6 @@ using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Newtonsoft.Json;
 
 namespace Flow.FCL
 {
@@ -22,7 +19,7 @@ namespace Flow.FCL
         
         private IWebRequestUtils _webRequestUtils;
         
-        private IResolveUtil _resolveUtility;
+        private IResolveUtility _resolveUtility;
         
         private IFlowClient _flowClient;
         
@@ -30,7 +27,7 @@ namespace Flow.FCL
         
         private string _txId;
         
-        public Transaction(IWalletProvider walletProvider, IFlowClient flowClient, IResolveUtil resolveUtility, UtilFactory utilFactory)
+        public Transaction(IWalletProvider walletProvider, IFlowClient flowClient, IResolveUtility resolveUtility, UtilFactory utilFactory)
         {
             _walletProvider = walletProvider;
             _flowClient = flowClient;
@@ -38,7 +35,7 @@ namespace Flow.FCL
             _resolveUtility = utilFactory.CreateResolveUtility();
         }
         
-        public FlowTransaction SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
+        public virtual FlowTransaction SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
         {
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
@@ -85,7 +82,7 @@ namespace Flow.FCL
             return tx;
         }
         
-        public FlowTransactionResult GetTransactionResult(string transactionId)
+        public FlowTransactionResult GetTransactionStatus(string transactionId)
         {
             var txr = _flowClient.GetTransactionResultAsync(transactionId).ConfigureAwait(false).GetAwaiter().GetResult();
             return txr;
