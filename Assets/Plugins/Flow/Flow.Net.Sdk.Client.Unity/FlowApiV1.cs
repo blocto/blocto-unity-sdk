@@ -815,8 +815,7 @@ namespace Flow.Net.SDK.Client.Unity.Unity
             {
                 using var streamReader = new System.IO.StreamReader(new MemoryStream(unityWebRequest.downloadHandler.data));
                 using var jsonTextReader = new JsonTextReader(streamReader);
-                // var serializer = JsonSerializer.Create(_jsonSettings.Value);
-                var serializer = JsonSerializer.Create();
+                var serializer = JsonSerializer.Create(_jsonSettings.Value);
                 var typedBody = serializer.Deserialize<T>(jsonTextReader);
                 return new ObjectResponseResult<T>(typedBody, string.Empty);
             }
