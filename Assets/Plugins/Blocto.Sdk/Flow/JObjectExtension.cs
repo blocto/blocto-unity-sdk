@@ -10,6 +10,8 @@ namespace Blocto.SDK.Flow
         
         public static string SignatureStr(this JObject jobj) => jobj.GetValue("signature")?.ToString();
         
+        public static string Address(this JObject jobj) => jobj.GetValue("addr")?.ToString();
+        
         public static string KeyId(this JObject jobj) => jobj.GetValue("keyId")?.ToString();
     }
 }
