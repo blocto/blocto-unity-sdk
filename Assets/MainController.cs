@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Blocto.Sdk.Core.Extension;
 using Blocto.SDK.Flow;
 using Flow.FCL;
 using Flow.FCL.Config;
@@ -39,8 +41,6 @@ public class MainController : MonoBehaviour
         }
     }";
     
-    // static string _script = "transaction {prepare(signer: AuthAccount) { log(signer.address) }}";
-
     private string _url = "https://flow-wallet.blocto.app/authn?channel=back&authenticationId=h3KEsPgXh&fclVersion=1.1.0";
     
     private Button _authnBtn;
@@ -188,9 +188,17 @@ public class MainController : MonoBehaviour
         var receiveAddress = _transactionToTxt.text;
         var transactionAmount = _transactionAmountTxt.text;
         
+        var script = @"
+                    import ValueDapp from 0x5a8143da8058740c
+
+                    transaction(value: UFix64) {
+                        prepare(authorizer: AuthAccount) {
+                            ValueDapp.setValue(value)
+                        }
+                    }";
         var tx = new FlowTransaction
                  {
-                     Script = MainController._mutateScript,
+                     Script = script,
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
@@ -220,8 +228,6 @@ public class MainController : MonoBehaviour
                 case TransactionExecution.Pending:
                     _txResultTxt.text = $"{result.Message}";
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
     }
@@ -233,11 +239,21 @@ public class MainController : MonoBehaviour
                         pub var balance: UFix64
                         pub var address: Address
                         pub var name: String
+                        pub var user: Item
                         
-                        init(name: String, address: Address, balance: UFix64) {
+                        init(name: String, address: Address, balance: UFix64, item: Item) {
                             self.name = name
                             self.address = address
                             self.balance = balance
+                            self.user = item
+                        }
+                    }
+
+                    pub struct Item {
+                        pub var name: String
+
+                        init(name: String){
+                            self.name = name
                         }
                     }
 
@@ -245,13 +261,14 @@ public class MainController : MonoBehaviour
                         return User(
                             name: name,
                             address: 0x1,
-                            balance: 10.0
+                            balance: 10.0,
+                            item: Item(name: name)
                         )
                     }";
         
         var flowScript = new FlowScript
                          {
-                             Script = MainController._queryScript,
+                             Script = script,
                              Arguments = new List<ICadence>
                                          {
                                              new CadenceString("blocto")
@@ -275,25 +292,29 @@ public class MainController : MonoBehaviour
     
     public void VerifyUserMessage()
     {
-        var appUtil = new AppUtility(this.gameObject);
-        var result = appUtil.VerifyUserSignatures(_signmessageTxt.text, _address, _keyId.ToString(), _signature);
+        var userSignature = default(FlowSignature);
+        var originalMessage = "SignMessage Test";
+        
+        var appUtil = new AppUtility(gameObject);
+        var result = appUtil.VerifyUserSignatures(originalMessage, userSignature, "0x5b250a8a85b44a67");
         _signmessageTxt.text += $"\r\nVerify result: {result}";
     }
     
     private void SignUserMessage()
     {
         var appUtil = new AppUtility(this.gameObject);
-        _fcl.SignUserMessage(_signmessageTxt.text, result => {
+        
+        var originalMessage = "SignMessage Test";
+        _fcl.SignUserMessage(_signmessageTxt.text, result => 
+                                                   {
                                                        if(result.IsSuccessed == false)
                                                        {
                                                            _signmessageTxt.text = $"Get signmessage failed, Reason: {result.Message}";
                                                            return;
                                                        }
                                                        
-                                                       var item = result.Data.First();
-                                                       var isLegal = appUtil.VerifyUserSignatures(item.Source, _address, item.KeyId.ToString(), item.Signature);
-                                                       var originMessage = item.Source;
-                                                       _signmessageTxt.text = $"Message: {originMessage} \r\nSignature: {item.Signature} \r\nKeyId: {item.KeyId} \r\nVerify message: {isLegal}";
+                                                       var item = result.Data;
+                                                       _signmessageTxt.text = $"Message: {originalMessage} \r\nSignature: {item.Signature} \r\nKeyId: {item.KeyId}";
                                                    });    
     }
     

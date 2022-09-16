@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Blocto.SDK.Flow;
 using Flow.FCL.Extension;
 using Flow.FCL.Models.Authz;
@@ -9,6 +10,8 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.SDK.Extensions;
+using Newtonsoft.Json;
 using Plugins.Flow.FCL.Models;
 
 namespace Flow.FCL.Models
@@ -137,7 +140,7 @@ namespace Flow.FCL.Models
             return preAuthzResponse;
         }
         
-        public void SignUserMessage(string message, Action<ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>> callback = null)
+        public void SignUserMessage(string message, Action<ExecuteResult<FlowSignature>> callback = null)
         {
             if(Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
             {
@@ -154,13 +157,16 @@ namespace Flow.FCL.Models
             var endpoint = response.SignMessageEndpoint();
             _walletProvider.SignMessage(endpoint.IframeUrl, endpoint.PollingUrl, item => {
                                                                                      var response = item as SignMessageResponse;
-                                                                                     var signature = response?.Data.First().GetValue("signature")?.ToString();
-                                                                                     var keyId = Convert.ToInt32(response?.Data.First().GetValue("keyId")?.ToString());
-                                                                                     var result = new ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>
+                                                                                     var signature = response?.Data.First().SignatureStr();
+                                                                                     var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
+                                                                                     var addr = response?.Data.First().Address();
+                                                                                     var result = new ExecuteResult<FlowSignature>
                                                                                                   {
-                                                                                                      Data = new List<(string Source, string Signature, ulong KeyId)>
+                                                                                                      Data = new FlowSignature
                                                                                                              {
-                                                                                                                 (message, signature, Convert.ToUInt64(keyId))
+                                                                                                                 Address = new FlowAddress(addr),
+                                                                                                                 KeyId = keyId,
+                                                                                                                 Signature = Encoding.UTF8.GetBytes(signature!)
                                                                                                              },
                                                                                                       IsSuccessed = true,
                                                                                                       Message = string.Empty

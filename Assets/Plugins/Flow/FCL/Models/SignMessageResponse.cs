@@ -20,6 +20,7 @@ namespace Flow.FCL.Models
         public string Reason { get; set; }
 
         [JsonProperty("data")]
+        
         public List<JObject> Data { get; set; }
     }
 }

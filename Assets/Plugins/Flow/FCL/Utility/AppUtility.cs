@@ -1,11 +1,11 @@
 using System.Collections.Generic;
+using System.Text;
 using Blocto.Sdk.Flow.Utility;
 using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using Plugins.Flow.FCL.Models;
 using UnityEngine;
 
@@ -22,28 +22,26 @@ namespace Flow.FCL.Utility
             _flowClient = flowClient;
             var env = FlowClientLibrary.Config.Get("flow.network");
             var contractAddress = FlowClientLibrary.Config.Get($"{env}.fclcrypto");
-            // _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", contractAddress);
-            // _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", contractAddress);
         }
         
         public AppUtility(GameObject gameObject)
         {
             _flowClient = new FlowUnityWebRequest(gameObject, FlowClientLibrary.Config.Get("accessNode.api")); 
-            // _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", contractAddress);
         }
         
-        public bool VerifyUserSignatures(string message, string address, string keyId, string signature)
+        public bool VerifyUserSignatures(string message, FlowSignature signature, string fclCryptoContract)
         {
+            _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", fclCryptoContract);
             var signatures = new CadenceArray(
                 new List<ICadence>
                 {
-                    new CadenceString(signature)
+                    new CadenceString(Encoding.UTF8.GetString(signature.Signature))
                 });
             
             var signatureIndexes = new CadenceArray(
                 new List<ICadence>
                 {
-                    new CadenceNumber(CadenceNumberType.Int, keyId)
+                    new CadenceNumber(CadenceNumberType.Int, signature.KeyId.ToString())
                 });
             
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(
@@ -52,7 +50,7 @@ namespace Flow.FCL.Utility
                     Script = _verifyUserSignatureScript,
                     Arguments = new List<ICadence>
                                 {
-                                    new CadenceAddress(address),
+                                    new CadenceAddress(signature.Address.Address.AddHexPrefix()),
                                     new CadenceString(message.StringToHex()),
                                     signatureIndexes,
                                     signatures

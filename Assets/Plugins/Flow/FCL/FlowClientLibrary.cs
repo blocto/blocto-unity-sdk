@@ -156,7 +156,7 @@ namespace Flow.FCL
         /// </summary>
         /// <param name="message">Source message</param>
         /// <param name="callback">Complete sign message then call callback function</param>
-        public void SignUserMessage(string message, Action<ExecuteResult<List<(string Source, string Signature, ulong KeyId)>>> callback = null)
+        public void SignUserMessage(string message, Action<ExecuteResult<FlowSignature>> callback = null)
         {
             _currentUser.SignUserMessage(message, callback);
         }
@@ -187,28 +187,32 @@ namespace Flow.FCL
         /// <param name="transactionId">Transaction hash code</param>
         /// <returns>Tuple include Execution, Status, BlockId</returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)> GetTransactionStatus(string transactionId)
+        public ExecuteResult<FlowTransactionResult> GetTransactionStatus(string transactionId)
         {
             var txr = _transaction.GetTransactionStatus(transactionId);
             var result = txr.Execution switch
                          {
-                             TransactionExecution.Failure => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
+                             TransactionExecution.Failure => new ExecuteResult<FlowTransactionResult>
                                                              {
-                                                                 Data = (TransactionExecution.Failure, TransactionStatus.Sealed, string.Empty), IsSuccessed = true,
+                                                                 Data = txr,
+                                                                 IsSuccessed = true,
                                                                  Message = txr.ErrorMessage
                                                              },
-                             TransactionExecution.Success => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
+                             TransactionExecution.Success => new ExecuteResult<FlowTransactionResult>
                                                              {
-                                                                 Data = (TransactionExecution.Success, TransactionStatus.Sealed, txr.BlockId), IsSuccessed = true,
+                                                                 Data = txr,
+                                                                 IsSuccessed = true,
                                                                  Message = string.Empty
                                                              },
-                             TransactionExecution.Pending => new ExecuteResult<(TransactionExecution Execution, TransactionStatus Status, string BlockId)>
+                             TransactionExecution.Pending => new ExecuteResult<FlowTransactionResult>
                                                              {
-                                                                 Data = (TransactionExecution.Pending, TransactionStatus.Pending, string.Empty), IsSuccessed = true,
+                                                                 Data = txr,
+                                                                 IsSuccessed = true,
                                                                  Message = "Still Pending"
                                                              },
                              _ => throw new ArgumentOutOfRangeException()
                          }; 
+            
             return result;
         }
         
