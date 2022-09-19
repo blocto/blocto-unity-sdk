@@ -1,6 +1,4 @@
 using System;
-using Flow.FCL.Models;
-using Flow.FCL.Models.Authz;
 
 namespace Flow.FCL.WalletProvider
 {

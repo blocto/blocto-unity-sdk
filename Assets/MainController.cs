@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Blocto.SDK.Flow;
 using Blocto.Sdk.Flow.Utility;
@@ -172,7 +173,7 @@ public class MainController : MonoBehaviour
                                                      $"Address: {accountProofData.Signature.Addr}, KeyId: {accountProofData.Signature.KeyId}, Signature: {accountProofData.Signature.SignatureStr}".ToLog();
                                                  }
                                                  
-                                                 var appUtil = new AppUtility(gameObject);
+                                                 var appUtil = new AppUtility(gameObject, new EncodeUtility());
                                                  var isVerify = appUtil.VerifyAccountProofSignature(
                                                      appIdentifier: accountProofData!.AppId,
                                                      accountProofData: accountProofData,
@@ -287,14 +288,14 @@ public class MainController : MonoBehaviour
         var userSignature = default(FlowSignature);
         var originalMessage = "SignMessage Test";
         
-        var appUtil = new AppUtility(gameObject);
+        var appUtil = new AppUtility(gameObject, new EncodeUtility());
         var result = appUtil.VerifyUserSignatures(originalMessage, userSignature, "0x5b250a8a85b44a67");
         _signmessageTxt.text += $"\r\nVerify result: {result}";
     }
     
     private void SignUserMessage()
     {
-        var appUtil = new AppUtility(this.gameObject);
+        var appUtil = new AppUtility(this.gameObject, new EncodeUtility());
         
         var originalMessage = "SignMessage Test";
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
@@ -306,7 +307,7 @@ public class MainController : MonoBehaviour
                                                        }
                                                        
                                                        var item = result.Data;
-                                                       _signmessageTxt.text = $"Message: {originalMessage} \r\nSignature: {item.Signature} \r\nKeyId: {item.KeyId}";
+                                                       _signmessageTxt.text = $"Message: {originalMessage} \r\nSignature: {Encoding.UTF8.GetString(item.Signature)} \r\nKeyId: {item.KeyId}";
                                                    });    
     }
     

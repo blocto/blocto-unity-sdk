@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text;
-using Blocto.Sdk.Flow.Utility;
 using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
@@ -15,8 +14,11 @@ namespace Flow.FCL.Utility
     {
         private string _verifyAccountProofScript = @"import FCLCrypto from {address} pub fun main( address: Address, message: String, keyIndices: [Int], signatures: [String] ): Bool { return FCLCrypto.verifyAccountProofSignatures(address: address, message: message, keyIndices: keyIndices, signatures: signatures) }";
         private string _verifyUserSignatureScript = @"import FCLCrypto from {address} pub fun main( address: Address, message: String, keyIndices: [Int], signatures: [String] ): Bool { return FCLCrypto.verifyUserSignatures(address: address, message: message, keyIndices: keyIndices, signatures: signatures) }";
+        
         private IFlowClient _flowClient;
-
+        
+        private IEncodeUtility _encodeUtility;
+        
         public AppUtility(IFlowClient flowClient)
         {
             _flowClient = flowClient;
@@ -24,9 +26,10 @@ namespace Flow.FCL.Utility
             var contractAddress = FlowClientLibrary.Config.Get($"{env}.fclcrypto");
         }
         
-        public AppUtility(GameObject gameObject)
+        public AppUtility(GameObject gameObject, IEncodeUtility encodeUtility)
         {
             _flowClient = new FlowUnityWebRequest(gameObject, FlowClientLibrary.Config.Get("accessNode.api")); 
+            _encodeUtility = encodeUtility;
         }
         
         public bool VerifyUserSignatures(string message, FlowSignature signature, string fclCryptoContract)
@@ -60,10 +63,17 @@ namespace Flow.FCL.Utility
             return response.As<CadenceBool>().Value;
         }
         
+        /// <summary>
+        /// Verify account proof signature
+        /// </summary>
+        /// <param name="appIdentifier"></param>
+        /// <param name="accountProofData"></param>
+        /// <param name="fclCryptoContract"></param>
+        /// <returns></returns>
         public bool VerifyAccountProofSignature(string appIdentifier, AccountProofData accountProofData, string fclCryptoContract)
         {
             _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", fclCryptoContract);
-            var message = EncodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.Addr, accountProofData.Nonce);
+            var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.Addr, accountProofData.Nonce);
             
             var signatures = new CadenceArray(
                 new List<ICadence>

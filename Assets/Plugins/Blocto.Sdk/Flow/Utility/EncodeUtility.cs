@@ -3,13 +3,14 @@ using System.Linq;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
+using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json;
 
 namespace Blocto.Sdk.Flow.Utility
 {
-    public static class EncodeUtility
+    public class EncodeUtility : IEncodeUtility
     {
         public static string GetEncodeMessage(FlowTransaction tx)
         {
@@ -20,7 +21,7 @@ namespace Blocto.Sdk.Flow.Utility
             return message;
         }
         
-        public static string GetEncodeMessage(string appIdentifier, string address, string nonce)
+        public string GetEncodeMessage(string appIdentifier, string address, string nonce)
         {
             var datas = new List<object>(); 
             var leftPaddedhexAddress = address.PadLeft(16, '0');
