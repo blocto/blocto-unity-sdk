@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Linq;
 
-namespace Blocto.SDK.Flow
+namespace Flow.FCL.Extensions
 {
     public static class JObjectExtension
     {

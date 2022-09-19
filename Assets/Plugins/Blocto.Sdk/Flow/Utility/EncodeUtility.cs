@@ -5,7 +5,6 @@ using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.Sdk.Utility.NEthereum.Hex;
 using Newtonsoft.Json;
 
 namespace Blocto.Sdk.Flow.Utility

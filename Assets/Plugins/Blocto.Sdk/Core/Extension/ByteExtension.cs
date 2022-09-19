@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Blocto.Sdk.Core.Extension
@@ -15,6 +16,12 @@ namespace Blocto.Sdk.Core.Extension
             }
             
             return sb.ToString().Replace(" ", "");
+        }
+        
+        public static string ToHex(this byte[] value, bool isPrefix = false)
+        {
+            var prefix = isPrefix ? "0x" : "";
+            return $"{prefix}{string.Concat(value.Select(b => b.ToString("x2")).ToArray())}";
         }
     }
 }

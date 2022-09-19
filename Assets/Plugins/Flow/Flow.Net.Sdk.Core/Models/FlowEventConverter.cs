@@ -1,11 +1,10 @@
 using System;
 using System.Text;
 using Flow.Net.Sdk.Core.Cadence;
-using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Plugins.Blocto.Sdk.Core.Converts
+namespace Flow.Net.Sdk.Core.Models
 {
     public class FlowEventConverter : JsonConverter
     {

@@ -5,13 +5,14 @@ using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
+using Flow.FCL.WalletProvider;
 using Flow.Net.SDK.Extensions;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Blocto.SDK.Flow
 {
-    public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider
+    public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider, IWalletProvider
     {
         /// <summary>
         /// iOS swift open ASWebAuthenticationSession method

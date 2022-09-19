@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Flow.FCL.Extension;
+using Flow.FCL.Extensions;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;

@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Blocto.Sdk.Core.Extension;
 using Blocto.SDK.Flow;
+using Blocto.Sdk.Flow.Utility;
 using Flow.FCL;
 using Flow.FCL.Config;
 using Flow.FCL.Utility;
@@ -59,8 +58,6 @@ public class MainController : MonoBehaviour
     
     private InputField _accountTxt;
     
-    private InputField _balanceTxt;
-    
     private InputField _resultTxt;
     
     private InputField _signmessageTxt;
@@ -77,7 +74,7 @@ public class MainController : MonoBehaviour
     
     private IResolveUtility _resolveUtilities;
     
-    private IBloctoWalletProvider _walletProvider;
+    private BloctoWalletProvider _walletProvider;
     
     private string _address;
     
@@ -122,9 +119,6 @@ public class MainController : MonoBehaviour
         tmp = GameObject.Find("AccountTxt");
         _accountTxt = tmp.GetComponent<InputField>();
         
-        tmp = GameObject.Find("BalanceTxt");
-        _balanceTxt = tmp.GetComponent<InputField>();
-        
         tmp = GameObject.Find("SignMessageTxt");
         _signmessageTxt = tmp.GetComponent<InputField>();
         _signmessageTxt.text = "SignMessage Test";
@@ -151,11 +145,15 @@ public class MainController : MonoBehaviour
         config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
               .Put("fcl.limit", "1000")
-              .Put("flow.network", "testnet")
-              .Put("appIdentifier", "jamisdeapp");
+              .Put("flow.network", "testnet");
         
         _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject: gameObject, bloctoAppIdentifier:Guid.Parse("00868d9f-37ad-42ae-bb05-bbdd829650ba"));
-        _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, _walletProvider, config);
+        _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, GetFCL => {
+                                                                     var fcl = GetFCL.Invoke();
+                                                                     fcl.SetWalletProvider(_walletProvider);
+                                                                     fcl.SetResolveUtility(new ResolveUtility());
+                                                                     return fcl;
+                                                                 }, config);
     }
     
     private void ConnectWallet()
@@ -188,23 +186,17 @@ public class MainController : MonoBehaviour
         var receiveAddress = _transactionToTxt.text;
         var transactionAmount = _transactionAmountTxt.text;
         
-        var script = @"
-                    import ValueDapp from 0x5a8143da8058740c
-
-                    transaction(value: UFix64) {
-                        prepare(authorizer: AuthAccount) {
-                            ValueDapp.setValue(value)
-                        }
-                    }";
         var tx = new FlowTransaction
                  {
-                     Script = script,
+                     Script = _script,
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, "123.456"),
+                                     new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:N8}"),
+                                     new CadenceAddress(receiveAddress.AddHexPrefix())
                                  },
                  };
+
 
         _fcl.Mutate(tx, txId => {
                             _txId = txId;

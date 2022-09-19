@@ -2,16 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Blocto.SDK.Flow;
-using Flow.FCL.Extension;
+using Flow.FCL.Extensions;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
-using Newtonsoft.Json;
 using Plugins.Flow.FCL.Models;
 
 namespace Flow.FCL.Models
@@ -30,7 +27,7 @@ namespace Flow.FCL.Models
         
         public List<FclService> Services { get; set; }
 
-        public AccountProofData AccountProofData { get; set; }
+        private AccountProofData AccountProofData { get; set; }
         
         private readonly IWalletProvider _walletProvider;
         
@@ -127,17 +124,6 @@ namespace Flow.FCL.Models
                                                                                   callback?.Invoke(this, null);
                                                                               }
                                                                            });
-        }
-        
-        public PreAuthzAdapterResponse PreAuth(FlowTransaction tx, FclService service, Action internalCallback = null)
-        {
-            var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-            tx.ReferenceBlockId = lastBlock.Header.Id;
-            
-            var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
-            var preAuthzResponse = _webRequestUtils.GetResponse<PreAuthzAdapterResponse>(service.PreAuthAdapterEndpoint(), "POST", "application/json", preSignableJObj);
-            
-            return preAuthzResponse;
         }
         
         public void SignUserMessage(string message, Action<ExecuteResult<FlowSignature>> callback = null)

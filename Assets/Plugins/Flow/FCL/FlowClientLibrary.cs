@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Flow.FCL.Extension;
+using Flow.FCL.Extensions;
 using Flow.FCL.Models;
+using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
 using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
@@ -22,36 +22,38 @@ namespace Flow.FCL
 
         private CurrentUser _currentUser;
         
-        private IFlowClient _flowClient;
-        
         private Transaction _transaction;
         
+        private IFlowClient _flowClient;
+        
         private ICadence _response;
+        
+        private IResolveUtility _resolveUtility;
+        
+        private IWalletProvider _walletProvider;
         
         private string _errorMessage;
         
         private bool _isSuccessed;
         
-        public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, IWalletProvider walletProvider, Config.Config config = null)
+        public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, Func<Func<FlowClientLibrary>,FlowClientLibrary> initialFun, Config.Config config = null)
         {
-            Config = config;
+            if(config != null)
+            {
+                Config = config;
+            }
             
             var env = Config.Get("flow.network");
-            var fcl = gameObject.AddComponent<FlowClientLibrary>();
-            var flowClient = new FlowUnityWebRequest(gameObject, config.Get("accessNode.api")); 
-            var factory = UtilFactory.CreateUtilFactory(gameObject, flowClient);
-            var appUtil = factory.CreateAppUtil(env);
-            var resolveUtility = factory.CreateResolveUtility();
-            var currentUser = new CurrentUser(walletProvider, factory.CreateWebRequestUtil(), resolveUtility, flowClient);
+            var fcl = initialFun.Invoke(() => {
+                                            var tmpFcl = gameObject.AddComponent<FlowClientLibrary>();
+                                            var flowClient = new FlowUnityWebRequest(gameObject, Config.Get("accessNode.api")); 
+                                            tmpFcl._flowClient = flowClient;
+                                            return tmpFcl;
+                                        });
             
-            fcl._flowClient = flowClient;
-            fcl._transaction = new Transaction(
-                walletProvider,
-                flowClient,
-                resolveUtility,
-                factory);
-            fcl._currentUser = currentUser;
-            
+            var factory = UtilFactory.CreateUtilFactory(gameObject, fcl._flowClient, fcl._resolveUtility);
+            fcl._currentUser = new CurrentUser(fcl._walletProvider, factory.CreateWebRequestUtil(), fcl._resolveUtility, fcl._flowClient); 
+            fcl._transaction = new Transaction(fcl._walletProvider, fcl._flowClient, fcl._resolveUtility, factory);
             return fcl;
         }
         
@@ -75,6 +77,25 @@ namespace Flow.FCL
         {
             return _currentUser;
         }
+        
+        /// <summary>
+        /// Set fcl wallet provider
+        /// </summary>
+        /// <param name="walletProvider">IWalletProvider implement</param>
+        public void SetWalletProvider(IWalletProvider walletProvider)
+        {
+            _walletProvider = walletProvider;
+        }
+        
+        /// <summary>
+        /// Set fcl IResolveUtility
+        /// </summary>
+        /// <param name="resolveUtility">ResolveUtility implement</param>
+        public void SetResolveUtility(IResolveUtility resolveUtility)
+        {
+            _resolveUtility = resolveUtility;
+        }
+        
         
         /// <summary>
         /// Calling this method will authenticate the current user via any wallet that supports FCL.
