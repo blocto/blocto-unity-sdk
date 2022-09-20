@@ -26,7 +26,7 @@ public class MainController : MonoBehaviour
     static string _script = "import FungibleToken from 0x9a0766d93b6608b7\nimport FlowToken from 0x7e60df042a9c0868\n\ntransaction(amount: UFix64, to: Address) {\n\n    // The Vault resource that holds the tokens that are being transferred\n    let sentVault: @FungibleToken.Vault\n\n    prepare(signer: AuthAccount) {\n\n        // Get a reference to the signer's stored vault\n        let vaultRef = signer.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)\n            ?? panic(\"Could not borrow reference to the owner's Vault!\")\n\n        // Withdraw tokens from the signer's stored vault\n        self.sentVault <- vaultRef.withdraw(amount: amount)\n    }\n\n    execute {\n\n        // Get the recipient's public account object\n        let recipient = getAccount(to)\n\n        // Get a reference to the recipient's Receiver\n        let receiverRef = recipient.getCapability(/public/flowTokenReceiver)\n            .borrow<&{FungibleToken.Receiver}>()\n            ?? panic(\"Could not borrow receiver reference to the recipient's Vault\")\n\n        // Deposit the withdrawn tokens in the recipient's receiver\n        receiverRef.deposit(from: <-self.sentVault)\n    }\n}";
     
     static string _queryScript = @"
-    import ValueDapp from {valueDappContract}
+    import ValueDapp from 0x5a8143da8058740c
 
     pub fun main(): UFix64 {
         return ValueDapp.value
@@ -57,6 +57,8 @@ public class MainController : MonoBehaviour
     
     private Button _testBtn;
     
+    private Button _transactionBtn;
+    
     private InputField _accountTxt;
     
     private InputField _resultTxt;
@@ -68,6 +70,10 @@ public class MainController : MonoBehaviour
     private InputField _transactionAmountTxt;
     
     private InputField _txResultTxt;
+    
+    private InputField _transactionValueTxt;
+    
+    private InputField _queryResultTxt;
     
     private FlowUnityWebRequest _flowWebRequest;
     
@@ -110,6 +116,10 @@ public class MainController : MonoBehaviour
         _getAccountBtn = tmp.GetComponent<Button>();
         _getAccountBtn.onClick.AddListener(GetTxr);
         
+        tmp = GameObject.Find("TransactionBtn");
+        _getAccountBtn = tmp.GetComponent<Button>();
+        _getAccountBtn.onClick.AddListener(Transaction);
+        
         tmp = GameObject.Find("TestBtn");
         _getAccountBtn = tmp.GetComponent<Button>();
         _getAccountBtn.onClick.AddListener(Test);
@@ -134,6 +144,12 @@ public class MainController : MonoBehaviour
         
         tmp = GameObject.Find("TxResultTxt");
         _txResultTxt = tmp.GetComponent<InputField>();
+        
+        tmp = GameObject.Find("TransactionValueTxt");
+        _transactionValueTxt = tmp.GetComponent<InputField>();
+        
+        tmp = GameObject.Find("QueryResultTxt");
+        _queryResultTxt = tmp.GetComponent<InputField>();
         
         tmp = GameObject.Find("QueryBtn");
         _queryBtn = tmp.GetComponent<Button>();
@@ -205,6 +221,26 @@ public class MainController : MonoBehaviour
                         });
     }
     
+    private void Transaction()
+    {
+        var value = _transactionValueTxt.text;
+        $"Value: {value.ToString()}".ToLog();
+        var tx = new FlowTransaction
+                 {
+                     Script = MainController._mutateScript,
+                     GasLimit = 1000,
+                     Arguments = new List<ICadence>
+                                 {
+                                     new CadenceNumber(CadenceNumberType.UFix64, value.ToString())
+                                 },
+                 };
+        
+        _fcl.Mutate(tx, txId => { 
+                            _txId = txId;
+                            _resultTxt.text = $"https://testnet.flowscan.org/transaction/{_txId}";
+                        });
+    }
+    
     public void GetTxr()
     {
         var result = _fcl.GetTransactionStatus(_txId);
@@ -261,25 +297,24 @@ public class MainController : MonoBehaviour
         
         var flowScript = new FlowScript
                          {
-                             Script = script,
-                             Arguments = new List<ICadence>
-                                         {
-                                             new CadenceString("blocto")
-                                         }
+                             Script = MainController._queryScript,
                          };
         
         var result = await _fcl.QueryAsync(flowScript);
         if(result.IsSuccessed)
         {
             //// Composite object parser
-            var name = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceString>("name").Value;
-            var balance = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceNumber>("balance").Value;
-            var address = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceAddress>("address").Value;
-            _resultTxt.text = $"Name: {name}, Balance: {balance}, Address: {address}";
+            // var name = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceString>("name").Value;
+            // var balance = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceNumber>("balance").Value;
+            // var address = result.Data.As<CadenceComposite>().CompositeFieldAs<CadenceAddress>("address").Value;
+            // _resultTxt.text = $"Name: {name}, Balance: {balance}, Address: {address}";
+            
+            var value = result.Data.As<CadenceNumber>().Value;
+            _queryResultTxt.text = value;
         }
         else
         {
-            _resultTxt.text = result.Message;
+            _queryResultTxt.text = result.Message;
         }
     }
     
@@ -295,8 +330,7 @@ public class MainController : MonoBehaviour
     
     private void SignUserMessage()
     {
-        var appUtil = new AppUtility(this.gameObject, new EncodeUtility());
-        
+        var flowSignature = default(FlowSignature);
         var originalMessage = "SignMessage Test";
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
                                                    {
@@ -313,7 +347,9 @@ public class MainController : MonoBehaviour
     
     private async void GetAccount()
     {
-        var account = await _fcl.GetAccountAsync("f086a545ce3c552d");
+        var account = await _fcl.FlowClient.GetAccountAtLatestBlockAsync("f086a545ce3c552d");
+        var lastBlock = await _fcl.FlowClient.GetLatestBlockAsync(isSealed: true);
+        var txr = await _fcl.FlowClient.GetTransactionResultAsync(transactionId: _txId);
         _resultTxt.text = $"Address: {account.Address.Address}, KeyId: {account.Keys.First().Index}, SeqNum: {account.Keys.First().SequenceNumber}";
     }
 

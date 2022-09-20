@@ -18,13 +18,13 @@ namespace Flow.FCL
 {
     public class FlowClientLibrary : MonoBehaviour
     {
+        public IFlowClient FlowClient { get; set; }
+        
         public static Config.Config Config { get; private set; }
 
         private CurrentUser _currentUser;
         
         private Transaction _transaction;
-        
-        private IFlowClient _flowClient;
         
         private ICadence _response;
         
@@ -47,13 +47,13 @@ namespace Flow.FCL
             var fcl = initialFun.Invoke(() => {
                                             var tmpFcl = gameObject.AddComponent<FlowClientLibrary>();
                                             var flowClient = new FlowUnityWebRequest(gameObject, Config.Get("accessNode.api")); 
-                                            tmpFcl._flowClient = flowClient;
+                                            tmpFcl.FlowClient = flowClient;
                                             return tmpFcl;
                                         });
             
-            var factory = UtilFactory.CreateUtilFactory(gameObject, fcl._flowClient, fcl._resolveUtility);
-            fcl._currentUser = new CurrentUser(fcl._walletProvider, factory.CreateWebRequestUtil(), fcl._resolveUtility, fcl._flowClient); 
-            fcl._transaction = new Transaction(fcl._walletProvider, fcl._flowClient, fcl._resolveUtility, factory);
+            var factory = UtilFactory.CreateUtilFactory(gameObject, fcl.FlowClient, fcl._resolveUtility);
+            fcl._currentUser = new CurrentUser(fcl._walletProvider, factory.CreateWebRequestUtil(), fcl._resolveUtility, fcl.FlowClient); 
+            fcl._transaction = new Transaction(fcl._walletProvider, fcl.FlowClient, fcl._resolveUtility, factory);
             return fcl;
         }
         
@@ -237,23 +237,11 @@ namespace Flow.FCL
             return result;
         }
         
-        
-        /// <summary>
-        /// Get account by address
-        /// </summary>
-        /// <param name="address">Address</param>
-        /// <returns></returns>
-        public async Task<FlowAccount> GetAccountAsync(string address)
-        {
-            var account = _transaction.GetAccount(address);
-            return await account;
-        }
-
         private async Task ExecuteScript(FlowScript flowScript)
         {
             try
             {
-                _response = await _flowClient.ExecuteScriptAtLatestBlockAsync(flowScript); 
+                _response = await FlowClient.ExecuteScriptAtLatestBlockAsync(flowScript); 
                 _isSuccessed = true;
             }
             catch (Exception e)
