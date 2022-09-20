@@ -14,19 +14,18 @@ You can watch the source code at [Github](https://github.com/portto/blocto-unity
 ### Requirements
 - .Net Core version >= 2.1
 
-## Installation
-
 ### Release Page
 
 FCL-SDK is available through [Github](https://github.com/portto/blocto-unity-sdk/releases/tag/fcl-unity-0.1.0). You can include specific subspec to install, simply add the following line to your Podfile:
 
+## Import unitypackage
 You can import .unitypackage to your unity project, simply perform the following steps 
 
 You can import Standard Asset Packages, which are asset collections pre-made and supplied with Unity, and Custom Packages, which are made by people using Unity. The more description at [unity document](https://docs.unity3d.com/Manual/AssetPackagesImport.html).
 
 Choose Assets > Import Package > to import both types of package.
 
-![unity import package](https://app.gitbook.com/o/-MHyDTW62Fv80kF6RJHK/s/-MFJEAgz-LrhDYkRm4sv/blocto-sdk/unity-sdk-coming-soon/flow/getting-started)
+![unity import package](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FNvJDR0MSuBI5TYdDpVIP%2FImport-unity-package.png?alt=media&token=f0160516-335f-4a56-bf63-a186bd36e478)
 
 ---
 ## FCL for dApps
