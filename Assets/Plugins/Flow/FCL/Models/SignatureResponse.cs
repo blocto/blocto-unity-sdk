@@ -1,9 +1,10 @@
+using Flow.FCL.Models.Authz;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL.Models
 {
-    public class PayerSignResponse
+    public class SignatureResponse : IResponse
     {
         [JsonProperty("status")]
         public ResponseStatusEnum ResponseStatus { get; set; }

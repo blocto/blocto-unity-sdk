@@ -83,6 +83,21 @@ namespace Flow.FCL.Extensions
             return (authzIframeUrl, pollingUri);
         }
         
+        public static (string IframeUrl, Uri PollingUrl) AuthzEndpoint(this NonCustodialAuthzResponse adapterResponse)
+        {
+            var pollingUrlBuilder = new StringBuilder();
+            pollingUrlBuilder.Append(adapterResponse.AuthorizationUpdates.Endpoint.AbsoluteUri + "?")
+                             .Append(Uri.EscapeDataString("sessionId") + "=")
+                             .Append(Uri.EscapeDataString(adapterResponse.AuthorizationUpdates.Params.SessionId()) + "&")
+                             .Append(Uri.EscapeDataString("authorizationId") + "=")
+                             .Append(Uri.EscapeDataString(adapterResponse.AuthorizationUpdates.Params.AuthorizationId()));
+                                    
+            var pollingUri = new Uri(pollingUrlBuilder.ToString());
+            var authzIframeUrl = adapterResponse.Local.Endpoint.AbsoluteUri;
+            
+            return (authzIframeUrl, pollingUri);
+        }
+        
         public static (string IframeUrl, Uri PollingUrl) SignMessageEndpoint(this AuthnAdapterResponse response)
         {
             var iframeUrlBuilder = new StringBuilder();

@@ -24,18 +24,20 @@ namespace Flow.FCL.Extensions
             return authorize;
         }
         
-        public static (JToken Signature, JToken Address) ConvertToSignInfo(this AuthzAdapterResponse response)
+        public static (JToken Signature, JToken KeyId, JToken Address) SignatureInfo(this AuthzAdapterResponse response)
         {
             var signature =response?.CompositeSignature.GetValue("signature");
             var addr = response?.CompositeSignature.GetValue("addr");
-            return (signature, addr);
+            var keyId = response?.CompositeSignature.GetValue("keyId");
+            return (signature, keyId, addr);
         }
         
-        public static (JToken Signature, JToken Address) ConvertToSignInfo(this PayerSignResponse response)
+        public static (JToken Signature, JToken KeyId, JToken Address) SignatureInfo(this SignatureResponse response)
         {
             var signature = response.Data.GetValue("signature");
             var addr = response.Data.GetValue("addr");
-            return (signature, addr);
+            var keyId = response.Data.GetValue("keyId");
+            return (signature, keyId, addr);
         }
     }
 }
