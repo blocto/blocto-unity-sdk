@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Blocto.Sdk.Flow.Utility;
 using Flow.FCL.Extensions;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
@@ -37,7 +36,7 @@ namespace Flow.FCL
         
         private bool _isSuccessed;
         
-        public static FlowClientLibrary CreateClientLibrary(Func<Func<GameObject, IWalletProvider, ResolveUtility, FlowClientLibrary>,FlowClientLibrary> initialFun, Config.Config config = null)
+        public static FlowClientLibrary CreateClientLibrary(Func<Func<GameObject, IWalletProvider, IResolveUtility, FlowClientLibrary>,FlowClientLibrary> initialFun, Config.Config config = null)
         {
             if(config != null)
             {
