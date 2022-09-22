@@ -2,7 +2,7 @@
 
 ## Installation
 
-In this guide we will show you prerequisite for Blocto Flow SDK.
+In this guide we will show you prerequisite for blocto unity sdk.
 
 A sample app is available at: [https://github.com/portto/blocto-unity-sdk](https://github.com/portto/blocto-unity-sdk)
 
@@ -14,7 +14,7 @@ A sample app is available at: [https://github.com/portto/blocto-unity-sdk](https
 
 ### Release Page
 
-* Blocto-unity-SDK is available through [github](https://github.com/portto/blocto-unity-sdk/tree/main/Assets/Plugins/Blocto.Sdk). You can download at github [release page](https://github.com/portto/blocto-unity-sdk/releases/tag/blocto-unity-sdk.0.1.0)
+* Blocto-unity-sdk is available through [github](https://github.com/portto/blocto-unity-sdk/tree/main/Assets/Plugins/Blocto.Sdk). You can download at github [release page](https://github.com/portto/blocto-unity-sdk/releases/tag/blocto-unity-sdk.0.1.0)
 
 ## Import .unitypackage
 
