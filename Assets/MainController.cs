@@ -93,6 +93,10 @@ public class MainController : MonoBehaviour
     
     private string _originMessage = "SignMessage Test";
     
+    private string _signMessageStr;
+    
+    private FlowSignature _flowSignature;
+    
     private void Awake()
     {
         Debug.Log("Start Debug.");
@@ -164,11 +168,18 @@ public class MainController : MonoBehaviour
               .Put("fcl.limit", "1000")
               .Put("flow.network", "testnet");
         
-        _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(gameObject: gameObject, bloctoAppIdentifier:Guid.Parse("00868d9f-37ad-42ae-bb05-bbdd829650ba"));
-        _fcl = FlowClientLibrary.CreateClientLibrary(gameObject, GetFCL => {
-                                                                     var fcl = GetFCL.Invoke();
-                                                                     fcl.SetWalletProvider(_walletProvider);
-                                                                     fcl.SetResolveUtility(new ResolveUtility());
+        _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(initialFun: GetWallet => {
+                                                                                          var walletProvider = GetWallet.Invoke(
+                                                                                              gameObject, 
+                                                                                              new FlowUnityWebRequest(gameObject, config.Get("accessNode.api")),
+                                                                                              new ResolveUtility());
+                                                                                          
+                                                                                          return walletProvider;
+                                                                                      }, 
+                                                                          bloctoAppIdentifier:Guid.Parse("d0c4c565-db60-4848-99c8-2bdfc6bd3576"));
+        
+        _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
+                                                                     var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
                                                                  }, config);
     }
@@ -181,21 +192,23 @@ public class MainController : MonoBehaviour
                                    Nonce = KeyGenerator.GetUniqueKey(32).StringToHex()
                                };
         
-        _fcl.Authenticate(accountProofData, ((currentUser,  accountProofData) => {
-                                                 _accountTxt.text = currentUser.Addr.Address.AddHexPrefix();
-                                                 if(accountProofData != null)
-                                                 {
-                                                     $"AppId: {accountProofData.AppId}, Nonce: {accountProofData.Nonce}".ToLog();
-                                                     $"Address: {accountProofData.Signature.Addr}, KeyId: {accountProofData.Signature.KeyId}, Signature: {accountProofData.Signature.SignatureStr}".ToLog();
-                                                 }
-                                                 
-                                                 var appUtil = new AppUtility(gameObject, new EncodeUtility());
-                                                 var isVerify = appUtil.VerifyAccountProofSignature(
-                                                     appIdentifier: accountProofData!.AppId,
-                                                     accountProofData: accountProofData,
-                                                     fclCryptoContract: "0x5b250a8a85b44a67");
-                                                 Debug.Log($"User is verify: {isVerify}");
-                                             }));
+        _fcl.Authenticate(
+            accountProofData:accountProofData,
+            callback: ((currentUser,  accountProofData) => {
+                           _accountTxt.text = currentUser.Addr.Address.AddHexPrefix();
+                           if(accountProofData != null)
+                           {
+                               $"AppId: {accountProofData.AppId}, Nonce: {accountProofData.Nonce}".ToLog();
+                               $"Address: {accountProofData.Signature.Addr}, KeyId: {accountProofData.Signature.KeyId}, Signature: {accountProofData.Signature.SignatureStr}".ToLog();
+                           }
+                           
+                           var appUtil = new AppUtility(gameObject, new EncodeUtility());
+                           var isVerify = appUtil.VerifyAccountProofSignature(
+                               appIdentifier: accountProofData!.AppId,
+                               accountProofData: accountProofData,
+                               fclCryptoContract: "0x5b250a8a85b44a67");
+                           Debug.Log($"User is verify: {isVerify}");
+                       }));
     }
     
     private void SendTransaction()
@@ -320,18 +333,14 @@ public class MainController : MonoBehaviour
     
     public void VerifyUserMessage()
     {
-        var userSignature = default(FlowSignature);
-        var originalMessage = "SignMessage Test";
-        
+        _signmessageTxt.text = "";
         var appUtil = new AppUtility(gameObject, new EncodeUtility());
-        var result = appUtil.VerifyUserSignatures(originalMessage, userSignature, "0x5b250a8a85b44a67");
+        var result = appUtil.VerifyUserSignatures(_originMessage, _flowSignature, "0x5b250a8a85b44a67");
         _signmessageTxt.text += $"\r\nVerify result: {result}";
     }
     
     private void SignUserMessage()
     {
-        var flowSignature = default(FlowSignature);
-        var originalMessage = "SignMessage Test";
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
                                                    {
                                                        if(result.IsSuccessed == false)
@@ -340,16 +349,14 @@ public class MainController : MonoBehaviour
                                                            return;
                                                        }
                                                        
-                                                       var item = result.Data;
-                                                       _signmessageTxt.text = $"Message: {originalMessage} \r\nSignature: {Encoding.UTF8.GetString(item.Signature)} \r\nKeyId: {item.KeyId}";
+                                                       _flowSignature = result.Data;
+                                                       _signmessageTxt.text = $"Message: {_originMessage} \r\nSignature: {Encoding.UTF8.GetString(_flowSignature.Signature)} \r\nKeyId: {_flowSignature.KeyId}";
                                                    });    
     }
     
     private async void GetAccount()
     {
         var account = await _fcl.FlowClient.GetAccountAtLatestBlockAsync("f086a545ce3c552d");
-        var lastBlock = await _fcl.FlowClient.GetLatestBlockAsync(isSealed: true);
-        var txr = await _fcl.FlowClient.GetTransactionResultAsync(transactionId: _txId);
         _resultTxt.text = $"Address: {account.Address.Address}, KeyId: {account.Keys.First().Index}, SeqNum: {account.Keys.First().SequenceNumber}";
     }
 
