@@ -89,8 +89,7 @@ namespace Flow.FCL
                                                                                                              $"Signature info keyId: {signInfo.KeyId}".ToLog();
                                                                                                              tx.PayloadSignatures.Add(new FlowSignature
                                                                                                                                       {
-                                                                                                                                          //// wait frontend fix bug
-                                                                                                                                          Address = new FlowAddress(authorization.Identity.Address),
+                                                                                                                                          Address = new FlowAddress(signInfo.Address.ToString()),
                                                                                                                                           Signature = signInfo.Signature.ToString().StringToBytes().ToArray(),
                                                                                                                                           KeyId = Convert.ToUInt32(signInfo.KeyId)
                                                                                                                                       });

@@ -9,6 +9,9 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.SDK.Extensions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Plugins.Flow.FCL.Models;
 
 namespace Flow.FCL.Models

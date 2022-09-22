@@ -19,6 +19,10 @@ namespace Flow.FCL.Extensions
                            .Append(Uri.EscapeDataString(response.Local.Params.AppId) + "&")
                            .Append(Uri.EscapeDataString("authenticationId") + "=")
                            .Append(Uri.EscapeDataString(response.Local.Params.AuthenticationId) + "&")
+                           .Append(Uri.EscapeDataString("thumbnail") + "=")
+                           .Append(Uri.EscapeDataString(response.Local.Params.Thumbnail) + "&")
+                           .Append(Uri.EscapeDataString("title") + "=")
+                           .Append(Uri.EscapeDataString(response.Local.Params.Title) + "&")
                            .Append(Uri.EscapeDataString("fclVersion") + "=")
                            .Append(Uri.EscapeDataString(response.Local.Params.FclVersion));
                 
