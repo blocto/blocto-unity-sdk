@@ -80,3 +80,6 @@ ios install_BurstDebugInformation_DoNotShip
 UserSettings
 UserSettings
 Assets/Plugins/Flow/*/obj
+android project_BurstDebugInformation_DoNotShip
+ios project
+ios project_BurstDebugInformation_DoNotShip
