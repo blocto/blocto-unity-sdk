@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Blocto.Sdk.Flow.Utility;
 using Flow.FCL.Extensions;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
@@ -36,7 +37,7 @@ namespace Flow.FCL
         
         private bool _isSuccessed;
         
-        public static FlowClientLibrary CreateClientLibrary(GameObject gameObject, Func<Func<FlowClientLibrary>,FlowClientLibrary> initialFun, Config.Config config = null)
+        public static FlowClientLibrary CreateClientLibrary(Func<Func<GameObject, IWalletProvider, ResolveUtility, FlowClientLibrary>,FlowClientLibrary> initialFun, Config.Config config = null)
         {
             if(config != null)
             {
@@ -44,16 +45,18 @@ namespace Flow.FCL
             }
             
             var env = Config.Get("flow.network");
-            var fcl = initialFun.Invoke(() => {
+            var fcl = initialFun.Invoke((gameObject, walletProvider, resolveUtility) => {
                                             var tmpFcl = gameObject.AddComponent<FlowClientLibrary>();
-                                            var flowClient = new FlowUnityWebRequest(gameObject, Config.Get("accessNode.api")); 
-                                            tmpFcl.FlowClient = flowClient;
+                                            tmpFcl.FlowClient = new FlowUnityWebRequest(gameObject, Config.Get("accessNode.api"));
+                                            tmpFcl._walletProvider = walletProvider;
+                                            tmpFcl._resolveUtility = resolveUtility;
+                                            
+                                            var factory = UtilFactory.CreateUtilFactory(gameObject, tmpFcl.FlowClient, tmpFcl._resolveUtility);
+                                            tmpFcl._currentUser = new CurrentUser(tmpFcl._walletProvider, factory.CreateWebRequestUtil(), tmpFcl._resolveUtility, tmpFcl.FlowClient); 
+                                            tmpFcl._transaction = new Transaction(tmpFcl._walletProvider, tmpFcl.FlowClient, tmpFcl._resolveUtility, factory);
                                             return tmpFcl;
                                         });
             
-            var factory = UtilFactory.CreateUtilFactory(gameObject, fcl.FlowClient, fcl._resolveUtility);
-            fcl._currentUser = new CurrentUser(fcl._walletProvider, factory.CreateWebRequestUtil(), fcl._resolveUtility, fcl.FlowClient); 
-            fcl._transaction = new Transaction(fcl._walletProvider, fcl.FlowClient, fcl._resolveUtility, factory);
             return fcl;
         }
         
@@ -77,25 +80,6 @@ namespace Flow.FCL
         {
             return _currentUser;
         }
-        
-        /// <summary>
-        /// Set fcl wallet provider
-        /// </summary>
-        /// <param name="walletProvider">IWalletProvider implement</param>
-        public void SetWalletProvider(IWalletProvider walletProvider)
-        {
-            _walletProvider = walletProvider;
-        }
-        
-        /// <summary>
-        /// Set fcl IResolveUtility
-        /// </summary>
-        /// <param name="resolveUtility">ResolveUtility implement</param>
-        public void SetResolveUtility(IResolveUtility resolveUtility)
-        {
-            _resolveUtility = resolveUtility;
-        }
-        
         
         /// <summary>
         /// Calling this method will authenticate the current user via any wallet that supports FCL.
@@ -169,7 +153,12 @@ namespace Flow.FCL
                 
             }
             
-            _transaction.SendTransaction(service.PreAuthzEndpoint(), tx, () => {}, callback);
+            var url = service.PreAuthzEndpoint();
+            $"Preauth endpoint: {url}".ToLog();
+            
+            // var url = "https://run.mocky.io/v3/7990fb6b-6461-426f-a0ca-ff625e57a095";
+            
+            _transaction.SendTransaction(url, tx, () => {}, callback);
         }
         
         /// <summary>

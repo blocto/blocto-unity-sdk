@@ -43,7 +43,7 @@ namespace Blocto.Sdk.Flow.Utility
             return tmp;
         }
         
-        public JObject ResolveSignable(ref FlowTransaction tx, AuthorizerData authorizerData, FlowAccount authorizer)
+        public List<JObject> ResolveSignable(ref FlowTransaction tx, AuthorizerData authorizerData, FlowAccount authorizer)
         {
             var item = ResolvePreSignable(ref tx);
             item.Remove(SignablePropertyEnum.voucher.ToString());
@@ -55,6 +55,7 @@ namespace Blocto.Sdk.Flow.Utility
             item.Add(new JProperty("f_type", "Signable"));
             
             var participators = ResolveUtility.GetAllAccount(authorizerData, tx.ProposalKey);
+            
             if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
             {
                 tx.SignerList.Add(participators.Proposer.Addr, 0);
@@ -116,7 +117,6 @@ namespace Blocto.Sdk.Flow.Utility
             var voucher = CreateVoucher(tx, args, "signable");
             item.Add("voucher", voucher);
             item.Add(SignablePropertyEnum.addr.ToString(), authorizer.Address.Address);
-            item.Add(SignablePropertyEnum.keyId.ToString(), authorizer.Keys.First().Index);
             
             var propertys = new List<JProperty>
                             {
@@ -143,17 +143,39 @@ namespace Blocto.Sdk.Flow.Utility
             var message = EncodeUtility.GetEncodeMessage(tx);
             item.Add("message", message);
             
-            $"Tx: {JsonConvert.SerializeObject(tx)}".ToLog();
-            return item;
+            var result = new List<JObject>();
+            foreach (var authoriaztion in authorizerData.Authorizations)
+            {
+                if(item.ContainsKey(SignablePropertyEnum.keyId.ToString()))
+                {
+                    item.Remove(SignablePropertyEnum.keyId.ToString());
+                }
+                
+                item.Add(SignablePropertyEnum.keyId.ToString(), authoriaztion.Identity.KeyId);
+                result.Add((JObject)item.DeepClone());
+            }
+            return result;
         }
 
         public JObject ResolvePayerSignable(ref FlowTransaction tx, JObject signable)
         {
+            var payerAddress = tx.Payer.Address;
+            var signer = tx.EnvelopeSignatures.First(p => p.Address.Address == payerAddress);
+            $"SignerKeys: {JsonConvert.SerializeObject(tx.EnvelopeSignatures)}, payer address {tx.Payer.Address}, signerKey: {JsonConvert.SerializeObject(signer)}".ToLog();
+            var keyId = signer.KeyId;
+            signable.Remove(SignablePropertyEnum.addr.ToString());
+            signable.Remove(SignablePropertyEnum.keyId.ToString());
+            signable.Add(SignablePropertyEnum.addr.ToString(), tx.Payer.Address);
+            signable.Add(SignablePropertyEnum.keyId.ToString(), keyId.ToString());
+            
+            $"Update completed addr and keyId".ToLog();
+            $"Payer signable: {JsonConvert.SerializeObject(signable)}".ToLog();
             var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
             var voucher = CreateVoucher(tx, args, "payersignable");
             signable.Remove(SignablePropertyEnum.voucher.ToString());
             signable.Add(SignablePropertyEnum.voucher.ToString(), voucher);
             
+            $"Payer signable: {JsonConvert.SerializeObject(signable)}".ToLog();
             var message = EncodeUtility.EncodedCanonicalAuthorizationEnvelope(tx);
             signable.Remove(SignablePropertyEnum.message.ToString());
             signable.Add(SignablePropertyEnum.message.ToString(), message);
@@ -192,7 +214,7 @@ namespace Blocto.Sdk.Flow.Utility
         
         private static void AddPayloadSignature(FlowTransaction tx, FlowSignature flowSignature)
         {
-            if(tx.PayloadSignatures.All(p => p.Address.Address != flowSignature.Address.Address))
+            if(tx.PayloadSignatures.All(p => p.Address.Address != flowSignature.Address.Address || p.KeyId != flowSignature.KeyId))
             {
                 tx.PayloadSignatures.Add(flowSignature);
             }

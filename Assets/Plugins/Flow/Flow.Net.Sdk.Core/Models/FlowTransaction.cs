@@ -15,7 +15,7 @@ namespace Flow.Net.Sdk.Core.Models
         }
 
         public Dictionary<string, int> SignerList { get; }
-
+        
         /// <summary>
         /// Signs the full transaction (TransactionDomainTag + payload) with the specified account key.
         /// </summary>
