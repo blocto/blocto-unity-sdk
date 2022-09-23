@@ -1,6 +1,6 @@
-# FCL-Unity Demp App
+# FCL-Unity Demo App
 
-The reposityory contains fcl-unity, blocto-unity-sdk and demo app. This demo application demonstrates how it is to access the blocto wallet through fcl-unity and blocto-unity-sdk.
+The repository contains fcl-unity, blocto-unity-sdk and demo app. This demo application demonstrates how it is to access the blocto wallet through fcl-unity and blocto-unity-sdk.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ After clone repository, the entire directory is the Unity project directory, ope
 
 In the project settings, you need to fill in your contracted team ID in Identification to be able to run the demo app in the iOS simulator.
 
-![Signing Tema ID](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FeMGV8s4Ne7fP0sAQgM5a%2FSigningTeamID.png?alt=media&token=102fdfcf-83d3-4f85-b21f-57a31244fa07)
+![Signing Team ID](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FeMGV8s4Ne7fP0sAQgM5a%2FSigningTeamID.png?alt=media&token=102fdfcf-83d3-4f85-b21f-57a31244fa07)
 ## Tutorials Demo App
 
 The demo app include five access to flow blockchain interactions
