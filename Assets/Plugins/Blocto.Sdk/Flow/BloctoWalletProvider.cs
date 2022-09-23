@@ -1,15 +1,20 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
+using Flow.FCL.Extensions;
 using Flow.FCL.Models;
+using Flow.FCL.Models.Authn;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
+using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
+using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -95,12 +100,14 @@ namespace Blocto.SDK.Flow
         /// <summary>
         /// User connect wallet get account
         /// </summary>
-        /// <param name="iframeUrl">User approve page</param>
-        /// <param name="pollingUri">Service endpoint url</param>
+        /// <param name="url">fcl authn url</param>
+        /// <param name="parameters">parameter of authn</param>
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
-        public void Login(string iframeUrl, Uri pollingUri, Action<object> internalCallback)
+        public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null)
         {
-            var element = iframeUrl.Split("?")[1].Split("&").ToList();
+            var authnResponse = WebRequestUtility.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
+            var endpoint = authnResponse.AuthnEndpoint();
+            var element = endpoint.IframeUrl.Split("?")[1].Split("&").ToList();
             var thumbnailElement = element.FirstOrDefault(p => p.ToLower().Contains("thumbnail"));
             var titleElement = element.FirstOrDefault(p => p.ToLower().Contains("title"));
             if(thumbnailElement != null)
@@ -113,8 +120,8 @@ namespace Blocto.SDK.Flow
                 BloctoWalletProvider.Title = titleElement.Split("=")[1];
             }
 
-            StartCoroutine(OpenUrl(iframeUrl));
-            StartCoroutine(GetService<AuthenticateResponse>(pollingUri, internalCallback));
+            StartCoroutine(OpenUrl(endpoint.IframeUrl));
+            StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
         }
         
         /// <summary>
@@ -132,21 +139,45 @@ namespace Blocto.SDK.Flow
         /// <summary>
         /// SignMessage
         /// </summary>
-        /// <param name="iframeUrl">User approve page</param>
-        /// <param name="pollingUri">Service endpoint url</param>
-        /// <param name="internalCallback">After, get endpoint response internal callback.</param>
-        public void SignMessage(string iframeUrl, Uri pollingUri, Action<object> internalCallback)
+        /// <param name="message">Original message </param>
+        /// <param name="signService">FCL signature service</param>
+        /// <param name="callback">After, get endpoint response callback.</param>
+        public void SignMessage(string message, FclService signService, Action<ExecuteResult<FlowSignature>> callback = null)
         {
-            var sb = new StringBuilder(iframeUrl);
+            var signUrl = signService.SignMessageAdapterEndpoint();
+            
+            var hexMessage = message.StringToHex();
+            var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
+            var response = WebRequestUtility.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
+            var endpoint = response.SignMessageEndpoint();
+            
+            var sb = new StringBuilder(endpoint.IframeUrl);
             sb.Append("&")
               .Append(Uri.EscapeDataString("thumbnail") + "=")
               .Append(BloctoWalletProvider.Thumbnail + "&")
               .Append(Uri.EscapeDataString("title") + "=")
               .Append(BloctoWalletProvider.Title);
-            iframeUrl = sb.ToString();
+            var iframeUrl = sb.ToString();
 
             StartCoroutine(OpenUrl(iframeUrl));
-            StartCoroutine(GetService<SignMessageResponse>(pollingUri, internalCallback));
+            StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, response => {
+                                                                                     var signature = response?.Data.First().SignatureStr();
+                                                                                     var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
+                                                                                     var addr = response?.Data.First().Address();
+                                                                                     var result = new ExecuteResult<FlowSignature>
+                                                                                                  {
+                                                                                                      Data = new FlowSignature
+                                                                                                             {
+                                                                                                                 Address = new FlowAddress(addr),
+                                                                                                                 KeyId = keyId,
+                                                                                                                 Signature = Encoding.UTF8.GetBytes(signature!)
+                                                                                                             },
+                                                                                                      IsSuccessed = true,
+                                                                                                      Message = string.Empty
+                                                                                                  };
+                                                                                     
+                                                                                     callback?.Invoke(result);
+                                                                                 }));
         }
         
         /// <summary>
