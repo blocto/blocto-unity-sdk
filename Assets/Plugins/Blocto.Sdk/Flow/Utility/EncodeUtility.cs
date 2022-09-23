@@ -6,6 +6,7 @@ using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 
 namespace Blocto.Sdk.Flow.Utility
@@ -79,6 +80,7 @@ namespace Blocto.Sdk.Flow.Utility
         private static List<List<List<byte>>> EncodedSignatures(IReadOnlyList<FlowSignature> signatures, Dictionary<string, int> signers)
         {
             var signatureElements = new List<List<List<byte>>>();
+            $"Signers keys: {JsonConvert.SerializeObject(signers.Keys)}".ToLog();
             for (var i = 0; i < signatures.Count; i++)
             {
                 var index = i;
@@ -91,6 +93,7 @@ namespace Blocto.Sdk.Flow.Utility
                     signers.Add(signatures[i].Address.Address, i);
                 }
 
+                $"EncodedSignature: {signatures[i]}, Index: {index}".ToLog();
                 var signatureEncoded = EncodedSignature(signatures[i], index);
                 signatureElements.Add(signatureEncoded);
             }
