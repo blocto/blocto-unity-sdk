@@ -19,8 +19,9 @@ After clone repository, the entire directory is the Unity project directory, ope
 
 ![flowscene.unity](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2Ft6XmJaMeDnmxUebHQadd%2Fflowscene.png?alt=media&token=e1bb11bd-fa87-4d1b-bd26-14f279cf0117)
 
+In the project settings, you need to fill in your contracted team ID in Identification to be able to run the demo app in the iOS simulator.
 
-
+![Signing Tema ID](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FeMGV8s4Ne7fP0sAQgM5a%2FSigningTeamID.png?alt=media&token=102fdfcf-83d3-4f85-b21f-57a31244fa07)
 ## Tutorials Demo App
 
 The demo app include five access to flow blockchain interactions
