@@ -1,6 +1,6 @@
 # FCL-Unity Demp App
 
-The reposityory contains fcl-unity, blocto-unity-sdk and demp app. The demo app demonstrates how easy it is to string the blocto wallet
+The reposityory contains fcl-unity, blocto-unity-sdk and demp app. This demo application demonstrates how it is to access the blocto wallet through fcl-unity and blocto-unity-sdk.
 
 ## Requirements
 
