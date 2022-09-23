@@ -157,7 +157,7 @@ PlayerSettings:
   applicationIdentifier:
     Android: com.blocto.flow.demo
     Standalone: com.DefaultCompany.2DProject
-    iPhone: com.blocto.flow.sdk
+    iPhone: com.blocto.flow.demoapp
   buildNumber:
     Standalone: 0
     iPhone: 0
@@ -178,7 +178,7 @@ PlayerSettings:
   keepLoadedShadersAlive: 0
   StripUnusedMeshComponents: 0
   VertexChannelCompressionMask: 4054
-  iPhoneSdkVersion: 988
+  iPhoneSdkVersion: 989
   iOSTargetOSVersionString: 14.0
   tvOSSdkVersion: 0
   tvOSRequireExtendedGameController: 0
@@ -227,7 +227,7 @@ PlayerSettings:
   metalAPIValidation: 1
   iOSRenderExtraFrameOnPause: 0
   iosCopyPluginsCodeInsteadOfSymlink: 0
-  appleDeveloperTeamID: 6CLS73YQRQ
+  appleDeveloperTeamID: 
   iOSManualSigningProvisioningProfileID: 
   tvOSManualSigningProvisioningProfileID: 
   iOSManualSigningProvisioningProfileType: 0

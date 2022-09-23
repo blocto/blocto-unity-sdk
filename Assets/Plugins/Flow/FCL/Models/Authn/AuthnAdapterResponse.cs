@@ -1,10 +1,8 @@
-using System.Globalization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Flow.FCL.Models.Authn
 {
-    public partial class AuthnAdapterResponse
+    public class AuthnAdapterResponse
     {
         [JsonProperty("f_type")]
         public string FType { get; set; }

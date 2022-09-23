@@ -165,7 +165,6 @@ public class MainController : MonoBehaviour
         var config = new Config();
         config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
-              .Put("fcl.limit", "1000")
               .Put("flow.network", "testnet");
         
         _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(initialFun: GetWallet => {
@@ -371,76 +370,5 @@ public class MainController : MonoBehaviour
 
     public void Test()
     {
-        var result = _fcl.GetTransactionStatus("6ec486df690b1938fdfdc0a9ebf5c63fc39ad8202f48164252a57761fe11ee24");
-        // _resolveUtils = new ResolveUtility(null);
-        // var tx = new FlowTransaction
-        //          {
-        //              Script = _script,
-        //              GasLimit = 9999,
-        //              Arguments = new List<ICadence>
-        //                          {
-        //                              new CadenceNumber(CadenceNumberType.UFix64, "10.00000000"),
-        //                              new CadenceAddress("0x068606b2acddc1ca")
-        //                          },
-        //              ProposalKey = new FlowProposalKey
-        //                            {
-        //                                Address = new FlowAddress("0xf086a545ce3c552d"),
-        //                                KeyId = 0,
-        //                                SequenceNumber = 458 
-        //                            },
-        //              ReferenceBlockId = "908476694b90bbcb184c4e98e76667aaf87ed477e0dfe31ecb62e3301872cd1f"
-        //          }; 
-        //
-        // var preSignable = _resolveUtils.ResolvePreSignable(ref tx);
-        // var preAuthzData = new PreAuthzData
-        //                    {
-        //                        Proposer = new AuthzInformation
-        //                                   {
-        //                                       Identity = new PreAuthzIdentity
-        //                                                  {
-        //                                                      KeyId = 0,
-        //                                                      Address = "0xe2c2f0fd9fdec656"
-        //                                                  }
-        //                                   },
-        //                        Payer = new List<AuthzInformation>
-        //                                {
-        //                                    new AuthzInformation
-        //                                    {
-        //                                        Identity = new PreAuthzIdentity
-        //                                                   {
-        //                                                       Address = "0xf086a545ce3c552d",
-        //                                                       KeyId = 0 
-        //                                                   }
-        //                                    }
-        //                                },
-        //                        Authorization = new List<AuthzInformation>
-        //                                        {
-        //                                            new AuthzInformation
-        //                                            {
-        //                                                Identity = new PreAuthzIdentity
-        //                                                           {
-        //                                                               KeyId = 0,
-        //                                                              Address = "0xe2c2f0fd9fdec656"
-        //                                                           }
-        //                                            }
-        //                                        }
-        //                    };
-        //
-        // var account = new FlowAccount
-        //               {
-        //                   Address = new FlowAddress("0xe2c2f0fd9fdec656"),
-        //                   Keys = new List<FlowAccountKey>
-        //                          {
-        //                              new FlowAccountKey
-        //                              {
-        //                                  Index = 0,
-        //                                  SequenceNumber = 0,
-        //                                  Weight = 1000
-        //                              }
-        //                          }
-        //               };
-        //
-        // var signable = _resolveUtils.ResolveSignable(ref tx, preAuthzData, account);
-        // var payerSignable = _resolveUtils.ResolvePayerSignable(ref tx, signable);
     }
 }

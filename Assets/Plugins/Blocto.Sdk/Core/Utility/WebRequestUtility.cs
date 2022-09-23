@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
@@ -9,6 +10,7 @@ using Flow.Net.SDK.Client.Unity.Models.Enums;
 using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -27,6 +29,72 @@ namespace Blocto.Sdk.Core.Utility
                             {"404", NotFoundHandler},
                             {"500", InternalServerError}
                         };
+        }
+        
+        /// <summary>
+        /// Send http request
+        /// </summary>
+        /// <param name="url">Endpoint url</param>
+        /// <param name="method">HTTP method</param>
+        /// <param name="contentType">Header content type</param>
+        /// <param name="parameters">body parameter</param>
+        /// <typeparam name="TResponse">Return type</typeparam>
+        /// <returns></returns>
+        public TResponse GetResponse<TResponse>(string url, string method, string contentType, Dictionary<string, object> parameters)
+        {
+            Debug.Log($"Get response, url: {url}");
+            var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
+            if(parameters.Keys.Any())
+            {
+                var jsonStr = JsonConvert.SerializeObject(parameters);
+                var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
+                var uploadHandler = new UploadHandlerRaw(requestBytes);
+                client.uploadHandler = uploadHandler;
+            }
+            
+            try
+            {
+                var result = ProcessWebRequest<TResponse>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
+        }
+        
+        /// <summary>
+        /// Send http request
+        /// </summary>
+        /// <param name="url">Endpoint url</param>
+        /// <param name="method">HTTP method</param>
+        /// <param name="contentType">Header content type</param>
+        /// <param name="parameter">body parameter</param>
+        /// <typeparam name="TResponse">Return type</typeparam>
+        /// <returns></returns>
+        public TResponse GetResponse<TResponse>(string url, string method, string contentType, object parameter)
+        {
+            var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
+            client.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
+            var jsonStr = default(string);
+            
+            jsonStr = parameter is JObject
+                          ? parameter.ToString()
+                          : JsonConvert.SerializeObject(parameter);
+            
+            var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
+            var uploadHandler = new UploadHandlerRaw(requestBytes);
+            client.uploadHandler = uploadHandler;
+            
+            try
+            {
+                var result = ProcessWebRequest<TResponse>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
         }
         
         /// <summary>

@@ -28,8 +28,6 @@ namespace Flow.FCL
         
         private ICadence _response;
         
-        private IResolveUtility _resolveUtility;
-        
         private IWalletProvider _walletProvider;
         
         private string _errorMessage;
@@ -48,11 +46,10 @@ namespace Flow.FCL
                                             var tmpFcl = gameObject.AddComponent<FlowClientLibrary>();
                                             tmpFcl.FlowClient = new FlowUnityWebRequest(gameObject, Config.Get("accessNode.api"));
                                             tmpFcl._walletProvider = walletProvider;
-                                            tmpFcl._resolveUtility = resolveUtility;
                                             
-                                            var factory = UtilFactory.CreateUtilFactory(gameObject, tmpFcl.FlowClient, tmpFcl._resolveUtility);
-                                            tmpFcl._currentUser = new CurrentUser(tmpFcl._walletProvider, factory.CreateWebRequestUtil(), tmpFcl._resolveUtility, tmpFcl.FlowClient); 
-                                            tmpFcl._transaction = new Transaction(tmpFcl._walletProvider, tmpFcl.FlowClient, tmpFcl._resolveUtility, factory);
+                                            var factory = UtilFactory.CreateUtilFactory(gameObject, tmpFcl.FlowClient, resolveUtility);
+                                            tmpFcl._currentUser = new CurrentUser(tmpFcl._walletProvider); 
+                                            tmpFcl._transaction = new Transaction(tmpFcl._walletProvider, tmpFcl.FlowClient, resolveUtility, factory);
                                             return tmpFcl;
                                         });
             
@@ -153,10 +150,6 @@ namespace Flow.FCL
             }
             
             var url = service.PreAuthzEndpoint();
-            $"Preauth endpoint: {url}".ToLog();
-            
-            // var url = "https://run.mocky.io/v3/7990fb6b-6461-426f-a0ca-ff625e57a095";
-            
             _transaction.SendTransaction(url, tx, () => {}, callback);
         }
         
