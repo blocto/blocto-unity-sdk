@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
-using Blocto.Sdk.Flow.Utility;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
@@ -17,6 +18,21 @@ namespace Blocto.SDK.Flow
 {
     public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider, IWalletProvider
     {
+        /// <summary>
+        /// System Thumbnail
+        /// </summary>
+        public static string Thumbnail;
+        
+        /// <summary>
+        /// System Title
+        /// </summary>
+        public static string Title;
+
+        /// <summary>
+        /// HTTP utility
+        /// </summary>
+        public WebRequestUtility WebRequestUtility { get; set; }
+        
         /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
@@ -38,8 +54,6 @@ namespace Blocto.SDK.Flow
         /// </summary>
         private AndroidJavaObject _pluginInstance = null;
         
-        private WebRequestUtility _webRequestUtility;
-        
         private IResolveUtility _resolveUtility;
         
         private IFlowClient _flowClient;
@@ -59,7 +73,7 @@ namespace Blocto.SDK.Flow
         {
             var bloctoWalletProvider = initialFun.Invoke((gameObject, flowClient, resolveUtility) => {
                                                              var provider = gameObject.AddComponent<BloctoWalletProvider>();
-                                                             provider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
+                                                             provider.WebRequestUtility = gameObject.AddComponent<WebRequestUtility>();
                                                              provider._bloctoAppIdentifier = bloctoAppIdentifier;
                                                              provider._resolveUtility = resolveUtility;
                                                              provider._flowClient = flowClient;
@@ -86,6 +100,19 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void Login(string iframeUrl, Uri pollingUri, Action<object> internalCallback)
         {
+            var element = iframeUrl.Split("?")[1].Split("&").ToList();
+            var thumbnailElement = element.FirstOrDefault(p => p.ToLower().Contains("thumbnail"));
+            var titleElement = element.FirstOrDefault(p => p.ToLower().Contains("title"));
+            if(thumbnailElement != null)
+            {
+                BloctoWalletProvider.Thumbnail = thumbnailElement.Split("=")[1];
+            }
+            
+            if(titleElement != null)
+            {
+                BloctoWalletProvider.Title = titleElement.Split("=")[1];
+            }
+
             StartCoroutine(OpenUrl(iframeUrl));
             StartCoroutine(GetService<AuthenticateResponse>(pollingUri, internalCallback));
         }
@@ -110,6 +137,14 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void SignMessage(string iframeUrl, Uri pollingUri, Action<object> internalCallback)
         {
+            var sb = new StringBuilder(iframeUrl);
+            sb.Append("&")
+              .Append(Uri.EscapeDataString("thumbnail") + "=")
+              .Append(BloctoWalletProvider.Thumbnail + "&")
+              .Append(Uri.EscapeDataString("title") + "=")
+              .Append(BloctoWalletProvider.Title);
+            iframeUrl = sb.ToString();
+
             StartCoroutine(OpenUrl(iframeUrl));
             StartCoroutine(GetService<SignMessageResponse>(pollingUri, internalCallback));
         }
@@ -129,8 +164,8 @@ namespace Blocto.SDK.Flow
             _isCancelRequest = false;
             while (isApprove == false && _isCancelRequest == false)
             {
-                var webRequest = _webRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
-                response = _webRequestUtility.ProcessWebRequest<TResponse>(webRequest);
+                var webRequest = WebRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
+                response = WebRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                 isApprove = response!.ResponseStatus is ResponseStatusEnum.APPROVED or ResponseStatusEnum.DECLINED ? true : false;
                 yield return new WaitForSeconds(0.2f);
             }

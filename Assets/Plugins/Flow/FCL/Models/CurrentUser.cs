@@ -141,7 +141,7 @@ namespace Flow.FCL.Models
             
             var hexMessage = message.StringToHex();
             var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
-            var response = _webRequestUtils.GetResponse<Authn.AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
+            var response = _walletProvider.WebRequestUtility.GetResponse<Authn.AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
             
             var endpoint = response.SignMessageEndpoint();
             _walletProvider.SignMessage(endpoint.IframeUrl, endpoint.PollingUrl, item => {

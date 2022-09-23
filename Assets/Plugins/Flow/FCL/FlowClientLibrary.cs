@@ -153,10 +153,6 @@ namespace Flow.FCL
             }
             
             var url = service.PreAuthzEndpoint();
-            $"Preauth endpoint: {url}".ToLog();
-            
-            // var url = "https://run.mocky.io/v3/7990fb6b-6461-426f-a0ca-ff625e57a095";
-            
             _transaction.SendTransaction(url, tx, () => {}, callback);
         }
         
