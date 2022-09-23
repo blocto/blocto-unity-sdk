@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Extensions;
@@ -16,6 +17,7 @@ using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -122,6 +124,109 @@ namespace Blocto.SDK.Flow
 
             StartCoroutine(OpenUrl(endpoint.IframeUrl));
             StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
+        }
+        
+        public virtual void SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
+        {
+            var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
+            var preAuthzResponse = WebRequestUtility.GetResponse<PreAuthzAdapterResponse>(preAuthzUrl, "POST", "application/json", preSignableJObj);
+            var isNonCustodial = preAuthzResponse.AuthorizerData.Authorizations.Any(p => p.Endpoint.ToLower().Contains("cosigner") || p.Endpoint.ToLower().Contains("non-custodial"));
+            var tmpAccount = GetAccount(preAuthzResponse.AuthorizerData.Proposer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
+            tx.ProposalKey = GetProposerKey(tmpAccount, preAuthzResponse.AuthorizerData.Proposer.Identity.KeyId);
+            
+            var signableJObj = default(JObject);
+            var endpoint = default((string IframeUrl, Uri PollingUrl));
+            if(isNonCustodial)
+            {
+                var authorization = preAuthzResponse.AuthorizerData.Authorizations.First();
+                var authorize = authorization.ConvertToFlowAccount();
+                var signableJObjs = _resolveUtility.ResolveSignable(ref tx, preAuthzResponse.AuthorizerData, authorize);
+                tx.PayloadSignatures.Clear();
+            
+                for (var index = 0; index < preAuthzResponse.AuthorizerData.Authorizations.Count; index++)
+                {
+                    signableJObj = signableJObjs[index];
+                    var postUrl = preAuthzResponse.AuthorizerData.Authorizations[index].AuthzAdapterEndpoint();
+                    var path = postUrl.Split("?").First().Split("/").Last();
+                    switch (path)
+                    {
+                        case "cosigner":
+                            var cosigner = WebRequestUtility.GetResponse<SignatureResponse>(postUrl, "POST", "application/json", signableJObj);
+                            tx.PayloadSignatures.Add(new FlowSignature
+                                                     {
+                                                         Address = new FlowAddress(cosigner.SignatureInfo().Address.ToString()),
+                                                         Signature = cosigner.SignatureInfo().Signature.ToString().StringToBytes().ToArray(),
+                                                         KeyId = Convert.ToUInt32(cosigner.SignatureInfo().KeyId) 
+                                                     });
+                            break;
+                        case "non-custodial":
+                            var authzResponse = WebRequestUtility.GetResponse<NonCustodialAuthzResponse>(postUrl, "POST", "application/json", signableJObj);
+                            endpoint = authzResponse.AuthzEndpoint();
+                            break;
+                    }
+                }
+                
+                Authz<SignatureResponse>(endpoint.IframeUrl, endpoint.PollingUrl, response => {
+                                                                                      var signInfo = response.SignatureInfo();
+                                                                                      if (signInfo.Signature != null)
+                                                                                      {
+                                                                                          $"Signature info keyId: {signInfo.KeyId}".ToLog();
+                                                                                          tx.PayloadSignatures.Add(new FlowSignature
+                                                                                                                   {
+                                                                                                                       Address = new FlowAddress(signInfo.Address.ToString()),
+                                                                                                                       Signature = signInfo.Signature.ToString().StringToBytes().ToArray(),
+                                                                                                                       KeyId = Convert.ToUInt32(signInfo.KeyId)
+                                                                                                                   });
+                                                                                      }
+ 
+                                                                                      var payerEndpoint = preAuthzResponse.PayerEndpoint();
+                                                                                      var payerSignable = _resolveUtility.ResolvePayerSignable(ref tx, signableJObj);
+                                                                                      var payerSignResponse = WebRequestUtility.GetResponse<SignatureResponse>(payerEndpoint.AbsoluteUri, "POST", "application/json", payerSignable);
+                                                                                      signInfo = payerSignResponse.SignatureInfo();
+                                                                                      if (signInfo.Signature != null && signInfo.Address != null)
+                                                                                      {
+                                                                                          var envelopeSignature = tx.EnvelopeSignatures.First(p => p.Address.Address == signInfo.Address.ToString().RemoveHexPrefix());
+                                                                                          envelopeSignature.Signature = signInfo.Signature?.ToString().StringToBytes().ToArray();
+                                                                                      }
+                                                                                      
+                                                                                      var txResponse = _flowClient.SendTransactionAsync(tx).ConfigureAwait(false).GetAwaiter().GetResult();
+                                                                                      $"TxId: {txResponse.Id}".ToLog();
+                                                                                      callback?.Invoke(txResponse.Id);
+                                                                                  });  
+            }
+            else
+            {
+                var authorization = preAuthzResponse.AuthorizerData.Authorizations.First();
+                var postUrl = authorization.AuthzAdapterEndpoint();
+                var authorize = authorization.ConvertToFlowAccount();
+                signableJObj = _resolveUtility.ResolveSignable(ref tx, preAuthzResponse.AuthorizerData, authorize).First();
+                var authzResponse = WebRequestUtility.GetResponse<AuthzAdapterResponse>(postUrl, "POST", "application/json", signableJObj);
+                endpoint = authzResponse.AuthzEndpoint();
+                
+                Authz<AuthzAdapterResponse>(endpoint.IframeUrl, endpoint.PollingUrl, item => {
+                                                                                         var response = item as AuthzAdapterResponse;
+                                                                                         var signInfo = response.SignatureInfo();
+                                                                                         if (signInfo.Signature != null)
+                                                                                         {
+                                                                                             var payloadSignature = tx.PayloadSignatures.First(p => p.Address.Address == signInfo.Address?.ToString().RemoveHexPrefix());
+                                                                                             payloadSignature.Signature = signInfo.Signature?.ToString().StringToBytes().ToArray();
+                                                                                         }
+
+                                                                                         var payerEndpoint = preAuthzResponse.PayerEndpoint();
+                                                                                         var payerSignable = _resolveUtility.ResolvePayerSignable(ref tx, signableJObj);
+                                                                                         var payerSignResponse = WebRequestUtility.GetResponse<SignatureResponse>(payerEndpoint.AbsoluteUri, "POST", "application/json", payerSignable);
+                                                                                         signInfo = payerSignResponse.SignatureInfo();
+                                                                                         if (signInfo.Signature != null && signInfo.Address != null)
+                                                                                         {
+                                                                                             var envelopeSignature = tx.EnvelopeSignatures.First(p => p.Address.Address == signInfo.Address.ToString().RemoveHexPrefix());
+                                                                                             envelopeSignature.Signature = signInfo.Signature?.ToString().StringToBytes().ToArray();
+                                                                                         }
+
+                                                                                         var txResponse = _flowClient.SendTransactionAsync(tx).ConfigureAwait(false).GetAwaiter().GetResult();
+                                                                                         $"TxId: {txResponse.Id}".ToLog();
+                                                                                         callback?.Invoke(txResponse.Id);
+                                                                                     }); 
+            }
         }
         
         /// <summary>
@@ -250,6 +355,34 @@ namespace Blocto.SDK.Flow
             } 
             
             yield return new WaitForSeconds(0.01f);
+        }
+        
+        /// <summary>
+        /// Get flow account
+        /// </summary>
+        /// <param name="address">address of account</param>
+        /// <returns></returns>
+        private async Task<FlowAccount> GetAccount(string address)
+        {
+            var account = _flowClient.GetAccountAtLatestBlockAsync(address);
+            return await account;
+        }
+        
+        /// <summary>
+        /// Get full account key information
+        /// </summary>
+        /// <param name="account">flow account</param>
+        /// <param name="keyId">key id of account</param>
+        /// <returns></returns>
+        private FlowProposalKey GetProposerKey(FlowAccount account, uint keyId)
+        {
+            var proposalKey = account.Keys.First(p => p.Index == keyId);
+            return new FlowProposalKey
+                   {
+                       Address = account.Address,
+                       KeyId = keyId,
+                       SequenceNumber = proposalKey.SequenceNumber
+                   };
         }
         
         /// <summary>
