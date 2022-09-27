@@ -13,16 +13,13 @@ import AuthenticationServices
 
     @objc public func isInstallation(urlString:String) -> Bool {
         log(enable: true, message: "In swift isInstallation")
-        guard let appURL = URL(string: urlString) else {
-            return false
+        var isInstalled = false
+        if let appURL = URL(string: urlString) {
+            isInstalled = UIApplication.shared.canOpenURL(appURL)
+            print("Can open \"\(appURL)\": \(isInstalled)")
         }
         
-        if UIApplication.shared.canOpenURL(appURL)
-        {
-           return true
-        }
-        
-        return false
+        return isInstalled
     }
 
     @objc public func openUrl(window: UIWindow, webUrl: String, appUrl: String, completion: ((URL?, Error?) -> Void)?){
