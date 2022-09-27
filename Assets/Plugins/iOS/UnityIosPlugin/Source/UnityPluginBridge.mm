@@ -33,8 +33,7 @@ extern "C" {
           }
           
           if (keyWindow) {
-               NSLog(@"found keywindow.");
-               [sessionHelper openUrlWithWindow:keyWindow webUrl:tmpWebUrl appUrl:tmpAppUrl completion:^(NSURL * _Nullable url, NSError * _Nullable error) {
+               [sessionHelper openWebViewWithWindow:keyWindow webUrl:tmpWebUrl appUrl:tmpAppUrl completion:^(NSURL * _Nullable url, NSError * _Nullable error) {
                    if (error) {
                         // handle error here.
                         NSLog(@"In Error.");

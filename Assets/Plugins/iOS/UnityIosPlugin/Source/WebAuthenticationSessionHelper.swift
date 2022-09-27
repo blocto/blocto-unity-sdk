@@ -52,6 +52,37 @@ import AuthenticationServices
         })
     }
 
+    @objc public func openWebView(window: UIWindow, webUrl: String, appUrl: String, completion: ((URL?, Error?) -> Void)?){
+        guard let requestWebUrl = URL(string: webUrl) else {
+            completion?(nil, BloctoError.urlNotFound)
+            return
+        }
+
+        guard let requestAppUrl = URL(string: appUrl) else {
+            completion?(nil, BloctoError.urlNotFound)
+            return
+        }
+
+        self.session = ASWebAuthenticationSession(
+                    url: requestWebUrl,
+                    callbackURLScheme: "blocto",
+                    completionHandler: { callbackURL, error in
+                        completion?(callbackURL, error)
+                        self.session = nil
+                    })
+                
+        if #available(iOS 13.0, *) {
+            self.session?.presentationContextProvider = window
+        }
+        
+        let startsSuccessfully = self.session?.start()
+        if startsSuccessfully == false {
+            // handle error
+            self.log(enable: true, message: "star is failed.")
+            completion?(nil, BloctoError.startFailed)
+        }
+    }
+
     @objc public func closeWindow()
     {
         log(enable: true, message: "In swift closeWindow")
