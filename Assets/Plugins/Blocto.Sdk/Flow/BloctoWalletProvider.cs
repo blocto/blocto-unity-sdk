@@ -159,12 +159,13 @@ namespace Blocto.SDK.Flow
             return isInstallApp;
         }
 
-        public BloctoWalletProvider()
+        public bool IsInstalledApp()
         {
-            $"Create BloctoWalletProvider.".ToLog();
+            var isInstallApp = false;
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
-                _testAppUrl = "https://staging.blocto.app/sdk?";
+                $"AppId: {_bloctoAppIdentifier}".ToLog();
+                _appDomain = $"blocto-staging://test";
             }
             
             if(Application.platform == RuntimePlatform.Android)
@@ -172,8 +173,13 @@ namespace Blocto.SDK.Flow
                 
             }else if(Application.platform == RuntimePlatform.IPhonePlayer)
             {
-                _isInstalledApp = IsInstalled(_testAppUrl); 
+                $"App domain: {_appDomain}".ToLog();
+                
+                isInstallApp = IsInstalled(_appDomain);
+                $"Is installed App: {isInstallApp}".ToLog();
             }
+            
+            return isInstallApp;
         }
 
         /// <summary>
