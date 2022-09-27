@@ -11,6 +11,20 @@ import AuthenticationServices
         return Static.instance
     }
 
+    @objc public func isInstallation(urlString:String) -> Bool {
+        log(enable: true, message: "In swift isInstallation")
+        guard let appURL = URL(string: urlString) else {
+            return false
+        }
+        
+        if UIApplication.shared.canOpenURL(appURL)
+        {
+           return true
+        }
+        
+        return false
+    }
+
     @objc public func openUrl(window: UIWindow, webUrl: String, appUrl: String, completion: ((URL?, Error?) -> Void)?){
         guard let requestWebUrl = URL(string: webUrl) else {
             completion?(nil, BloctoError.urlNotFound)
@@ -57,7 +71,6 @@ import AuthenticationServices
         log(enable: true, message: "In swift closeWindow")
         self.session?.cancel()
     }
-
 
     func log(enable: Bool, message: String) {
         guard enable else { return }
