@@ -159,6 +159,23 @@ namespace Blocto.SDK.Flow
             return isInstallApp;
         }
 
+        public BloctoWalletProvider()
+        {
+            $"Create BloctoWalletProvider.".ToLog();
+            if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
+            {
+                _testAppUrl = "https://staging.blocto.app/sdk?";
+            }
+            
+            if(Application.platform == RuntimePlatform.Android)
+            {
+                
+            }else if(Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                _isInstalledApp = IsInstalled(_testAppUrl); 
+            }
+        }
+
         /// <summary>
         /// User connect wallet get account
         /// </summary>
