@@ -53,6 +53,15 @@ extern "C" {
           }
      }
 
+     bool IsInstalled(const char* appUrl){
+         NSLog(@"In check installed blocto app");
+         NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl]; 
+         bool isInstalled = [sessionHelper isInstallationWithUrlString:tmpAppUrl];
+
+         return isInstalled;
+     }
+
+
      void CloseWindow()
      {
          NSLog(@"In objc Close Windows");

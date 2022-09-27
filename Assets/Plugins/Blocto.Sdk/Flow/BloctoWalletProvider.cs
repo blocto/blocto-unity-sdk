@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
+using Flow.FCL;
+using Flow.FCL.Config;
 using Flow.FCL.Extensions;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authn;
@@ -25,6 +27,7 @@ namespace Blocto.SDK.Flow
 {
     public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider, IWalletProvider
     {
+        
         /// <summary>
         /// System Thumbnail
         /// </summary>
@@ -56,6 +59,9 @@ namespace Blocto.SDK.Flow
         [DllImport ("__Internal")]
         private static extern void CloseWindow();
         
+        [DllImport ("__Internal")]
+        private static extern bool IsInstalled(string appUrl);
+        
         /// <summary>
         /// Android instance
         /// </summary>
@@ -68,6 +74,10 @@ namespace Blocto.SDK.Flow
         private bool _isCancelRequest;
         
         private Guid _bloctoAppIdentifier;
+        
+        private readonly string _testAppUrl = "https://blocto.app/sdk?";
+        
+        private readonly bool _isInstalledApp = false;
         
         /// <summary>
         /// Create blocto wallet provider instance
@@ -97,6 +107,23 @@ namespace Blocto.SDK.Flow
             }
             
             return bloctoWalletProvider;
+        }
+
+        public BloctoWalletProvider()
+        {
+            $"Create BloctoWalletProvider.".ToLog();
+            if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
+            {
+                _testAppUrl = "https://staging.blocto.app/sdk?";
+            }
+            
+            if(Application.platform == RuntimePlatform.Android)
+            {
+                
+            }else if(Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                _isInstalledApp = IsInstalled(_testAppUrl); 
+            }
         }
 
         /// <summary>
