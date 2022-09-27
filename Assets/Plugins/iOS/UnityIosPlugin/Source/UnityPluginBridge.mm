@@ -55,8 +55,9 @@ extern "C" {
 
      bool IsInstalled(const char* appUrl){
          NSLog(@"In check installed blocto app");
-         NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl]; 
-         bool isInstalled = [sessionHelper isInstallationWithUrlString:tmpAppUrl];
+         NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl];
+         bool isInstalled = false;
+         isInstalled = [sessionHelper isInstallationWithUrlString:tmpAppUrl];
 
          return isInstalled;
      }

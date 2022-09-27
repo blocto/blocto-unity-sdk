@@ -75,9 +75,9 @@ namespace Blocto.SDK.Flow
         
         private Guid _bloctoAppIdentifier;
         
-        private readonly string _testAppUrl = "https://blocto.app/sdk?";
+        private string _appDomain = "https://blocto.app/sdk?";
         
-        private readonly bool _isInstalledApp = false;
+        private bool _isInstalledApp = false;
         
         /// <summary>
         /// Create blocto wallet provider instance
@@ -91,7 +91,6 @@ namespace Blocto.SDK.Flow
             var bloctoWalletProvider = initialFun.Invoke((gameObject, flowClient, resolveUtility) => {
                                                              var provider = gameObject.AddComponent<BloctoWalletProvider>();
                                                              provider.WebRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-                                                             provider._bloctoAppIdentifier = bloctoAppIdentifier;
                                                              provider._resolveUtility = resolveUtility;
                                                              provider._flowClient = flowClient;
                                                              return provider;
@@ -100,6 +99,7 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
             bloctoWalletProvider._isCancelRequest = false;
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
+            bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
             
             if(Application.platform == RuntimePlatform.Android)
             {
@@ -109,12 +109,13 @@ namespace Blocto.SDK.Flow
             return bloctoWalletProvider;
         }
 
-        public BloctoWalletProvider()
+        public bool IsInstalledApp()
         {
-            $"Create BloctoWalletProvider.".ToLog();
+            var isInstallApp = false;
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
-                _testAppUrl = "https://staging.blocto.app/sdk?";
+                $"AppId: {_bloctoAppIdentifier}".ToLog();
+                _appDomain = $"blocto-staging://test";
             }
             
             if(Application.platform == RuntimePlatform.Android)
@@ -122,8 +123,13 @@ namespace Blocto.SDK.Flow
                 
             }else if(Application.platform == RuntimePlatform.IPhonePlayer)
             {
-                _isInstalledApp = IsInstalled(_testAppUrl); 
+                $"App domain: {_appDomain}".ToLog();
+                
+                isInstallApp = IsInstalled(_appDomain);
+                $"Is installed App: {isInstallApp}".ToLog();
             }
+            
+            return isInstallApp;
         }
 
         /// <summary>
@@ -134,23 +140,43 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null)
         {
-            var authnResponse = WebRequestUtility.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
-            var endpoint = authnResponse.AuthnEndpoint();
-            var element = endpoint.IframeUrl.Split("?")[1].Split("&").ToList();
-            var thumbnailElement = element.FirstOrDefault(p => p.ToLower().Contains("thumbnail"));
-            var titleElement = element.FirstOrDefault(p => p.ToLower().Contains("title"));
-            if(thumbnailElement != null)
+            if(_isInstalledApp)
             {
-                BloctoWalletProvider.Thumbnail = thumbnailElement.Split("=")[1];
+                //// https://staging.blocto.app/sdk?
+                /// app_id=64776cec-5953-4a58-8025-772f55a3917b &
+                /// request_id=042C865E-8C08-4F5D-B265-A2B66E619F1B &
+                /// blockchain=flow &
+                /// method=authn &
+                /// flow_app_id=64776cec-5953-4a58-8025-772f55a3917b &
+                /// flow_nonce=75f8587e5bd5f9dcc9909d0dae1f0ac5814458b2ae129620502cb936fde7120a
+                
+                var sb = new StringBuilder(_appDomain);
+                sb.Append(Uri.EscapeDataString($"app_id={_bloctoAppIdentifier}") + "&")
+                  .Append(Uri.EscapeDataString($"request_id={Guid.NewGuid()}" + "&"))
+                  .Append(Uri.EscapeDataString("blockchain=flow") + "&")
+                  .Append(Uri.EscapeDataString("methd=authn") + "&")
+                  .Append(Uri.EscapeDataString(""));
             }
-            
-            if(titleElement != null)
+            else
             {
-                BloctoWalletProvider.Title = titleElement.Split("=")[1];
-            }
+                var authnResponse = WebRequestUtility.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
+                var endpoint = authnResponse.AuthnEndpoint();
+                var element = endpoint.IframeUrl.Split("?")[1].Split("&").ToList();
+                var thumbnailElement = element.FirstOrDefault(p => p.ToLower().Contains("thumbnail"));
+                var titleElement = element.FirstOrDefault(p => p.ToLower().Contains("title"));
+                if(thumbnailElement != null)
+                {
+                    BloctoWalletProvider.Thumbnail = thumbnailElement.Split("=")[1];
+                }
+                
+                if(titleElement != null)
+                {
+                    BloctoWalletProvider.Title = titleElement.Split("=")[1];
+                }
 
-            StartCoroutine(OpenUrl(endpoint.IframeUrl));
-            StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
+                StartCoroutine(OpenUrl(endpoint.IframeUrl));
+                StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
+            }
         }
         
         public virtual void SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
