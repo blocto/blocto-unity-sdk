@@ -22,7 +22,11 @@ IMPL_APP_CONTROLLER_SUBCLASS (BloctoAppController)
 }
 
 
-- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> *_Nullable))restorationHandler {
+- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *_Nullable))restorationHandler {
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            message:@"My message" delegate:self cancelButtonTitle:@"Cancel"
+            otherButtonTitles:@"OK", nil];
+    [alert show];
     
     if ([userActivity.activityType isEqualToString: NSUserActivityTypeBrowsingWeb]) {
         NSURL *url = userActivity.webpageURL;
@@ -35,4 +39,26 @@ IMPL_APP_CONTROLLER_SUBCLASS (BloctoAppController)
     
     return YES;
 }
+
+
+- (BOOL)application:(UIApplication*)application openURL:(NSURL*)url sourceApplication:(NSString*)sourceApplication annotation:(id)annotation
+{
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            message:@"In notification" delegate:self cancelButtonTitle:@"Cancel"
+            otherButtonTitles:@"OK", nil];
+    
+    [alert show];
+    return YES;
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
+{
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            message:@"In notification" delegate:self cancelButtonTitle:@"Cancel"
+            otherButtonTitles:@"OK", nil];
+    
+    [alert show];
+    return YES;
+}
+
 @end

@@ -162,6 +162,7 @@ public class MainController : MonoBehaviour
 
     void Start()
     {
+        $"Maincontroller Start".ToLog();
         var config = new Config();
         config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
@@ -181,6 +182,12 @@ public class MainController : MonoBehaviour
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
                                                                  }, config);
+        
+        var tmpUniversalLink = _walletProvider.UniversalLinkHandler();
+        if(tmpUniversalLink != "default")
+        {
+            _signmessageTxt.text = tmpUniversalLink;
+        }
     }
     
     private void ConnectWallet()

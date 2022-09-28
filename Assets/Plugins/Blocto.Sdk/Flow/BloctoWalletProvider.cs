@@ -60,6 +60,12 @@ namespace Blocto.SDK.Flow
         [DllImport ("__Internal")]
         private static extern bool IsInstalled(string appUrl);
         
+        [DllImport("__Internal")]
+        private static extern string UniversalLink_GetURL();
+
+        [DllImport("__Internal")]
+        private static extern string UniversalLink_Reset();
+        
         /// <summary>
         /// Android instance
         /// </summary>
@@ -73,9 +79,11 @@ namespace Blocto.SDK.Flow
         
         private Guid _bloctoAppIdentifier;
         
-        private string _appDomain = "https://blocto.app/sdk?";
+        private string _appDomain = "https://staging.blocto.app/sdk?";
         
         private bool _isInstalledApp = false;
+        
+        private string _universalLink = "default";
         
         /// <summary>
         /// Create blocto wallet provider instance
@@ -106,14 +114,33 @@ namespace Blocto.SDK.Flow
             
             return bloctoWalletProvider;
         }
+        
+        public string UniversalLinkHandler()
+        {
+            $"Universal Link Handler".ToLog();
+            if(Application.platform == RuntimePlatform.Android)
+            {
+                
+            }else if(Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                _universalLink = BloctoWalletProvider.UniversalLink_GetURL();
+                if(_universalLink != "")
+                {
+                    $"Universal link: {_universalLink}".ToLog();
+                    BloctoWalletProvider.UniversalLink_Reset();
+                }
+            }
+            
+            return _universalLink;
+        }
 
         public bool IsInstalledApp()
         {
             var isInstallApp = false;
+            var testDomain = "blocto://open";
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
-                $"AppId: {_bloctoAppIdentifier}".ToLog();
-                _appDomain = $"blocto-staging://test";
+                testDomain = $"blocto-staging://open";
             }
             
             if(Application.platform == RuntimePlatform.Android)
@@ -123,7 +150,7 @@ namespace Blocto.SDK.Flow
             {
                 $"App domain: {_appDomain}".ToLog();
                 
-                isInstallApp = IsInstalled(_appDomain);
+                isInstallApp = IsInstalled(testDomain);
                 $"Is installed App: {isInstallApp}".ToLog();
             }
             
@@ -138,22 +165,23 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null)
         {
+            $"isInstalledApp: {_isInstalledApp}".ToLog();
             if(_isInstalledApp)
             {
-                //// https://staging.blocto.app/sdk?
-                /// app_id=64776cec-5953-4a58-8025-772f55a3917b &
-                /// request_id=042C865E-8C08-4F5D-B265-A2B66E619F1B &
-                /// blockchain=flow &
-                /// method=authn &
-                /// flow_app_id=64776cec-5953-4a58-8025-772f55a3917b &
-                /// flow_nonce=75f8587e5bd5f9dcc9909d0dae1f0ac5814458b2ae129620502cb936fde7120a
-                
                 var sb = new StringBuilder(_appDomain);
-                sb.Append(Uri.EscapeDataString($"app_id={_bloctoAppIdentifier}") + "&")
-                  .Append(Uri.EscapeDataString($"request_id={Guid.NewGuid()}" + "&"))
-                  .Append(Uri.EscapeDataString("blockchain=flow") + "&")
-                  .Append(Uri.EscapeDataString("methd=authn") + "&")
-                  .Append(Uri.EscapeDataString(""));
+                sb.Append($"app_id={_bloctoAppIdentifier}" + "&")
+                  .Append($"request_id={Guid.NewGuid()}" + "&")
+                  .Append("blockchain=flow" + "&")
+                  .Append("method=authn" + "&");
+                    
+                if(parameters.ContainsKey("accountProofIdentifier") && parameters.ContainsKey("accountProofNonce"))
+                {
+                    sb.Append($"flow_app_id={parameters["accountProofIdentifier"]}" + "&")
+                      .Append($"flow_nonce={parameters["accountProofNonce"]}");
+                }
+                
+                $"Url: {sb.ToString()}".ToLog();
+                StartCoroutine(OpenUrl(sb.ToString()));
             }
             else
             {
@@ -293,7 +321,7 @@ namespace Blocto.SDK.Flow
                 }
                 else if(Application.platform == RuntimePlatform.IPhonePlayer)
                 {
-                    // var appSdkUrl = url.Replace("https://wallet-testnet.blocto.app/", "https://staging.blocto.app/");
+                    $"Open url: {url}".ToLog();
                     OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
                 }
             }
