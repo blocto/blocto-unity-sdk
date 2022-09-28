@@ -17,8 +17,10 @@ import AuthenticationServices
         if let appURL = URL(string: urlString) {
             isInstalled = UIApplication.shared.canOpenURL(appURL)
             print("Can open \"\(appURL)\": \(isInstalled)")
+            return isInstalled
         }
         
+        print("Can open blocto-staging://open: \(isInstalled)")
         return isInstalled
     }
 
