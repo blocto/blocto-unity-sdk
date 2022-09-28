@@ -162,10 +162,10 @@ namespace Blocto.SDK.Flow
         public bool IsInstalledApp()
         {
             var isInstallApp = false;
+            var testDomain = "blocto://open";
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
-                $"AppId: {_bloctoAppIdentifier}".ToLog();
-                _appDomain = $"blocto-staging://test";
+                testDomain = $"blocto-staging://open";
             }
             
             if(Application.platform == RuntimePlatform.Android)
@@ -175,7 +175,7 @@ namespace Blocto.SDK.Flow
             {
                 $"App domain: {_appDomain}".ToLog();
                 
-                isInstallApp = IsInstalled(_appDomain);
+                isInstallApp = IsInstalled(testDomain);
                 $"Is installed App: {isInstallApp}".ToLog();
             }
             
