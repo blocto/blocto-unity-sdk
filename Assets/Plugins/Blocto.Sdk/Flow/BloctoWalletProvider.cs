@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Flow.FCL;
-using Flow.FCL.Config;
 using Flow.FCL.Extensions;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authn;
@@ -68,6 +67,9 @@ namespace Blocto.SDK.Flow
         [DllImport("__Internal")]
         private static extern string UniversalLink_Reset();
         
+        [DllImport("__Internal")]
+        private static extern string WriteLog();
+        
         /// <summary>
         /// Android instance
         /// </summary>
@@ -85,7 +87,7 @@ namespace Blocto.SDK.Flow
         
         private bool _isInstalledApp = false;
         
-        private string _universalLink = "default";
+        public static string UniversalLink = "default";
         
         /// <summary>
         /// Create blocto wallet provider instance
@@ -117,23 +119,33 @@ namespace Blocto.SDK.Flow
             return bloctoWalletProvider;
         }
         
-        public string UniversalLinkHandler()
+        public static string UniversalLinkHandler()
         {
             $"Universal Link Handler".ToLog();
-            if(Application.platform == RuntimePlatform.Android)
+            switch (Application.platform)
             {
+                case RuntimePlatform.Android:
+                    break;
+                case RuntimePlatform.IPhonePlayer: {
+                    BloctoWalletProvider.UniversalLink = BloctoWalletProvider.UniversalLink_GetURL();
+                    $"Universal Link: {BloctoWalletProvider.UniversalLink}".ToLog();
                 
-            }else if(Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-                _universalLink = BloctoWalletProvider.UniversalLink_GetURL();
-                if(_universalLink != "")
-                {
-                    $"Universal link: {_universalLink}".ToLog();
-                    BloctoWalletProvider.UniversalLink_Reset();
+                    if(BloctoWalletProvider.UniversalLink != "")
+                    {
+                        $"Universal link: {BloctoWalletProvider.UniversalLink}".ToLog();
+                        // BloctoWalletProvider.UniversalLink_Reset();
+                    }
+
+                    break;
                 }
             }
             
-            return _universalLink;
+            return BloctoWalletProvider.UniversalLink;
+        }
+        
+        public void UniversalLinkCallbackHandler(string message)
+        {
+            $"Universal Link: {message}, in Handler".ToLog();
         }
 
         public bool IsInstalledApp()

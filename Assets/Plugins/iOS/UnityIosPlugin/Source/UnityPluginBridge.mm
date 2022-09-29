@@ -15,7 +15,7 @@ extern "C" {
           NSString* tmpWebUrl = [NSString stringWithUTF8String:webUrl];
           NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl];
          
-          NSLog(@"%@", failedFn);
+          NSLog(@"%@", go);
           
           UIWindow *keyWindow = nil;
           
@@ -60,6 +60,10 @@ extern "C" {
 
          return isInstalled;
      }
+
+    void WriteLog(){
+        printf("MainController Start or Awake");
+    }
 
 
      void CloseWindow()

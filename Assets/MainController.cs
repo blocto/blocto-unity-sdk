@@ -128,8 +128,7 @@ public class MainController : MonoBehaviour
         _getAccountBtn = tmp.GetComponent<Button>();
         _getAccountBtn.onClick.AddListener(Test);
         
-        tmp = GameObject.Find("ResultTxt");
-        _resultTxt = tmp.GetComponent<InputField>();
+        
         
         tmp = GameObject.Find("AccountTxt");
         _accountTxt = tmp.GetComponent<InputField>();
@@ -155,13 +154,31 @@ public class MainController : MonoBehaviour
         tmp = GameObject.Find("QueryResultTxt");
         _queryResultTxt = tmp.GetComponent<InputField>();
         
+        tmp = GameObject.Find("ResultTxt");
+        _resultTxt = tmp.GetComponent<InputField>();
+        
         tmp = GameObject.Find("QueryBtn");
         _queryBtn = tmp.GetComponent<Button>();
         _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
+        
+        
+        _accountTxt.text = DateTime.Now.ToString("hh:mm:ss.ff");
+        // if(Application.platform == RuntimePlatform.IPhonePlayer)
+        // {
+        //     var tmpUniversalLink = BloctoWalletProvider.UniversalLinkHandler();
+        //     if(tmpUniversalLink != "default")
+        //     {
+        //         _resultTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
+        //         _resultTxt.text = tmpUniversalLink;
+        //     }
+        // }
+        
+        
     }
 
     void Start()
     {
+        _accountTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
         $"Maincontroller Start".ToLog();
         var config = new Config();
         config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
@@ -171,25 +188,32 @@ public class MainController : MonoBehaviour
         _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(initialFun: GetWallet => {
                                                                                           var walletProvider = GetWallet.Invoke(
                                                                                               gameObject, 
-                                                                                              new FlowUnityWebRequest(gameObject, config.Get("accessNode.api")),
+                                                                                              new FlowUnityWebRequest(gameObject, "https://rest-testnet.onflow.org/v1"),
                                                                                               new ResolveUtility());
                                                                                           
                                                                                           return walletProvider;
                                                                                       }, 
-                                                                          bloctoAppIdentifier:Guid.Parse("d0c4c565-db60-4848-99c8-2bdfc6bd3576"));
+                                                                          bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
         
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
                                                                  }, config);
         
-        var tmpUniversalLink = _walletProvider.UniversalLinkHandler();
-        if(tmpUniversalLink != "default")
+        _accountTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
+        if(Application.platform == RuntimePlatform.IPhonePlayer)
         {
-            _signmessageTxt.text = tmpUniversalLink;
+            var tmpUniversalLink = BloctoWalletProvider.UniversalLinkHandler();
+            if(tmpUniversalLink != "default")
+            {
+                _resultTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
+                _resultTxt.text = tmpUniversalLink;
+            }
         }
+        
+        DontDestroyOnLoad (gameObject);
     }
-    
+
     private void ConnectWallet()
     {
         var accountProofData = new AccountProofData
