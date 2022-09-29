@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -38,9 +39,35 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                 proj.AddBuildProperty(targetGuid, "SWIFT_VERSION", "4.0");
                 proj.AddBuildProperty(targetGuid, "COREML_CODEGEN_LANGUAGE", "Swift");
 
+                var plistPath = buildPath + "/Info.plist";
+                PlistDocument plist = new PlistDocument();
+                plist.ReadFromString(File.ReadAllText(plistPath));
 
+                var isContainQueriesSchemes = plist.root.values.ContainsKey("LSApplicationQueriesSchemes");
+                var queriesUrlTypeArray = default(PlistElementArray);
+                if(isContainQueriesSchemes)
+                {
+                    queriesUrlTypeArray = plist.root["LSApplicationQueriesSchemes"] as PlistElementArray;
+                }
+                else
+                {
+                    queriesUrlTypeArray = plist.root.CreateArray("LSApplicationQueriesSchemes");
+                }
+                
+                
+                if(queriesUrlTypeArray?.values.Any(p => p.AsString() == "blocto") == false)
+                {
+                    queriesUrlTypeArray?.AddString("blocto");
+                }
+                
+                if(queriesUrlTypeArray?.values.Any(p => p.AsString() == "blocto-staging") == false)
+                {
+                    queriesUrlTypeArray?.AddString("blocto-staging");
+                }
+                
                 OnProstProcessBuildIOS(buildPath);
                 
+                plist.WriteToFile(plistPath);
                 proj.WriteToFile(projPath);
             }
         }
