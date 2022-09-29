@@ -8,4 +8,6 @@
 
 - (void)reset;
 
+-(NSString *)getUrl;
+
 @end
