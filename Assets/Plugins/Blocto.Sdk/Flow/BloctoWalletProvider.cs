@@ -82,6 +82,9 @@ namespace Blocto.SDK.Flow
         [DllImport("__Internal")]
         private static extern string UniversalLink_Reset();
         
+        [DllImport("__Internal")]
+        private static extern string WriteLog();
+        
         /// <summary>
         /// Android instance
         /// </summary>

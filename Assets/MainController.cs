@@ -157,6 +157,9 @@ public class MainController : MonoBehaviour
         tmp = GameObject.Find("QueryBtn");
         _queryBtn = tmp.GetComponent<Button>();
         _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
+        
+        
+        _accountTxt.text = DateTime.Now.ToString("hh:mm:ss.ff");
     }
 
     void Start()
