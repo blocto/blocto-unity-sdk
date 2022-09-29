@@ -1,5 +1,6 @@
 #import "UnityAppController.h"
 #import <UniversalLink.h>
+#import "UnityInterface.h"
 
 @interface BloctoAppController : UnityAppController
 @end
@@ -32,8 +33,8 @@ IMPL_APP_CONTROLLER_SUBCLASS (BloctoAppController)
             NSString *query = [url query];
             [UniversalLink instance].URL = query;
 
+            UnitySendMessage("bloctowalletprovider", "UniversalLinkCallbackHandler", [UniversalLink instance].URL.UTF8String);
             NSLog(@"Universal link: %@", [UniversalLink instance].URL);
-            UniversalLink_GetURL();
             UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
             message:query delegate:self cancelButtonTitle:@"Cancel"
             otherButtonTitles:@"OK", nil];
