@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UniversalLink.h>
 
-
 __strong UniversalLink *_instance;
 @implementation UniversalLink
 +(void)load
@@ -44,13 +43,9 @@ extern "C"
         {
             NSLog(@"UniversalLink GetURL");
             const char* cString = [[UniversalLink instance] URL].UTF8String;
-            NSLog(@"UniversalLink GetURL 1");
             NSLog(@"%s", cString);
-            NSLog(@"UniversalLink GetURL 2");
             char* _unityString = (char*)malloc(strlen(cString) + 1);
-            NSLog(@"UniversalLink GetURL 3");
             strcpy(_unityString, cString);
-            NSLog(@"UniversalLink GetURL End.");
             
             NSString* fn = [NSString stringWithUTF8String:"bloctowalletprovider"];
             NSString* failedFn = [NSString stringWithUTF8String:"UniversalLinkCallbackHandler"];
