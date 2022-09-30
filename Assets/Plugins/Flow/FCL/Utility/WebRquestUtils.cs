@@ -111,7 +111,6 @@ namespace Flow.FCL.Utility
             else
             {
                 using var streamReader = new System.IO.StreamReader(new MemoryStream(unityWebRequest.downloadHandler.data));
-                streamReader.ReadToEnd().ToLog();
                 throw new ApiException("The HTTP status code of the response was not expected (" + (int)unityWebRequest.responseCode + ").", (int)unityWebRequest.responseCode, "", null); 
             } 
             
