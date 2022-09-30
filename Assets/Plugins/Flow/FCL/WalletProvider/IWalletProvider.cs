@@ -38,6 +38,6 @@ namespace Flow.FCL.WalletProvider
         /// <param name="message">Original message </param>
         /// <param name="signService">FCL signature service</param>
         /// <param name="callback">After, get endpoint response callback.</param>
-        public void SignMessage(string message, FclService signService, Action<ExecuteResult<FlowSignature>> callback = null);
+        public void SignMessage(string message, FclService signService, Action<ExecuteResult<List<FlowSignature>>> callback = null);
     }
 }
