@@ -5,7 +5,6 @@ using Flow.FCL.Extensions;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core.Models;
-using Plugins.Flow.FCL.Models;
 
 namespace Flow.FCL.Models
 {
@@ -116,7 +115,7 @@ namespace Flow.FCL.Models
                                                        }}) ;
         }
         
-        public void SignUserMessage(string message, Action<ExecuteResult<FlowSignature>> callback = null)
+        public void SignUserMessage(string message, Action<ExecuteResult<List<FlowSignature>>> callback = null)
         {
             if(Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
             {

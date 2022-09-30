@@ -34,11 +34,11 @@ IMPL_APP_CONTROLLER_SUBCLASS (BloctoAppController)
             [UniversalLink instance].URL = query;
 
             UnitySendMessage("bloctowalletprovider", "UniversalLinkCallbackHandler", [UniversalLink instance].URL.UTF8String);
-            NSLog(@"Universal link: %@", [UniversalLink instance].URL);
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
-            message:query delegate:self cancelButtonTitle:@"Cancel"
-            otherButtonTitles:@"OK", nil];
-            [alert show];
+            // NSLog(@"Universal link: %@", [UniversalLink instance].URL);
+            // UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            // message:query delegate:self cancelButtonTitle:@"Cancel"
+            // otherButtonTitles:@"OK", nil];
+            // [alert show];
 
             return YES;
         }
