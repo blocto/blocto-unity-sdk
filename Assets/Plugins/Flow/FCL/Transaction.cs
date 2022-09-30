@@ -38,9 +38,6 @@ namespace Flow.FCL
         
         public virtual void SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
         {
-            // var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-            // tx.ReferenceBlockId = lastBlock.Header.Id;
-            // _walletProvider.SendTransaction(preAuthzUrl, tx, internalCallback, callback);
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
             
@@ -86,7 +83,6 @@ namespace Flow.FCL
                                                                                                          var signInfo = response.SignatureInfo();
                                                                                                          if (signInfo.Signature != null)
                                                                                                          {
-                                                                                                             $"Signature info keyId: {signInfo.KeyId}".ToLog();
                                                                                                              tx.PayloadSignatures.Add(new FlowSignature
                                                                                                                                       {
                                                                                                                                           Address = new FlowAddress(signInfo.Address.ToString()),

@@ -161,21 +161,17 @@ namespace Blocto.Sdk.Flow.Utility
         {
             var payerAddress = tx.Payer.Address;
             var signer = tx.EnvelopeSignatures.First(p => p.Address.Address == payerAddress);
-            $"SignerKeys: {JsonConvert.SerializeObject(tx.EnvelopeSignatures)}, payer address {tx.Payer.Address}, signerKey: {JsonConvert.SerializeObject(signer)}".ToLog();
             var keyId = signer.KeyId;
             signable.Remove(SignablePropertyEnum.addr.ToString());
             signable.Remove(SignablePropertyEnum.keyId.ToString());
             signable.Add(SignablePropertyEnum.addr.ToString(), tx.Payer.Address);
             signable.Add(SignablePropertyEnum.keyId.ToString(), keyId.ToString());
             
-            $"Update completed addr and keyId".ToLog();
-            $"Payer signable: {JsonConvert.SerializeObject(signable)}".ToLog();
             var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
             var voucher = CreateVoucher(tx, args, "payersignable");
             signable.Remove(SignablePropertyEnum.voucher.ToString());
             signable.Add(SignablePropertyEnum.voucher.ToString(), voucher);
             
-            $"Payer signable: {JsonConvert.SerializeObject(signable)}".ToLog();
             var message = EncodeUtility.EncodedCanonicalAuthorizationEnvelope(tx);
             signable.Remove(SignablePropertyEnum.message.ToString());
             signable.Add(SignablePropertyEnum.message.ToString(), message);
