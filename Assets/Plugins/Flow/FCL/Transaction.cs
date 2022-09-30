@@ -50,29 +50,14 @@ namespace Flow.FCL
             Action<string> callback = null
         )
         {
-            var lastBlock =
-                _flowClient
-                    .GetLatestBlockAsync()
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
+            var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
-            _walletProvider.SendTransaction (
-                preAuthzUrl,
-                tx,
-                internalCallback,
-                callback
-            );
+            _walletProvider.SendTransaction(preAuthzUrl, tx, internalCallback, callback);
         }
 
         public FlowTransactionResult GetTransactionStatus(string transactionId)
         {
-            var txr =
-                _flowClient
-                    .GetTransactionResultAsync(transactionId)
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
+            var txr = _flowClient.GetTransactionResultAsync(transactionId).ConfigureAwait(false).GetAwaiter().GetResult();
             return txr;
         }
 
