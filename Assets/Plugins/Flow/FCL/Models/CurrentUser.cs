@@ -100,12 +100,6 @@ namespace Flow.FCL.Models
                                                            var nonce = service?.Data.Nonce;
                                                            foreach (var signature in service?.Data.Signatures)
                                                            {
-                                                               // accountProofData.Signature.Add(new Signature
-                                                               //                                {
-                                                               //                                    Addr = service?.Data.Address,
-                                                               //                                    KeyId = Convert.ToUInt32(signature.KeyId()),
-                                                               //                                    SignatureStr = signature.SignatureStr()
-                                                               //                                });
                                                                accountProofData.Signature.Add(new FlowSignature()
                                                                                               {
                                                                                                   Address = new FlowAddress(service?.Data.Address),

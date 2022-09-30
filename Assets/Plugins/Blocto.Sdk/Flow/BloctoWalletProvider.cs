@@ -82,9 +82,6 @@ namespace Blocto.SDK.Flow
         [DllImport("__Internal")]
         private static extern string UniversalLink_Reset();
         
-        [DllImport("__Internal")]
-        private static extern string WriteLog();
-        
         /// <summary>
         /// Android instance
         /// </summary>
@@ -134,6 +131,8 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider._isCancelRequest = false;
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
+            
+            
             
             if(Application.platform == RuntimePlatform.Android)
             {
@@ -256,7 +255,11 @@ namespace Blocto.SDK.Flow
             return isInstallApp;
         }
 
-        public bool IsInstalledApp()
+        /// <summary>
+        /// Check specify app installed
+        /// </summary>
+        /// <returns></returns>
+        private bool IsInstalledApp()
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
@@ -265,15 +268,16 @@ namespace Blocto.SDK.Flow
                 testDomain = $"blocto-staging://open";
             }
             
-            if(Application.platform == RuntimePlatform.Android)
+            switch (Application.platform)
             {
+                case RuntimePlatform.Android:
+                    break;
+                case RuntimePlatform.IPhonePlayer:
+                    $"App domain: {_appSdkDomain}".ToLog();
                 
-            }else if(Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-                $"App domain: {_appDomain}".ToLog();
-                
-                isInstallApp = IsInstalled(testDomain);
-                $"Is installed App: {isInstallApp}".ToLog();
+                    isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
+                    $"Is installed App: {isInstallApp}".ToLog();
+                    break;
             }
             
             return isInstallApp;
