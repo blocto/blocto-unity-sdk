@@ -5,8 +5,10 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
+using Blocto.Sdk.Flow.Model;
 using Flow.FCL;
 using Flow.FCL.Extensions;
 using Flow.FCL.Models;
@@ -30,12 +32,12 @@ namespace Blocto.SDK.Flow
         /// <summary>
         /// System Thumbnail
         /// </summary>
-        public static string Thumbnail;
+        private static string Thumbnail;
         
         /// <summary>
         /// System Title
         /// </summary>
-        public static string Title;
+        private static string Title;
 
         /// <summary>
         /// HTTP utility
@@ -58,17 +60,27 @@ namespace Blocto.SDK.Flow
         [DllImport ("__Internal")]
         private static extern void CloseWindow();
         
+        /// <summary>
+        /// Check specify app installed
+        /// </summary>
+        /// <param name="appUrl"></param>
+        /// <returns></returns>
         [DllImport ("__Internal")]
         private static extern bool IsInstalled(string appUrl);
         
+        /// <summary>
+        /// Get universal link data
+        /// </summary>
+        /// <returns></returns>
         [DllImport("__Internal")]
         private static extern string UniversalLink_GetURL();
 
+        /// <summary>
+        /// Reset universal link on iOS code
+        /// </summary>
+        /// <returns></returns>
         [DllImport("__Internal")]
         private static extern string UniversalLink_Reset();
-        
-        [DllImport("__Internal")]
-        private static extern string WriteLog();
         
         /// <summary>
         /// Android instance
@@ -83,11 +95,17 @@ namespace Blocto.SDK.Flow
         
         private Guid _bloctoAppIdentifier;
         
-        private string _appDomain = "https://staging.blocto.app/sdk?";
+        private string _appSdkDomain = "https://staging.blocto.app/sdk?";
         
-        private bool _isInstalledApp = false;
+        public bool _isInstalledApp = false;
         
         public static string UniversalLink = "default";
+        
+        public Dictionary<string, string> _requestIdActionMapper;
+        
+        private List<Func<string, (int Index, string Name, string Value)>> _authnReturnParsers;
+        
+        private Action<object> _authenticateCallback;
         
         /// <summary>
         /// Create blocto wallet provider instance
@@ -103,6 +121,8 @@ namespace Blocto.SDK.Flow
                                                              provider.WebRequestUtility = gameObject.AddComponent<WebRequestUtility>();
                                                              provider._resolveUtility = resolveUtility;
                                                              provider._flowClient = flowClient;
+                                                             provider._requestIdActionMapper = new Dictionary<string, string>();
+                                                             
                                                              return provider;
                                                          });
             
@@ -111,6 +131,8 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
             
+            
+            
             if(Application.platform == RuntimePlatform.Android)
             {
                 bloctoWalletProvider.InitializePlugins("com.blocto.unity.PluginActivity");
@@ -118,37 +140,73 @@ namespace Blocto.SDK.Flow
             
             return bloctoWalletProvider;
         }
-        
-        public static string UniversalLinkHandler()
-        {
-            $"Universal Link Handler".ToLog();
-            switch (Application.platform)
-            {
-                case RuntimePlatform.Android:
-                    break;
-                case RuntimePlatform.IPhonePlayer: {
-                    BloctoWalletProvider.UniversalLink = BloctoWalletProvider.UniversalLink_GetURL();
-                    $"Universal Link: {BloctoWalletProvider.UniversalLink}".ToLog();
-                
-                    if(BloctoWalletProvider.UniversalLink != "")
-                    {
-                        $"Universal link: {BloctoWalletProvider.UniversalLink}".ToLog();
-                        // BloctoWalletProvider.UniversalLink_Reset();
-                    }
 
-                    break;
+        public void Awake()
+        {
+            if(_isInstalledApp)
+            {
+                _authnReturnParsers = new List<Func<string, (int Index, string Name, string Value)>>
+                                      {
+                                          AddressParser,
+                                          SignatureParser
+                                      };
+            }
+        }
+
+        /// <summary>
+        /// Universal link handler on receive universal link
+        /// </summary>
+        /// <param name="message">universal link data from iOS</param>
+        public void UniversalLinkCallbackHandler(string link)
+        {
+            $"Universal Link: {link}, in Handler".ToLog();
+            var decodeLink = UnityWebRequest.UnEscapeURL(link);
+            $"Universal Link decode : {decodeLink}, in Handler".ToLog();
+            var item = decodeLink.RequestId();
+            if(_requestIdActionMapper.ContainsKey(item.RequestId))
+            {
+                var action = _requestIdActionMapper[item.RequestId];
+                switch (action)
+                {
+                    case "authn":
+                        var tmp = UniversalLinkAuthnHandler(item.RemainContent);
+                        var signatures = tmp.Signatures.Select(signature => new JObject
+                                                                            {
+                                                                                new JProperty("keyId", signature.KeyId),
+                                                                                new JProperty("signature", signature.SignatureStr)
+                                                                            }).ToList();
+
+                        var authnResponse = new AuthenticateResponse
+                                            {
+                                                Data = new AuthenticateData
+                                                       {
+                                                           Addr = tmp.Address,
+                                                           Services = new FclService[]{ new FclService
+                                                                                        {
+                                                                                            Type = ServiceTypeEnum.AccountProof,
+                                                                                            Data = new FclServiceData
+                                                                                                   {
+                                                                                                       Address = tmp.Address,
+                                                                                                       FVsn = string.Empty,
+                                                                                                       Signatures = signatures
+                                                                                                   }
+                                                                                        }}
+                                                       }
+                                            };
+                        
+                        _authenticateCallback.Invoke(authnResponse);
+                        break;
                 }
             }
             
-            return BloctoWalletProvider.UniversalLink;
-        }
-        
-        public void UniversalLinkCallbackHandler(string message)
-        {
-            $"Universal Link: {message}, in Handler".ToLog();
+            
         }
 
-        public bool IsInstalledApp()
+        /// <summary>
+        /// Check specify app installed
+        /// </summary>
+        /// <returns></returns>
+        private bool IsInstalledApp()
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
@@ -157,15 +215,16 @@ namespace Blocto.SDK.Flow
                 testDomain = $"blocto-staging://open";
             }
             
-            if(Application.platform == RuntimePlatform.Android)
+            switch (Application.platform)
             {
+                case RuntimePlatform.Android:
+                    break;
+                case RuntimePlatform.IPhonePlayer:
+                    $"App domain: {_appSdkDomain}".ToLog();
                 
-            }else if(Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-                $"App domain: {_appDomain}".ToLog();
-                
-                isInstallApp = IsInstalled(testDomain);
-                $"Is installed App: {isInstallApp}".ToLog();
+                    isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
+                    $"Is installed App: {isInstallApp}".ToLog();
+                    break;
             }
             
             return isInstallApp;
@@ -179,12 +238,14 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null)
         {
-            $"isInstalledApp: {_isInstalledApp}".ToLog();
             if(_isInstalledApp)
             {
-                var sb = new StringBuilder(_appDomain);
+                var requestId = Guid.NewGuid();
+                _requestIdActionMapper.Add(requestId.ToString(), "authn");
+                
+                var sb = new StringBuilder(_appSdkDomain);
                 sb.Append($"app_id={_bloctoAppIdentifier}" + "&")
-                  .Append($"request_id={Guid.NewGuid()}" + "&")
+                  .Append($"request_id={requestId}" + "&")
                   .Append("blockchain=flow" + "&")
                   .Append("method=authn" + "&");
                     
@@ -194,7 +255,9 @@ namespace Blocto.SDK.Flow
                       .Append($"flow_nonce={parameters["accountProofNonce"]}");
                 }
                 
-                $"Url: {sb.ToString()}".ToLog();
+                $"Nonce: {parameters["accountProofNonce"].ToString()}".ToLog();
+                
+                _authenticateCallback = internalCallback;
                 StartCoroutine(OpenUrl(sb.ToString()));
             }
             else
@@ -448,6 +511,103 @@ namespace Blocto.SDK.Flow
             } 
             
             yield return new WaitForSeconds(0.01f);
+        }
+        
+        private (string Address, List<Signature> Signatures) UniversalLinkAuthnHandler(string link)
+        {
+            var address = default(string);
+            var signatures = default(List<Signature>);
+            var keywords = new List<string>{ "address=", "account_proof" };
+            var index = 0;
+            var data = (MatchContents: new List<string>(), RemainContent: link);
+            while (data.RemainContent.Length > 0)
+            {
+                var keyword = keywords[index];
+                data = CheckContent(data.RemainContent, keyword);
+                switch (keyword)
+                {
+                    case "address=":
+                        address = AddressParser(data.MatchContents.FirstOrDefault()).Value;
+                        break;
+                    case "account_proof":
+                        signatures = AccountProofProcess(data);
+                        break;
+                }
+                
+                index++;
+            }
+            
+            return (address, signatures);
+        }
+
+        private List<Signature> AccountProofProcess((List<string> MatchContents, string RemainContent) data)
+        {
+            var sort = 0;
+            var signature = new Signature();
+            var signatures = new List<Signature>();
+            foreach (var result in data.MatchContents.Select(SignatureParser))
+            {
+                if (sort != result.Index)
+                {
+                    sort += 1;
+                    signatures.Add(signature);
+                    signature = new Signature();
+                }
+
+                switch (result.Name)
+                {
+                    case "address":
+                        signature.Addr = result.Value;
+                        break;
+                    case "key_id":
+                        signature.KeyId = Convert.ToUInt32(result.Value);
+                        break;
+                    case "signature":
+                        signature.SignatureStr = result.Value;
+                        break;
+                }
+            }
+            
+            signatures.Add(signature);
+            return signatures;
+        }
+
+        private (List<string> MatchContent, string RemainContent) CheckContent(string text, string keyword)
+        {
+            if (!text.ToLower().Contains(keyword))
+            {
+                return (new List<string>(), text);
+            }
+
+            var elements = text.Split("&").ToList();
+            var matchElements = elements.Where(p => p.ToLower().Contains(keyword)).ToList();
+            foreach (var element in matchElements)
+            {
+                elements.Remove(element);
+            }
+                
+            return (matchElements, elements.Count > 0 ? string.Join("&", elements) : string.Empty);
+        }
+        
+        private (int Index, string Name, string Value) AddressParser(string text)
+        {
+            var value = text.Split("=")[1];
+            return (0, "address", value);
+        }
+        
+        private (int Index, string Name, string Value) SignatureParser(string text)
+        {
+            var keyValue = text.Split("=");
+            var propertiesPattern = @"(?<=\[)(.*)(?=\])";
+
+            var match = Regex.Match(keyValue[0], propertiesPattern);
+            if (!match.Success)
+            {
+                throw new Exception("App sdk return value format error");
+            }
+
+            var elements = match.Captures.FirstOrDefault()?.Value.Split("][");
+            return (Convert.ToInt32(elements?[0]), elements?[1], keyValue[1]);
         }
         
         /// <summary>

@@ -8,13 +8,13 @@ using Blocto.SDK.Flow;
 using Blocto.Sdk.Flow.Utility;
 using Flow.FCL;
 using Flow.FCL.Config;
+using Flow.FCL.Models;
 using Flow.FCL.Utility;
 using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Plugins.Flow.FCL.Models;
 using UnityEngine;
 using UnityEngine.UI;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
@@ -128,8 +128,6 @@ public class MainController : MonoBehaviour
         _getAccountBtn = tmp.GetComponent<Button>();
         _getAccountBtn.onClick.AddListener(Test);
         
-        
-        
         tmp = GameObject.Find("AccountTxt");
         _accountTxt = tmp.GetComponent<InputField>();
         
@@ -160,20 +158,6 @@ public class MainController : MonoBehaviour
         tmp = GameObject.Find("QueryBtn");
         _queryBtn = tmp.GetComponent<Button>();
         _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
-        
-        
-        _accountTxt.text = DateTime.Now.ToString("hh:mm:ss.ff");
-        // if(Application.platform == RuntimePlatform.IPhonePlayer)
-        // {
-        //     var tmpUniversalLink = BloctoWalletProvider.UniversalLinkHandler();
-        //     if(tmpUniversalLink != "default")
-        //     {
-        //         _resultTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
-        //         _resultTxt.text = tmpUniversalLink;
-        //     }
-        // }
-        
-        
     }
 
     void Start()
@@ -194,24 +178,13 @@ public class MainController : MonoBehaviour
                                                                                           return walletProvider;
                                                                                       }, 
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
-        
+        _walletProvider._isInstalledApp = false;
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
                                                                  }, config);
         
-        _accountTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
-        if(Application.platform == RuntimePlatform.IPhonePlayer)
-        {
-            var tmpUniversalLink = BloctoWalletProvider.UniversalLinkHandler();
-            if(tmpUniversalLink != "default")
-            {
-                _resultTxt.text = DateTime.Now.ToString("hh:mm:ss.fff");
-                _resultTxt.text = tmpUniversalLink;
-            }
-        }
-        
-        DontDestroyOnLoad (gameObject);
+        DontDestroyOnLoad (_walletProvider);
     }
 
     private void ConnectWallet()
@@ -229,7 +202,7 @@ public class MainController : MonoBehaviour
                            if(accountProofData != null)
                            {
                                $"AppId: {accountProofData.AppId}, Nonce: {accountProofData.Nonce}".ToLog();
-                               $"Address: {accountProofData.Signature.Addr}, KeyId: {accountProofData.Signature.KeyId}, Signature: {accountProofData.Signature.SignatureStr}".ToLog();
+                               $"Address: {accountProofData.Signature.First().Addr}, KeyId: {accountProofData.Signature.First().KeyId}, Signature: {accountProofData.Signature.First().SignatureStr}".ToLog();
                            }
                            
                            var appUtil = new AppUtility(gameObject, new EncodeUtility());
@@ -401,5 +374,46 @@ public class MainController : MonoBehaviour
 
     public void Test()
     {
+        var link = @"address=0x068606b2acddc1ca&account_proof%5B0%5D%5Baddress%5D=0x068606b2acddc1ca&account_proof%5B0%5D%5Bkey_id%5D=2&account_proof%5B0%5D%5Bsignature%5D=f0fb6849037a93311826fe715f2c6e192ddaf489a1f024a03fb412709b0fd93772e31b97e35621ad7973c96a53964b3ae5ef18ca19aa0f90da2e19b7d1d7ff5d&account_proof%5B1%5D%5Baddress%5D=0x068606b2acddc1ca&account_proof%5B1%5D%5Bkey_id%5D=0&account_proof%5B1%5D%5Bsignature%5D=0ec3d883082088d41906f40bf69fc5747b2792d6482daa0ca99b2f36a8c9ebfba88a7acbb0516139a9fdf7e168a3be73b782ff3388eeb212d0eac4bda86047b1&request_id=35ce5ea5-4f73-4880-96c5-30f819343ec3";
+        var tmpWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(initialFun: GetWallet => {
+                                                                                                var walletProvider = GetWallet.Invoke(
+                                                                                                    gameObject, 
+                                                                                                    new FlowUnityWebRequest(gameObject, "https://rest-testnet.onflow.org/v1"),
+                                                                                                    new ResolveUtility());
+                                                                                                
+                                                                                                walletProvider._requestIdActionMapper.Add("35ce5ea5-4f73-4880-96c5-30f819343ec3", "authn");
+                                                                                                return walletProvider;
+                                                                                            }, 
+                                                                                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
+        tmpWalletProvider._isInstalledApp = true;
+        var config = new Config();
+        _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
+                                                         var fcl = GetFCL.Invoke(gameObject, tmpWalletProvider, new ResolveUtility());
+                                                         return fcl;
+                                                     }, config); 
+        var accountProofData = new AccountProofData
+                               {
+                                   AppId = "com.blocto.flow.unitydemo",
+                                   Nonce = KeyGenerator.GetUniqueKey(32).StringToHex()
+                               };
+        _fcl.Authenticate(
+            accountProofData:accountProofData,
+            callback: ((currentUser,  accountProofData) => {
+                           _accountTxt.text = currentUser.Addr.Address.AddHexPrefix();
+                           if(accountProofData != null)
+                           {
+                               $"AppId: {accountProofData.AppId}, Nonce: {accountProofData.Nonce}".ToLog();
+                               $"Address: {accountProofData.Signature.First().Addr}, KeyId: {accountProofData.Signature.First().KeyId}, Signature: {accountProofData.Signature.First().SignatureStr}".ToLog();
+                           }
+                           
+                           var appUtil = new AppUtility(gameObject, new EncodeUtility());
+                           var isVerify = appUtil.VerifyAccountProofSignature(
+                               appIdentifier: accountProofData!.AppId,
+                               accountProofData: accountProofData,
+                               fclCryptoContract: "0x5b250a8a85b44a67");
+                           Debug.Log($"User is verify: {isVerify}");
+                       }));
+        
+        tmpWalletProvider.UniversalLinkCallbackHandler(link);
     }
 }

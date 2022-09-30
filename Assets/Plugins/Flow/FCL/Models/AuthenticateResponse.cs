@@ -1,7 +1,6 @@
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
 
 namespace Flow.FCL.Models
