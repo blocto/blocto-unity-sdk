@@ -1,4 +1,4 @@
-namespace Plugins.Flow.FCL.Models
+namespace Flow.FCL.Models
 {
     public class Signature
     {

@@ -1,9 +1,14 @@
-using Flow.Net.Sdk.Core.Models;
+using System.Collections.Generic;
 
-namespace Plugins.Flow.FCL.Models
+namespace Flow.FCL.Models
 {
     public class AccountProofData
     {
+        public AccountProofData()
+        {
+            Signature = new List<Signature>();
+        }
+        
         /// <summary>
         /// App Name
         /// </summary>
@@ -17,6 +22,6 @@ namespace Plugins.Flow.FCL.Models
         /// <summary>
         /// Signature
         /// </summary>
-        public Signature Signature { get; set; }
+        public List<Signature> Signature { get; set; }
     }
 }
