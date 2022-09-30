@@ -132,8 +132,6 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
             
-            
-            
             if(Application.platform == RuntimePlatform.Android)
             {
                 bloctoWalletProvider.InitializePlugins("com.blocto.unity.PluginActivity");
@@ -276,7 +274,6 @@ namespace Blocto.SDK.Flow
                     $"App domain: {_appSdkDomain}".ToLog();
                 
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
-                    $"Is installed App: {isInstallApp}".ToLog();
                     break;
             }
             
