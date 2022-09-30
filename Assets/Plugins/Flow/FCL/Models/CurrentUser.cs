@@ -98,12 +98,16 @@ namespace Flow.FCL.Models
                                                        {
                                                            var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
                                                            var nonce = service?.Data.Nonce;
-                                                           accountProofData.Signature = new Signature
-                                                                                        {
-                                                                                            Addr = service?.Data.Address,
-                                                                                            KeyId = Convert.ToUInt32(service?.Data.Signatures.First().KeyId()),
-                                                                                            SignatureStr = service?.Data.Signatures.First().SignatureStr()
-                                                                                        };
+                                                           foreach (var signature in service?.Data.Signatures)
+                                                           {
+                                                               accountProofData.Signature.Add(new Signature
+                                                                                              {
+                                                                                                  Addr = service?.Data.Address,
+                                                                                                  KeyId = Convert.ToUInt32(signature.KeyId()),
+                                                                                                  SignatureStr = signature.SignatureStr()
+                                                                                              });
+                                                           }
+                                                           
                                                            AccountProofData = accountProofData;
                                                            callback?.Invoke(this, accountProofData);
                                                        }else

@@ -11,7 +11,6 @@ using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Plugins.Flow.FCL.Models;
 using UnityEngine;
 
 namespace Flow.FCL

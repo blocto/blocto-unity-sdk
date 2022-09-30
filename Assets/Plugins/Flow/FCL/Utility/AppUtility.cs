@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Flow.FCL.Models;
 using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Plugins.Flow.FCL.Models;
 using UnityEngine;
 
 namespace Flow.FCL.Utility
@@ -73,19 +74,13 @@ namespace Flow.FCL.Utility
         public bool VerifyAccountProofSignature(string appIdentifier, AccountProofData accountProofData, string fclCryptoContract)
         {
             _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", fclCryptoContract);
-            var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.Addr, accountProofData.Nonce);
+            var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.First().Addr, accountProofData.Nonce);
             
-            var signatures = new CadenceArray(
-                new List<ICadence>
-                {
-                    new CadenceString(accountProofData.Signature.SignatureStr)
-                });
+            var signatureStrs = accountProofData.Signature.Select(p => new CadenceString(p.SignatureStr)).Cast<ICadence>().ToList();
+            var signatures = new CadenceArray(signatureStrs);
             
-            var signatureIndexes = new CadenceArray(
-                new List<ICadence>
-                {
-                    new CadenceNumber(CadenceNumberType.Int, accountProofData.Signature.KeyId.ToString())
-                });
+            var signatureIndexs = accountProofData.Signature.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList();
+            var signatureIndexes = new CadenceArray(signatureIndexs);
             
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(
                                new FlowScript
@@ -93,7 +88,7 @@ namespace Flow.FCL.Utility
                                    Script = _verifyAccountProofScript,
                                    Arguments = new List<ICadence>
                                                {
-                                                   new CadenceAddress(accountProofData.Signature.Addr),
+                                                   new CadenceAddress(accountProofData.Signature.First().Addr),
                                                    new CadenceString(message),
                                                    signatureIndexes,
                                                    signatures
