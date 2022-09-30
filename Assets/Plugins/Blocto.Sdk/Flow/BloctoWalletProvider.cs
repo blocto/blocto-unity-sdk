@@ -107,10 +107,11 @@ namespace Blocto.SDK.Flow
         
         private Action<object> _authenticateCallback;
         
+        private Action<ExecuteResult<List<FlowSignature>>> _signmessageCallback;
+
         /// <summary>
         /// Create blocto wallet provider instance
         /// </summary>
-        /// <param name="gameObject">Main gameobject</param>
         /// <param name="initialFun">Blocto initial func</param>
         /// <param name="bloctoAppIdentifier">Blocto sdk appId</param>
         /// <returns>BloctoWalletProvider</returns>
@@ -130,8 +131,6 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider._isCancelRequest = false;
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
-            
-            
             
             if(Application.platform == RuntimePlatform.Android)
             {
@@ -156,7 +155,7 @@ namespace Blocto.SDK.Flow
         /// <summary>
         /// Universal link handler on receive universal link
         /// </summary>
-        /// <param name="message">universal link data from iOS</param>
+        /// <param name="link">universal link data from iOS</param>
         public void UniversalLinkCallbackHandler(string link)
         {
             $"Universal Link: {link}, in Handler".ToLog();
@@ -181,20 +180,47 @@ namespace Blocto.SDK.Flow
                                                 Data = new AuthenticateData
                                                        {
                                                            Addr = tmp.Address,
-                                                           Services = new FclService[]{ new FclService
-                                                                                        {
-                                                                                            Type = ServiceTypeEnum.AccountProof,
-                                                                                            Data = new FclServiceData
-                                                                                                   {
-                                                                                                       Address = tmp.Address,
-                                                                                                       FVsn = string.Empty,
-                                                                                                       Signatures = signatures
-                                                                                                   }
-                                                                                        }}
+                                                           Services = new FclService[]{ 
+                                                                                          new FclService
+                                                                                          {
+                                                                                              Type = ServiceTypeEnum.AccountProof, 
+                                                                                              Data = new FclServiceData
+                                                                                                     {
+                                                                                                         Address = tmp.Address,
+                                                                                                         FVsn = string.Empty,
+                                                                                                         Signatures = signatures
+                                                                                                     }
+                                                                                          },
+                                                                                          new FclService
+                                                                                          {
+                                                                                              Type = ServiceTypeEnum.USERSIGNATURE,
+                                                                                              Addr = tmp.Address,
+                                                                                              Data = new FclServiceData
+                                                                                                     {
+                                                                                                         Address = tmp.Address
+                                                                                                     }
+                                                                                          },
+                                                                                          new FclService
+                                                                                          {
+                                                                                              Type = ServiceTypeEnum.PREAUTHZ
+                                                                                          }
+                                                                                      }
                                                        }
                                             };
                         
                         _authenticateCallback.Invoke(authnResponse);
+                        break;
+                    case "signmessage":
+                        var flowSignatures = UniversalLinkSignMessageHandler(item.RemainContent); 
+                        
+                        var result = new ExecuteResult<List<FlowSignature>>
+                                     {
+                                         Data = flowSignatures,
+                                         IsSuccessed = true,
+                                         Message = string.Empty
+                                     };
+                        
+                        _signmessageCallback?.Invoke(result);
                         break;
                 }
             }
@@ -220,10 +246,7 @@ namespace Blocto.SDK.Flow
                 case RuntimePlatform.Android:
                     break;
                 case RuntimePlatform.IPhonePlayer:
-                    $"App domain: {_appSdkDomain}".ToLog();
-                
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
-                    $"Is installed App: {isInstallApp}".ToLog();
                     break;
             }
             
@@ -403,42 +426,63 @@ namespace Blocto.SDK.Flow
         /// <param name="message">Original message </param>
         /// <param name="signService">FCL signature service</param>
         /// <param name="callback">After, get endpoint response callback.</param>
-        public void SignMessage(string message, FclService signService, Action<ExecuteResult<FlowSignature>> callback = null)
+        public void SignMessage(string message, FclService signService, Action<ExecuteResult<List<FlowSignature>>> callback = null)
         {
-            var signUrl = signService.SignMessageAdapterEndpoint();
-            
-            var hexMessage = message.StringToHex();
-            var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
-            var response = WebRequestUtility.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
-            var endpoint = response.SignMessageEndpoint();
-            
-            var sb = new StringBuilder(endpoint.IframeUrl);
-            sb.Append("&")
-              .Append(Uri.EscapeDataString("thumbnail") + "=")
-              .Append(BloctoWalletProvider.Thumbnail + "&")
-              .Append(Uri.EscapeDataString("title") + "=")
-              .Append(BloctoWalletProvider.Title);
-            var iframeUrl = sb.ToString();
+            if(_isInstalledApp)
+            {
+                var requestId = Guid.NewGuid();
+                _requestIdActionMapper.Add(requestId.ToString(), "signmessage");
+                
+                var sb = new StringBuilder(_appSdkDomain);
+                sb.Append($"app_id={_bloctoAppIdentifier}" + "&")
+                  .Append($"request_id={requestId}" + "&")
+                  .Append("blockchain=flow" + "&")
+                  .Append("method=user_signature" + "&")
+                  .Append($"from={signService.Addr}" + "&")
+                  .Append($"message={Uri.EscapeUriString(Uri.EscapeUriString(message))}"); 
+                
+                _signmessageCallback = callback;
+                StartCoroutine(OpenUrl(sb.ToString()));
+            }
+            else
+            {
+                var signUrl = signService.SignMessageAdapterEndpoint();
+                var hexMessage = message.StringToHex();
+                var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
+                var response = WebRequestUtility.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
+                var endpoint = response.SignMessageEndpoint();
+                
+                var sb = new StringBuilder(endpoint.IframeUrl);
+                sb.Append("&")
+                  .Append(Uri.EscapeDataString("thumbnail") + "=")
+                  .Append(BloctoWalletProvider.Thumbnail + "&")
+                  .Append(Uri.EscapeDataString("title") + "=")
+                  .Append(BloctoWalletProvider.Title);
+                var iframeUrl = sb.ToString();
 
-            StartCoroutine(OpenUrl(iframeUrl));
-            StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, response => {
-                                                                                     var signature = response?.Data.First().SignatureStr();
-                                                                                     var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
-                                                                                     var addr = response?.Data.First().Address();
-                                                                                     var result = new ExecuteResult<FlowSignature>
-                                                                                                  {
-                                                                                                      Data = new FlowSignature
-                                                                                                             {
-                                                                                                                 Address = new FlowAddress(addr),
-                                                                                                                 KeyId = keyId,
-                                                                                                                 Signature = Encoding.UTF8.GetBytes(signature!)
-                                                                                                             },
-                                                                                                      IsSuccessed = true,
-                                                                                                      Message = string.Empty
-                                                                                                  };
-                                                                                     
-                                                                                     callback?.Invoke(result);
-                                                                                 }));
+                StartCoroutine(OpenUrl(iframeUrl));
+                StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, response => {
+                                                                                         var signature = response?.Data.First().SignatureStr();
+                                                                                         var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
+                                                                                         var addr = response?.Data.First().Address();
+                                                                                         var result = new ExecuteResult<List<FlowSignature>>
+                                                                                                      {
+                                                                                                          Data = new List<FlowSignature>
+                                                                                                                 {
+                                                                                                                     new FlowSignature
+                                                                                                                     {
+                                                                                                                         Address = new FlowAddress(addr),
+                                                                                                                         KeyId = keyId,
+                                                                                                                         Signature = Encoding.UTF8.GetBytes(signature!)
+                                                                                                                     }
+                                                                                                                 },
+                                                                                                          IsSuccessed = true,
+                                                                                                          Message = string.Empty
+                                                                                                      };
+                                                                                         
+                                                                                         callback?.Invoke(result);
+                                                                                     }));
+            }
         }
         
         /// <summary>
@@ -501,7 +545,6 @@ namespace Blocto.SDK.Flow
                 }
                 else if(Application.platform == RuntimePlatform.IPhonePlayer)
                 {
-                    $"Open url: {url}".ToLog();
                     OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
                 }
             }
@@ -539,6 +582,13 @@ namespace Blocto.SDK.Flow
             
             return (address, signatures);
         }
+        
+        private List<FlowSignature> UniversalLinkSignMessageHandler(string link)
+        {
+            var data = CheckContent(link, "user_signature");
+            var signatures = SignMessageProcess(data);
+            return signatures;
+        }
 
         private List<Signature> AccountProofProcess((List<string> MatchContents, string RemainContent) data)
         {
@@ -571,7 +621,39 @@ namespace Blocto.SDK.Flow
             signatures.Add(signature);
             return signatures;
         }
+        
+        private List<FlowSignature> SignMessageProcess((List<string> MatchContents, string RemainContent) data)
+        {
+            var sort = 0;
+            var signature = new FlowSignature();
+            var signatures = new List<FlowSignature>();
+            foreach (var result in data.MatchContents.Select(SignatureParser))
+            {
+                if (sort != result.Index)
+                {
+                    sort += 1;
+                    signatures.Add(signature);
+                    signature = new FlowSignature();
+                }
 
+                switch (result.Name)
+                {
+                    case "address":
+                        signature.Address = new FlowAddress(result.Value);
+                        break;
+                    case "key_id":
+                        signature.KeyId = Convert.ToUInt32(result.Value);
+                        break;
+                    case "signature":
+                        signature.Signature = Encoding.UTF8.GetBytes(result.Value);
+                        break;
+                }
+            }
+            
+            signatures.Add(signature);
+            return signatures;
+        }
+        
         private (List<string> MatchContent, string RemainContent) CheckContent(string text, string keyword)
         {
             if (!text.ToLower().Contains(keyword))

@@ -7,6 +7,7 @@ using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.SDK.Extensions;
 using UnityEngine;
 
 namespace Flow.FCL.Utility
@@ -33,28 +34,35 @@ namespace Flow.FCL.Utility
             _encodeUtility = encodeUtility;
         }
         
-        public bool VerifyUserSignatures(string message, FlowSignature signature, string fclCryptoContract)
+        public bool VerifyUserSignatures(string message, List<FlowSignature> flowSignatures, string fclCryptoContract)
         {
             _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", fclCryptoContract);
-            var signatures = new CadenceArray(
-                new List<ICadence>
-                {
-                    new CadenceString(Encoding.UTF8.GetString(signature.Signature))
-                });
+            // var signatureStrs = flowSignatures.Select(p => new CadenceString(Encoding.UTF8.GetString(p.Signature))).Cast<ICadence>().ToList();
+            // var signatures = new CadenceArray(signatureStrs);
+            // var signatureIndexs = flowSignatures.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList(); 
+            // var signatureIndexes = new CadenceArray(signatureIndexs);
             
-            var signatureIndexes = new CadenceArray(
-                new List<ICadence>
-                {
-                    new CadenceNumber(CadenceNumberType.Int, signature.KeyId.ToString())
-                });
             
+            var argumentSignatures = new List<ICadence>();
+            var argumentIndex = new List<ICadence>();
+            foreach (var flowSignature in flowSignatures)
+            {
+                argumentSignatures.Add(new CadenceString(Encoding.UTF8.GetString(flowSignature.Signature)));
+                argumentIndex.Add(new CadenceNumber(CadenceNumberType.Int, flowSignature.KeyId.ToString()));
+                
+                $"KeyId: {flowSignature.KeyId}, Signature: {Encoding.UTF8.GetString(flowSignature.Signature)}".ToLog();
+            }
+            
+            $"message: {message}, hexmessage: {message.StringToHex()}, in AppUtility".ToLog();
+            var signatures = new CadenceArray(argumentSignatures);
+            var signatureIndexes = new CadenceArray(argumentIndex);
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(
                 new FlowScript
                 {
                     Script = _verifyUserSignatureScript,
                     Arguments = new List<ICadence>
                                 {
-                                    new CadenceAddress(signature.Address.Address.AddHexPrefix()),
+                                    new CadenceAddress(flowSignatures.First().Address.Address.AddHexPrefix()),
                                     new CadenceString(message.StringToHex()),
                                     signatureIndexes,
                                     signatures
