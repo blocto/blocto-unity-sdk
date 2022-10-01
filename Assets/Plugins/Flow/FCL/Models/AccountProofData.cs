@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Flow.Net.Sdk.Core.Models;
 
 namespace Flow.FCL.Models
 {
@@ -6,7 +7,7 @@ namespace Flow.FCL.Models
     {
         public AccountProofData()
         {
-            Signature = new List<Signature>();
+            Signature = new List<FlowSignature>();
         }
         
         /// <summary>
@@ -22,6 +23,6 @@ namespace Flow.FCL.Models
         /// <summary>
         /// Signature
         /// </summary>
-        public List<Signature> Signature { get; set; }
+        public List<FlowSignature> Signature { get; set; }
     }
 }

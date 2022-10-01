@@ -82,9 +82,9 @@ namespace Flow.FCL.Utility
         public bool VerifyAccountProofSignature(string appIdentifier, AccountProofData accountProofData, string fclCryptoContract)
         {
             _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", fclCryptoContract);
-            var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.First().Addr, accountProofData.Nonce);
+            var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.First().Address.Address, accountProofData.Nonce);
             
-            var signatureStrs = accountProofData.Signature.Select(p => new CadenceString(p.SignatureStr)).Cast<ICadence>().ToList();
+            var signatureStrs = accountProofData.Signature.Select(p => new CadenceString(Encoding.UTF8.GetString(p.Signature))).Cast<ICadence>().ToList();
             var signatures = new CadenceArray(signatureStrs);
             
             var signatureIndexs = accountProofData.Signature.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList();
@@ -96,7 +96,7 @@ namespace Flow.FCL.Utility
                                    Script = _verifyAccountProofScript,
                                    Arguments = new List<ICadence>
                                                {
-                                                   new CadenceAddress(accountProofData.Signature.First().Addr),
+                                                   new CadenceAddress(accountProofData.Signature.First().Address.Address),
                                                    new CadenceString(message),
                                                    signatureIndexes,
                                                    signatures
