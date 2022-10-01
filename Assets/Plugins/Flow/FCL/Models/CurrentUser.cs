@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Flow.FCL.Extensions;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
@@ -99,11 +100,17 @@ namespace Flow.FCL.Models
                                                            var nonce = service?.Data.Nonce;
                                                            foreach (var signature in service?.Data.Signatures)
                                                            {
-                                                               accountProofData.Signature.Add(new Signature
+                                                               // accountProofData.Signature.Add(new Signature
+                                                               //                                {
+                                                               //                                    Addr = service?.Data.Address,
+                                                               //                                    KeyId = Convert.ToUInt32(signature.KeyId()),
+                                                               //                                    SignatureStr = signature.SignatureStr()
+                                                               //                                });
+                                                               accountProofData.Signature.Add(new FlowSignature()
                                                                                               {
-                                                                                                  Addr = service?.Data.Address,
+                                                                                                  Address = new FlowAddress(service?.Data.Address),
                                                                                                   KeyId = Convert.ToUInt32(signature.KeyId()),
-                                                                                                  SignatureStr = signature.SignatureStr()
+                                                                                                  Signature = Encoding.UTF8.GetBytes(signature.SignatureStr())
                                                                                               });
                                                            }
                                                            

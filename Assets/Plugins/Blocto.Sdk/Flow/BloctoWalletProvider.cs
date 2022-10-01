@@ -172,7 +172,7 @@ namespace Blocto.SDK.Flow
                         var signatures = tmp.Signatures.Select(signature => new JObject
                                                                             {
                                                                                 new JProperty("keyId", signature.KeyId),
-                                                                                new JProperty("signature", signature.SignatureStr)
+                                                                                new JProperty("signature", Encoding.UTF8.GetString(signature.Signature))
                                                                             }).ToList();
 
                         var authnResponse = new AuthenticateResponse
@@ -579,10 +579,10 @@ namespace Blocto.SDK.Flow
             yield return new WaitForSeconds(0.01f);
         }
         
-        private (string Address, List<Signature> Signatures) UniversalLinkAuthnHandler(string link)
+        private (string Address, List<FlowSignature> Signatures) UniversalLinkAuthnHandler(string link)
         {
             var address = default(string);
-            var signatures = default(List<Signature>);
+            var signatures = default(List<FlowSignature>);
             var keywords = new List<string>{ "address=", "account_proof" };
             var index = 0;
             var data = (MatchContents: new List<string>(), RemainContent: link);
@@ -596,7 +596,7 @@ namespace Blocto.SDK.Flow
                         address = AddressParser(data.MatchContents.FirstOrDefault()).Value;
                         break;
                     case "account_proof":
-                        signatures = AccountProofProcess(data);
+                        signatures = SignatureProcess(data);
                         break;
                 }
                 
@@ -609,43 +609,11 @@ namespace Blocto.SDK.Flow
         private List<FlowSignature> UniversalLinkSignMessageHandler(string link)
         {
             var data = CheckContent(link, "user_signature");
-            var signatures = SignMessageProcess(data);
+            var signatures = SignatureProcess(data);
             return signatures;
         }
 
-        private List<Signature> AccountProofProcess((List<string> MatchContents, string RemainContent) data)
-        {
-            var sort = 0;
-            var signature = new Signature();
-            var signatures = new List<Signature>();
-            foreach (var result in data.MatchContents.Select(SignatureParser))
-            {
-                if (sort != result.Index)
-                {
-                    sort += 1;
-                    signatures.Add(signature);
-                    signature = new Signature();
-                }
-
-                switch (result.Name)
-                {
-                    case "address":
-                        signature.Addr = result.Value;
-                        break;
-                    case "key_id":
-                        signature.KeyId = Convert.ToUInt32(result.Value);
-                        break;
-                    case "signature":
-                        signature.SignatureStr = result.Value;
-                        break;
-                }
-            }
-            
-            signatures.Add(signature);
-            return signatures;
-        }
-        
-        private List<FlowSignature> SignMessageProcess((List<string> MatchContents, string RemainContent) data)
+        private List<FlowSignature> SignatureProcess((List<string> MatchContents, string RemainContent) data)
         {
             var sort = 0;
             var signature = new FlowSignature();
