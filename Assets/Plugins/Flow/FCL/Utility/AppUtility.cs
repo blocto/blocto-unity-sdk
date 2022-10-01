@@ -30,51 +30,30 @@ namespace Flow.FCL.Utility
         {
             _flowClient = flowClient;
             var env = FlowClientLibrary.Config.Get("flow.network");
-            var contractAddress =
-                FlowClientLibrary.Config.Get($"{env}.fclcrypto");
+            var contractAddress = FlowClientLibrary.Config.Get($"{env}.fclcrypto");
         }
 
         public AppUtility(GameObject gameObject, IEncodeUtility encodeUtility)
         {
-            _flowClient =
-                new FlowUnityWebRequest(gameObject,
-                    FlowClientLibrary.Config.Get("accessNode.api"));
+            _flowClient = new FlowUnityWebRequest(gameObject, FlowClientLibrary.Config.Get("accessNode.api"));
             _encodeUtility = encodeUtility;
         }
 
         public bool
-        VerifyUserSignatures(
-            string message,
-            List<FlowSignature> flowSignatures,
-            string fclCryptoContract
-        )
+        VerifyUserSignatures(string message, List<FlowSignature> flowSignatures, string fclCryptoContract)
         {
-            _verifyUserSignatureScript =
-                _verifyUserSignatureScript
-                    .Replace("{address}", fclCryptoContract);
-
-            // var signatureStrs = flowSignatures.Select(p => new CadenceString(Encoding.UTF8.GetString(p.Signature))).Cast<ICadence>().ToList();
-            // var signatures = new CadenceArray(signatureStrs);
-            // var signatureIndexs = flowSignatures.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList();
-            // var signatureIndexes = new CadenceArray(signatureIndexs);
+            _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", fclCryptoContract); 
             var argumentSignatures = new List<ICadence>();
             var argumentIndex = new List<ICadence>();
             foreach (var flowSignature in flowSignatures)
             {
-                argumentSignatures
-                    .Add(new CadenceString(Encoding
-                            .UTF8
-                            .GetString(flowSignature.Signature)));
-                argumentIndex
-                    .Add(new CadenceNumber(CadenceNumberType.Int,
-                        flowSignature.KeyId.ToString()));
-
-                $"KeyId: {flowSignature.KeyId}, Signature: {
-                    Encoding.UTF8.GetString(flowSignature.Signature)}".ToLog();
+                argumentSignatures.Add(new CadenceString(Encoding.UTF8 .GetString(flowSignature.Signature)));
+                argumentIndex.Add(new CadenceNumber(CadenceNumberType.Int, flowSignature.KeyId.ToString())); 
+                $"KeyId: {flowSignature.KeyId},Signatur: {Encoding.UTF8.GetString(flowSignature.Signature)}".ToLog();
             }
+            
 
-            $"message: {message}, hexmessage: {
-                message.StringToHex()}, in AppUtility".ToLog();
+            $"message: {message}, hexmessage: { message.StringToHex()}, in AppUtility".ToLog();
             var signatures = new CadenceArray(argumentSignatures);
             var signatureIndexes = new CadenceArray(argumentIndex);
             var response =
@@ -108,51 +87,29 @@ namespace Flow.FCL.Utility
         /// <param name="fclCryptoContract"></param>
         /// <returns></returns>
         public bool
-        VerifyAccountProofSignature(
-            string appIdentifier,
-            AccountProofData accountProofData,
-            string fclCryptoContract
-        )
+        VerifyAccountProofSignature(string appIdentifier, AccountProofData accountProofData, string fclCryptoContract)
         {
-            _verifyAccountProofScript =
-                _verifyAccountProofScript
-                    .Replace("{address}", fclCryptoContract);
-            var message =
-                _encodeUtility
-                    .GetEncodeMessage(appIdentifier,
-                    accountProofData.Signature.First().Address.Address,
-                    accountProofData.Nonce);
-
+            _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", fclCryptoContract);
+            var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.First().Address.Address, accountProofData.Nonce);
             var signatureStrs =
-                accountProofData
-                    .Signature
-                    .Select(p =>
-                        new CadenceString(Encoding.UTF8.GetString(p.Signature)))
+                accountProofData.Signature
+                    .Select(p => new CadenceString(Encoding.UTF8.GetString(p.Signature)))
                     .Cast<ICadence>()
                     .ToList();
-            var signatures = new CadenceArray(signatureStrs);
-
             var signatureIndexs =
-                accountProofData
-                    .Signature
-                    .Select(p =>
-                        new CadenceNumber(CadenceNumberType.Int,
-                            p.KeyId.ToString()))
+                accountProofData.Signature
+                    .Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString()))
                     .Cast<ICadence>()
                     .ToList();
+            
+            var signatures = new CadenceArray(signatureStrs);
             var signatureIndexes = new CadenceArray(signatureIndexs);
 
-            var response =
-                _flowClient
-                    .ExecuteScriptAtLatestBlockAsync(new FlowScript {
+            var response = _flowClient .ExecuteScriptAtLatestBlockAsync(new FlowScript {
                         Script = _verifyAccountProofScript,
                         Arguments =
                             new List<ICadence> {
-                                new CadenceAddress(accountProofData
-                                        .Signature
-                                        .First()
-                                        .Address
-                                        .Address),
+                                new CadenceAddress(accountProofData.Signature.First().Address.Address),
                                 new CadenceString(message),
                                 signatureIndexes,
                                 signatures
