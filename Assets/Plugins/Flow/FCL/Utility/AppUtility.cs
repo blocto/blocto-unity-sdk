@@ -37,23 +37,14 @@ namespace Flow.FCL.Utility
         public bool VerifyUserSignatures(string message, List<FlowSignature> flowSignatures, string fclCryptoContract)
         {
             _verifyUserSignatureScript = _verifyUserSignatureScript.Replace("{address}", fclCryptoContract);
-            // var signatureStrs = flowSignatures.Select(p => new CadenceString(Encoding.UTF8.GetString(p.Signature))).Cast<ICadence>().ToList();
-            // var signatures = new CadenceArray(signatureStrs);
-            // var signatureIndexs = flowSignatures.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList(); 
-            // var signatureIndexes = new CadenceArray(signatureIndexs);
-            
-            
             var argumentSignatures = new List<ICadence>();
             var argumentIndex = new List<ICadence>();
             foreach (var flowSignature in flowSignatures)
             {
                 argumentSignatures.Add(new CadenceString(Encoding.UTF8.GetString(flowSignature.Signature)));
                 argumentIndex.Add(new CadenceNumber(CadenceNumberType.Int, flowSignature.KeyId.ToString()));
-                
-                $"KeyId: {flowSignature.KeyId}, Signature: {Encoding.UTF8.GetString(flowSignature.Signature)}".ToLog();
             }
             
-            $"message: {message}, hexmessage: {message.StringToHex()}, in AppUtility".ToLog();
             var signatures = new CadenceArray(argumentSignatures);
             var signatureIndexes = new CadenceArray(argumentIndex);
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(
