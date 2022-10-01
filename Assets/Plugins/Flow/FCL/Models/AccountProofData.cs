@@ -9,12 +9,12 @@ namespace Flow.FCL.Models
         {
             Signature = new List<FlowSignature>();
         }
-        
+
         /// <summary>
         /// App Name
         /// </summary>
         public string AppId { get; set; }
-        
+
         /// <summary>
         /// Random nonce as a hex string
         /// </summary>
