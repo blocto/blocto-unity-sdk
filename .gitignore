@@ -79,7 +79,7 @@ android install_BurstDebugInformation_DoNotShip
 ios install_BurstDebugInformation_DoNotShip
 UserSettings
 UserSettings
-Assets/Plugins/Flow/*/obj
-android project_BurstDebugInformation_DoNotShip
 ios project
 ios project_BurstDebugInformation_DoNotShip
+Assets/Plugins/Flow/Flow.Net.Sdk.Core/obj
+android project_BurstDebugInformation_DoNotShip
