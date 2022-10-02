@@ -20,12 +20,13 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                 var proj = new PBXProject();
                 proj.ReadFromFile(projPath);
 
-                var targetGuid = proj.TargetGuidByName(PBXProject.GetUnityTestTargetName());
+                // string targetName = "Unity-iPhone";
+                var targetName = proj.GetUnityFrameworkTargetGuid(); 
+                // var targetGuid = proj.TargetGuidByName();
+                var targetGuid = proj.GetUnityMainTargetGuid();
 
 
                 proj.SetBuildProperty(targetGuid, "ENABLE_BITCODE", "NO");
-
-
 
                 proj.SetBuildProperty(targetGuid, "SWIFT_OBJC_BRIDGING_HEADER", "Libraries/Plugins/iOS/UnityIosPlugin/Source/UnityPlugin-Bridging-Header.h");
                 proj.SetBuildProperty(targetGuid, "SWIFT_OBJC_INTERFACE_HEADER_NAME", "UnityFramework-Swift.h");
@@ -65,7 +66,15 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                     queriesUrlTypeArray?.AddString("blocto-staging");
                 }
                 
-                OnProstProcessBuildIOS(buildPath);
+                var entitlements = new ProjectCapabilityManager(projPath, "Unity-iPhone/Unity-iPhoneReleaseForProfiling.entitlements", "Unity-iPhone");
+                entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
+                
+                //Apply
+                entitlements.WriteToFile();
+                proj.AddCapability(targetGuid, PBXCapabilityType.AssociatedDomains, "Unity-iPhone/iPhoneReleaseForProfiling.entitlements");
+                proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", "Unity-iPhoneReleaseForProfiling.entitlements");
+                
+                //OnProstProcessBuildIOS(buildPath);
                 
                 plist.WriteToFile(plistPath);
                 proj.WriteToFile(projPath);
@@ -79,12 +88,12 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             //Default target name. Yours might be different
             string targetName = "Unity-iPhone";
             //Set the entitlements file name to what you want but make sure it has this extension
-            string entitlementsFileName = "my_app.entitlements";
+            string entitlementsFileName = "Unity-iPhoneReleaseForRunning.entitlements";
             
             var entitlements = new ProjectCapabilityManager(pathToBuiltProject + projectPath, entitlementsFileName, targetName);
-            entitlements.AddAssociatedDomains(new string[] { "applinks:fed9-114-36-191-176.jp.ngrok.io?mode=developer" });
+            entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
             //Apply
-            entitlements.WriteToFile();
+            // entitlements.WriteToFile();
             
             
             // string projectPath = PBXProject.GetPBXProjectPath(path);
