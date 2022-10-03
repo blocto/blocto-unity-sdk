@@ -79,3 +79,4 @@ android install_BurstDebugInformation_DoNotShip
 ios install_BurstDebugInformation_DoNotShip
 UserSettings
 UserSettings
+Assets/Plugins/Flow/*/obj
