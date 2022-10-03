@@ -1,14 +1,20 @@
+using System.Collections.Generic;
 using Flow.Net.Sdk.Core.Models;
 
-namespace Plugins.Flow.FCL.Models
+namespace Flow.FCL.Models
 {
     public class AccountProofData
     {
+        public AccountProofData()
+        {
+            Signature = new List<FlowSignature>();
+        }
+
         /// <summary>
         /// App Name
         /// </summary>
         public string AppId { get; set; }
-        
+
         /// <summary>
         /// Random nonce as a hex string
         /// </summary>
@@ -17,6 +23,6 @@ namespace Plugins.Flow.FCL.Models
         /// <summary>
         /// Signature
         /// </summary>
-        public Signature Signature { get; set; }
+        public List<FlowSignature> Signature { get; set; }
     }
 }

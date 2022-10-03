@@ -19,6 +19,8 @@ namespace Blocto.Sdk.Core.Utility
 {
     public class WebRequestUtility : MonoBehaviour
     {
+        public string BloctoAppId { get; set; }
+        
         private readonly Dictionary<string, Action<UnityWebRequest>> _handlers;
         
         public WebRequestUtility()
@@ -123,7 +125,7 @@ namespace Blocto.Sdk.Core.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
-                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
+                $"Respone content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  

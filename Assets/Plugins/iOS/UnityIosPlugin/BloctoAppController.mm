@@ -1,5 +1,7 @@
 #import "UnityAppController.h"
-#import <UniversalLink.h> 
+#import <UniversalLink.h>
+#import "UnityInterface.h"
+
 @interface BloctoAppController : UnityAppController
 @end
  
@@ -23,16 +25,21 @@ IMPL_APP_CONTROLLER_SUBCLASS (BloctoAppController)
 
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *_Nullable))restorationHandler {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
-            message:@"My message" delegate:self cancelButtonTitle:@"Cancel"
-            otherButtonTitles:@"OK", nil];
-    [alert show];
+   
     
     if ([userActivity.activityType isEqualToString: NSUserActivityTypeBrowsingWeb]) {
         NSURL *url = userActivity.webpageURL;
         if ([url.query containsString:@"request_id"]) {
             NSString *query = [url query];
             [UniversalLink instance].URL = query;
+
+            UnitySendMessage("bloctowalletprovider", "UniversalLinkCallbackHandler", [UniversalLink instance].URL.UTF8String);
+            // NSLog(@"Universal link: %@", [UniversalLink instance].URL);
+            // UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            // message:query delegate:self cancelButtonTitle:@"Cancel"
+            // otherButtonTitles:@"OK", nil];
+            // [alert show];
+
             return YES;
         }
     }

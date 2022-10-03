@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UniversalLink.h>
 
-
 __strong UniversalLink *_instance;
 @implementation UniversalLink
 +(void)load
@@ -21,7 +20,14 @@ __strong UniversalLink *_instance;
 
 -(void)reset
 {
-    self.URL = [NSString new];
+    //self.URL = [NSString new];
+    NSLog(@"UniversalLink Reset.");
+    self.URL = [NSString stringWithUTF8String:""];;
+}
+
+-(NSString*)getUrl
+{
+    return self.URL;
 }
 @end
 
@@ -33,10 +39,27 @@ extern "C"
 
     const char* UniversalLink_GetURL()
     {
-        const char* cString = [[UniversalLink instance] URL].UTF8String;
-        char* _unityString = (char*)malloc(strlen(cString) + 1);
-        strcpy(_unityString, cString);
-        return _unityString;
-        
+        try
+        {
+            NSLog(@"UniversalLink GetURL");
+            const char* cString = [[UniversalLink instance] URL].UTF8String;
+            NSLog(@"%s", cString);
+            char* _unityString = (char*)malloc(strlen(cString) + 1);
+            strcpy(_unityString, cString);
+            
+            NSString* fn = [NSString stringWithUTF8String:"bloctowalletprovider"];
+            NSString* failedFn = [NSString stringWithUTF8String:"UniversalLinkCallbackHandler"];
+            UnitySendMessage([fn UTF8String], [failedFn UTF8String], _unityString);
+            
+            return _unityString;
+        }
+        catch (NSException *exception)
+        {
+          // Print exception information
+          NSLog( @"NSException caught" );
+          NSLog( @"Name: %@", exception.name);
+          NSLog( @"Reason: %@", exception.reason );
+          return "";
+        }
     }
 }

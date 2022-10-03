@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Flow.FCL.Extensions;
@@ -11,7 +12,6 @@ using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
-using Plugins.Flow.FCL.Models;
 using UnityEngine;
 
 namespace Flow.FCL
@@ -158,7 +158,7 @@ namespace Flow.FCL
         /// </summary>
         /// <param name="message">Source message</param>
         /// <param name="callback">Complete sign message then call callback function</param>
-        public void SignUserMessage(string message, Action<ExecuteResult<FlowSignature>> callback = null)
+        public void SignUserMessage(string message, Action<ExecuteResult<List<FlowSignature>>> callback = null)
         {
             _currentUser.SignUserMessage(message, callback);
         }
