@@ -174,6 +174,7 @@ public class MainController : MonoBehaviour
                                                                                           
                                                                                           return walletProvider;
                                                                                       }, 
+                                                                          env: "testnet",
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
         
         // _walletProvider._isInstalledApp = false;
@@ -220,6 +221,10 @@ public class MainController : MonoBehaviour
                                      new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:N8}"),
                                      new CadenceAddress(receiveAddress.AddHexPrefix())
                                  },
+                     SignerList =
+                     {
+                         
+                     }
                  };
 
 

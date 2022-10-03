@@ -149,8 +149,8 @@ namespace Flow.FCL
                 
             }
             
-            var url = service.PreAuthzEndpoint();
-            _transaction.SendTransaction(url, tx, () => {}, callback);
+           
+            _transaction.SendTransaction(service, tx, () => {}, callback);
         }
         
         /// <summary>

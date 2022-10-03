@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Flow.Model;
+using Blocto.Sdk.Flow.Utility;
 using Flow.FCL;
 using Flow.FCL.Extensions;
 using Flow.FCL.Models;
@@ -97,6 +98,10 @@ namespace Blocto.SDK.Flow
         
         private string _appSdkDomain = "https://staging.blocto.app/sdk?";
         
+        private string _backedApiDomain = "https://api.blocto.app";
+        
+        private string _address = "default";
+        
         private Dictionary<bool, Func<FlowTransaction, PreAuthzAdapterResponse, Action<string>, FlowTransaction>> _transactionModeMapper;
 
         public bool _isInstalledApp = false;
@@ -115,9 +120,10 @@ namespace Blocto.SDK.Flow
         /// Create blocto wallet provider instance
         /// </summary>
         /// <param name="initialFun">Blocto initial func</param>
+        /// <param name="env">Env</param>
         /// <param name="bloctoAppIdentifier">Blocto sdk appId</param>
         /// <returns>BloctoWalletProvider</returns>
-        public static BloctoWalletProvider CreateBloctoWalletProvider(Func<Func<GameObject, IFlowClient, IResolveUtility, BloctoWalletProvider>, BloctoWalletProvider> initialFun, Guid bloctoAppIdentifier)
+        public static BloctoWalletProvider CreateBloctoWalletProvider(Func<Func<GameObject, IFlowClient, IResolveUtility, BloctoWalletProvider>, BloctoWalletProvider> initialFun, string env, Guid bloctoAppIdentifier)
         {
             var bloctoWalletProvider = initialFun.Invoke((gameObject, flowClient, resolveUtility) => {
                                                              var provider = gameObject.AddComponent<BloctoWalletProvider>();
@@ -132,7 +138,13 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
             bloctoWalletProvider._isCancelRequest = false;
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
+            bloctoWalletProvider.WebRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
+            
+            if(env.ToLower() == "testnet")
+            {
+                bloctoWalletProvider._backedApiDomain = bloctoWalletProvider._backedApiDomain.Replace("api", "api-dev");
+            } 
             
             if(Application.platform == RuntimePlatform.Android)
             {
@@ -146,8 +158,8 @@ namespace Blocto.SDK.Flow
         {
             _transactionModeMapper = new Dictionary<bool, Func<FlowTransaction, PreAuthzAdapterResponse, Action<string>, FlowTransaction>>
                                      {
-                                         { true, CustodialHandler},
-                                         { false, NonCustodialHandler}
+                                         { false, CustodialHandler},
+                                         { true, NonCustodialHandler}
                                      };
             if(_isInstalledApp)
             {
@@ -176,6 +188,7 @@ namespace Blocto.SDK.Flow
                 {
                     case "authn":
                         var tmp = UniversalLinkAuthnHandler(item.RemainContent);
+                        _address = tmp.Address;
                         var signatures = tmp.Signatures.Select(signature => new JObject
                                                                             {
                                                                                 new JProperty("keyId", signature.KeyId),
@@ -209,7 +222,8 @@ namespace Blocto.SDK.Flow
                                                                                           },
                                                                                           new FclService
                                                                                           {
-                                                                                              Type = ServiceTypeEnum.PREAUTHZ
+                                                                                              Type = ServiceTypeEnum.PREAUTHZ,
+                                                                                              
                                                                                           }
                                                                                       }
                                                        }
@@ -346,16 +360,99 @@ namespace Blocto.SDK.Flow
         /// <param name="tx">flow transaction data</param>
         /// <param name="internalCallback">complete transaction internal callback</param>
         /// <param name="callback">complete transaction callback</param>
-        public virtual void SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
+        public virtual void SendTransaction(FclService service, FlowTransaction tx, Action internalCallback, Action<string> callback = null)
         {
-            var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
-            var preAuthzResponse = WebRequestUtility.GetResponse<PreAuthzAdapterResponse>(preAuthzUrl, "POST", "application/json", preSignableJObj);
-            var isNonCustodial = preAuthzResponse.AuthorizerData.Authorizations.Any(p => p.Endpoint.ToLower().Contains("cosigner") || p.Endpoint.ToLower().Contains("non-custodial"));
-            var tmpAccount = GetAccount(preAuthzResponse.AuthorizerData.Proposer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
-            tx.ProposalKey = GetProposerKey(tmpAccount, preAuthzResponse.AuthorizerData.Proposer.Identity.KeyId);
-            
-            var action = _transactionModeMapper[isNonCustodial];
-            tx = action.Invoke(tx, preAuthzResponse, callback);
+            $"Installed App: {_isInstalledApp}".ToLog();
+            if(_isInstalledApp)
+            {
+               $"Not installed app".ToLog();
+                var proposer = _flowClient.GetAccountAtLatestBlockAsync(_address).ConfigureAwait(false).GetAwaiter().GetResult();
+                var key = proposer.Keys.FirstOrDefault(p => p.Weight == 999 && p.Revoked == true);
+                if(key == null)
+                {
+                    throw new Exception("Can't find user key.");
+                }
+                
+                var feePayerAddr = WebRequestUtility.GetResponse<string>($"{_backedApiDomain}/flow/feePayer", "GET", "", new Dictionary<string, object>());
+                var authorizer = tx.SignerList.Select(p => {
+                                                          return new AuthInformation
+                                                                 {
+                                                                     Identity = new Identity
+                                                                                {
+                                                                                    Addr = p.Key.RemoveHexPrefix(),
+                                                                                    Address = p.Key.RemoveHexPrefix(),
+                                                                                    KeyId = Convert.ToUInt32(-1)
+                                                                                }
+                                                                 };
+                                                      }).ToList();
+                var preAuthzResponse = new PreAuthzAdapterResponse
+                                       {
+                                           AuthorizerData = new AuthorizerData
+                                                            {
+                                                                Proposer = new AuthInformation
+                                                                           {
+                                                                               Identity = new Identity
+                                                                                          {
+                                                                                              Address = _address.RemoveHexPrefix(),
+                                                                                              Addr = _address.RemoveHexPrefix(),
+                                                                                              KeyId = Convert.ToUInt32(key.Index)
+                                                                                          }
+                                                                           },
+                                                                Payers = new List<AuthInformation>
+                                                                         {
+                                                                             new AuthInformation
+                                                                             {
+                                                                                 Identity = new Identity
+                                                                                            {
+                                                                                                Addr = feePayerAddr.RemoveHexPrefix(),
+                                                                                                Address = feePayerAddr.RemoveHexPrefix(),
+                                                                                                KeyId = Convert.ToUInt32(-1)
+                                                                                            }
+                                                                             }
+                                                                         },
+                                                                Authorizations = authorizer
+                                                            }
+                                       };
+                
+                var authorize = new FlowAccount();
+                if(tx.SignerList.Any())
+                {
+                    authorize.Address = new FlowAddress(tx.SignerList.FirstOrDefault().Key);
+                }
+                else
+                {
+                    authorize = new FlowAccount { Address = new FlowAddress(_address) };
+                }
+                
+                var signableJObj = _resolveUtility.ResolveSignable(ref tx, preAuthzResponse.AuthorizerData, authorize).First(); 
+                var encode = EncodeUtility.EncodedCanonicalAuthorizationEnvelope(tx);
+                $"Signable encode: {encode}".ToLog();
+                
+                var requestId = Guid.NewGuid();
+                _requestIdActionMapper.Add(requestId.ToString(), "transaction");
+                
+                var sb = new StringBuilder(_appSdkDomain);
+                sb.Append($"app_id={_bloctoAppIdentifier}" + "&")
+                  .Append($"request_id={requestId}" + "&")
+                  .Append("blockchain=flow" + "&")
+                  .Append("method=flow_send_transaction" + "&") 
+                  .Append($"from={_address}" + "&")
+                  .Append($"flow_transaction={encode}");
+                
+                $"Url: {sb.ToString()}".ToLog();
+                StartCoroutine(OpenUrl(sb.ToString())); 
+            }
+            else
+            {
+                var url = service.PreAuthzEndpoint();
+                var preSignableJObj = _resolveUtility.ResolvePreSignable(ref tx);
+                var preAuthzResponse = WebRequestUtility.GetResponse<PreAuthzAdapterResponse>(url, "POST", "application/json", preSignableJObj);
+                var isNonCustodial = preAuthzResponse.AuthorizerData.Authorizations.Any(p => p.Endpoint.ToLower().Contains("cosigner") || p.Endpoint.ToLower().Contains("non-custodial"));
+                var tmpAccount = GetAccount(preAuthzResponse.AuthorizerData.Proposer.Identity.Address).ConfigureAwait(false).GetAwaiter().GetResult();
+                tx.ProposalKey = GetProposerKey(tmpAccount, preAuthzResponse.AuthorizerData.Proposer.Identity.KeyId);
+                var action = _transactionModeMapper[isNonCustodial];
+                tx = action.Invoke(tx, preAuthzResponse, callback); 
+            }
         }
 
         /// <summary>
@@ -373,7 +470,6 @@ namespace Blocto.SDK.Flow
             var signableJObj = _resolveUtility.ResolveSignable(ref tx, preAuthzResponse.AuthorizerData, authorize).First();
             var authzResponse = WebRequestUtility.GetResponse<AuthzAdapterResponse>(postUrl, "POST", "application/json", signableJObj);
             var endpoint = authzResponse.AuthzEndpoint();
-
             Authz<AuthzAdapterResponse>(endpoint.IframeUrl, endpoint.PollingUrl, item => {
                                                                                      var response = item as AuthzAdapterResponse;
                                                                                      var signInfo = response.SignatureInfo();

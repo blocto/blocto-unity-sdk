@@ -44,7 +44,7 @@ namespace Flow.FCL
         }
 
         public virtual void SendTransaction(
-            string preAuthzUrl,
+            FclService service,
             FlowTransaction tx,
             Action internalCallback,
             Action<string> callback = null
@@ -52,7 +52,7 @@ namespace Flow.FCL
         {
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
-            _walletProvider.SendTransaction(preAuthzUrl, tx, internalCallback, callback);
+            _walletProvider.SendTransaction(service, tx, internalCallback, callback);
         }
 
         public FlowTransactionResult GetTransactionStatus(string transactionId)
