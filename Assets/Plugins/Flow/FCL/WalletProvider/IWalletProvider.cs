@@ -22,7 +22,7 @@ namespace Flow.FCL.WalletProvider
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null);
         
-        public void SendTransaction(string preAuthzUrl, FlowTransaction tx, Action internalCallback, Action<string> callback = null);
+        public void SendTransaction(FclService service, FlowTransaction tx, Action internalCallback, Action<string> callback = null);
         
         /// <summary>
         /// Get authorizer signature

@@ -13,6 +13,7 @@ using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.VisualScripting;
 
 namespace Blocto.Sdk.Flow.Utility
 {
@@ -55,6 +56,12 @@ namespace Blocto.Sdk.Flow.Utility
             item.Add(new JProperty("f_type", "Signable"));
             
             var participators = ResolveUtility.GetAllAccount(authorizerData, tx.ProposalKey);
+            
+            var tmpSigners = new Dictionary<string, int>();
+            if(tx.SignerList.Keys.Any())
+            {
+                tmpSigners.AddRange(tx.SignerList);
+            }
             
             if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
             {
@@ -105,6 +112,16 @@ namespace Blocto.Sdk.Flow.Utility
                                     };
                 
                 ResolveUtility.AddPayloadSignature(tx, flowSignature);
+            }
+
+            foreach (var (key, index) in tmpSigners)
+            {
+                if (tx.SignerList.Keys.Contains(key))
+                {
+                    continue;
+                }
+
+                tx.SignerList.Add(key, index + tx.SignerList.Count);
             }
             
             tx.Payer = new FlowAddress(participators.Payer.Addr);
