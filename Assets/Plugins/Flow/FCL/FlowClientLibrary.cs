@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Flow.FCL.Extensions;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
@@ -150,7 +149,7 @@ namespace Flow.FCL
             }
             
            
-            _transaction.SendTransaction(service, tx, () => {}, callback);
+            _transaction.SendTransaction(service, tx, callback);
         }
         
         /// <summary>
