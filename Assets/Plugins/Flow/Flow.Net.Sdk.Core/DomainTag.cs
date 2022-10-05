@@ -1,4 +1,6 @@
-﻿namespace Flow.Net.Sdk.Core
+﻿using System.Linq;
+
+namespace Flow.Net.Sdk.Core
 {
     public static class DomainTag
     {
@@ -21,6 +23,13 @@
         {
             var domainTag = Utilities.Pad("FLOW-V0.0-transaction", 32, false);
             return MessageWithDomain(bytes, domainTag);
+        }
+        
+        public static byte[] RemoveTransactionDomainTag(byte[] bytes)
+        {
+            var domainTag = Utilities.Pad("FLOW-V0.0-transaction", 32, false);
+            bytes.ToList().RemoveRange(0, domainTag.Length);
+            return bytes;
         }
     }
 }

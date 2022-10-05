@@ -86,8 +86,7 @@ namespace Flow.FCL.Utility
         /// <param name="accountProofData"></param>
         /// <param name="fclCryptoContract"></param>
         /// <returns></returns>
-        public bool
-        VerifyAccountProofSignature(string appIdentifier, AccountProofData accountProofData, string fclCryptoContract)
+        public bool VerifyAccountProofSignature(string appIdentifier, AccountProofData accountProofData, string fclCryptoContract)
         {
             _verifyAccountProofScript = _verifyAccountProofScript.Replace("{address}", fclCryptoContract);
             var message = _encodeUtility.GetEncodeMessage(appIdentifier, accountProofData.Signature.First().Address.Address, accountProofData.Nonce);

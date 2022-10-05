@@ -10,8 +10,6 @@ using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Unity.VisualScripting;
 
@@ -63,6 +61,7 @@ namespace Blocto.Sdk.Flow.Utility
                 tmpSigners.AddRange(tx.SignerList);
             }
             
+            tx.SignerList.Clear();
             if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
             {
                 tx.SignerList.Add(participators.Proposer.Addr, 0);
@@ -98,6 +97,16 @@ namespace Blocto.Sdk.Flow.Utility
                 tx.SignerList.Add(participators.Payer.Addr, tx.SignerList.Count);
             }
 
+            foreach (var (key, index) in tmpSigners)
+            {
+                if (tx.SignerList.Keys.Contains(key))
+                {
+                    continue;
+                }
+
+                tx.SignerList.Add(key, index + tx.SignerList.Count);
+            }
+            
             var transaction = tx;
             foreach (var authorization in participators.Authorizations.Where(authorization => !transaction.SignerList.ContainsKey(authorization.Addr)))
             {
@@ -112,16 +121,6 @@ namespace Blocto.Sdk.Flow.Utility
                                     };
                 
                 ResolveUtility.AddPayloadSignature(tx, flowSignature);
-            }
-
-            foreach (var (key, index) in tmpSigners)
-            {
-                if (tx.SignerList.Keys.Contains(key))
-                {
-                    continue;
-                }
-
-                tx.SignerList.Add(key, index + tx.SignerList.Count);
             }
             
             tx.Payer = new FlowAddress(participators.Payer.Addr);
@@ -157,7 +156,7 @@ namespace Blocto.Sdk.Flow.Utility
                                                                         });
             }
             
-            var message = EncodeUtility.GetEncodeMessage(tx);
+            var message = EncodeUtility.GetEncodeMessageWithDomainTag(tx);
             item.Add("message", message);
             
             var result = new List<JObject>();
