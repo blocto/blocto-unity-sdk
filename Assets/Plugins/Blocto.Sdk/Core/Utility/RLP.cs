@@ -102,15 +102,26 @@ namespace Blocto.Sdk.Core.Utility
                 return false;
             }
             
-            if(tmp.Count == 0)
+            var type = input.GetType();
+            var isList = default(bool);
+            if(type.GenericTypeArguments.Length > 0)
             {
-                return false;
+                isList = type.GenericTypeArguments.Any(p => p.GetInterfaces().Any(s => s.Name is "IEnumerable" or "ICollection" or "IList"));
             }
-
-            var elementType = tmp[0].GetType();                
-            var isList = elementType.GetInterfaces().Any(s => s.Name is "IEnumerable" or "ICollection" or "IList");
-            var isArray = elementType.IsArray;
-            return isList || isArray;
+            
+            switch (tmp.Count)
+            {
+                case 0 when isList == false:
+                    return false;
+                case > 0: {
+                    var elementType = tmp[0].GetType();                
+                    isList = elementType.GetInterfaces().Any(s => s.Name is "IEnumerable" or "ICollection" or "IList");
+                    var isArray = elementType.IsArray;
+                    return isList || isArray;
+                }
+                default:
+                    return isList;
+            }
         }
         
         private static List<byte> CalculatorLength(List<byte> item, int offset)
