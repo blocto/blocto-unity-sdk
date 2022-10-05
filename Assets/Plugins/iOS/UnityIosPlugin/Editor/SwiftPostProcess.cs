@@ -66,13 +66,13 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                     queriesUrlTypeArray?.AddString("blocto-staging");
                 }
                 
-                var entitlements = new ProjectCapabilityManager(projPath, "Unity-iPhone/Unity-iPhoneReleaseForProfiling.entitlements", "Unity-iPhone");
-                entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
+                // var entitlements = new ProjectCapabilityManager(projPath, "Unity-iPhone/Unity-iPhoneReleaseForProfiling.entitlements", "Unity-iPhone");
+                // entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
                 
                 //Apply
-                entitlements.WriteToFile();
-                proj.AddCapability(targetGuid, PBXCapabilityType.AssociatedDomains, "Unity-iPhone/iPhoneReleaseForProfiling.entitlements");
-                proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", "Unity-iPhoneReleaseForProfiling.entitlements");
+                // entitlements.WriteToFile();
+                // proj.AddCapability(targetGuid, PBXCapabilityType.AssociatedDomains, "Unity-iPhone/iPhoneReleaseForProfiling.entitlements");
+                // proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", "Unity-iPhoneReleaseForProfiling.entitlements");
                 
                 //OnProstProcessBuildIOS(buildPath);
                 
@@ -90,8 +90,8 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             //Set the entitlements file name to what you want but make sure it has this extension
             string entitlementsFileName = "Unity-iPhoneReleaseForRunning.entitlements";
             
-            var entitlements = new ProjectCapabilityManager(pathToBuiltProject + projectPath, entitlementsFileName, targetName);
-            entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
+            // var entitlements = new ProjectCapabilityManager(pathToBuiltProject + projectPath, entitlementsFileName, targetName);
+            // entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
             //Apply
             // entitlements.WriteToFile();
             

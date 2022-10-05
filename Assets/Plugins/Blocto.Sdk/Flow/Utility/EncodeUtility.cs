@@ -13,9 +13,18 @@ namespace Blocto.Sdk.Flow.Utility
 {
     public class EncodeUtility : IEncodeUtility
     {
+        public static string GetEncodeMessageWithDomainTag(FlowTransaction tx)
+        {
+            var data = EncodeUtility.GetRlpEncodeCollection(tx);
+            var encodeBytes = RLP.RlpEncode(data);
+            var message = CreateEncodeMessageWithDomainTag(encodeBytes);
+
+            return message;
+        }
+        
         public static string GetEncodeMessage(FlowTransaction tx)
         {
-            var data = EncodeTransaction(tx);
+            var data = EncodeUtility.GetRlpEncodeCollection(tx);
             var encodeBytes = RLP.RlpEncode(data);
             var message = CreateEncodeMessageWithDomainTag(encodeBytes);
 
@@ -34,7 +43,7 @@ namespace Blocto.Sdk.Flow.Utility
             return message;
         } 
         
-        private static List<object> EncodeTransaction(FlowTransaction tx)
+        public static List<object> GetRlpEncodeCollection(FlowTransaction tx)
         {
             var datas = new List<object>();
             datas.Add(Encoding.UTF8.GetBytes(tx.Script).ToList());
@@ -61,13 +70,13 @@ namespace Blocto.Sdk.Flow.Utility
             var message = messageBytes.ToHex();
             return message;
         }
-
+        
         public static string EncodedCanonicalAuthorizationEnvelope(FlowTransaction tx)
         {
             var tmp = tx.PayloadSignatures as List<FlowSignature>;
             var authEnvelopeElements = new List<object>
                                        {
-                                           EncodeTransaction(tx),
+                                           EncodeUtility.GetRlpEncodeCollection(tx),
                                            EncodedSignatures(tmp, tx.SignerList)
                                        };
             

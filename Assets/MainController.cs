@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -177,7 +178,7 @@ public class MainController : MonoBehaviour
                                                                           env: "testnet",
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
         
-        // _walletProvider._isInstalledApp = false;
+        _walletProvider._isInstalledApp = true;
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
@@ -198,12 +199,8 @@ public class MainController : MonoBehaviour
             accountProofData:accountProofData,
             callback: ((currentUser,  accountProofData) => {
                            _accountTxt.text = currentUser.Addr.Address.AddHexPrefix();
-                           var appUtil = new AppUtility(gameObject, new EncodeUtility());
-                           var isVerify = appUtil.VerifyAccountProofSignature(
-                               appIdentifier: accountProofData!.AppId,
-                               accountProofData: accountProofData,
-                               fclCryptoContract: "0x5b250a8a85b44a67");
-                           Debug.Log($"User is verify: {isVerify}");
+                           $"Start verify account proof".ToLog();
+                           StartCoroutine(VerifyAccountProof(accountProofData));
                        }));
     }
     
@@ -368,26 +365,38 @@ public class MainController : MonoBehaviour
         }
     }
 
+    private IEnumerator VerifyAccountProof(AccountProofData accountProofData)
+    {
+        yield return new WaitForSeconds(0.5f);
+        var appUtil = new AppUtility(gameObject, new EncodeUtility());
+        var isVerify = appUtil.VerifyAccountProofSignature(
+            appIdentifier: accountProofData!.AppId,
+            accountProofData: accountProofData,
+            fclCryptoContract: "0x5b250a8a85b44a67");
+        Debug.Log($"User is verify: {isVerify}"); 
+    }
+    
     public void Test()
     {
-        var appUtil = new AppUtility(gameObject, new EncodeUtility());
+        var value = _transactionValueTxt.text;
+        var tx = new FlowTransaction
+                 {
+                     Script = MainController._mutateScript,
+                     GasLimit = 9999,
+                     Arguments = new List<ICadence>
+                                 {
+                                     new CadenceNumber(CadenceNumberType.UFix64, value.ToString())
+                                 },
+                 };
         
-        _flowSignatures = new List<FlowSignature>
-                          {
-                              new FlowSignature
-                              {
-                                  Address = new FlowAddress("0x068606b2acddc1ca"),
-                                  KeyId = Convert.ToUInt32(2),
-                                  Signature = Encoding.UTF8.GetBytes("cd8e6999c0cd16db5767ffcc6501e25c57144d5bc4128bbd0054bc5430782d56680bd68aca76fb4fafbb991679a85fb5176a2e336db0fbbecfb5993929f83d9e")
-                              },
-                              new FlowSignature
-                              {
-                                  Address = new FlowAddress("0x068606b2acddc1ca"),
-                                  KeyId = Convert.ToUInt32(0),
-                                  Signature = Encoding.UTF8.GetBytes("4126f3579af973955579ddc19a1934b7958382b05c2c299cc5d277d76a8a487298aedcc3a2b38e5a041eb98e358840ead02053b74eb00c1e5c9a3632cff3fe0d")
-                              },
-                          };
-        var result = appUtil.VerifyUserSignatures(_originMessage, _flowSignatures, "0x5b250a8a85b44a67");
-        _signmessageTxt.text += $"\r\nVerify result: {result}";
+        var lastBlock = _fcl.FlowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        tx.ReferenceBlockId = lastBlock.Header.Id;
+        _walletProvider._address = "0x068606b2acddc1ca";
+        _walletProvider._isInstalledApp = true;
+        _walletProvider.SendTransaction(null, tx, tx => {});
+    }
+
+    private void OnDestroy()
+    {
     }
 }
