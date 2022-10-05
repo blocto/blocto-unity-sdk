@@ -21,9 +21,9 @@ namespace Blocto.Sdk.Core.Utility
     {
         public string BloctoAppId { get; set; }
         
-        private readonly Dictionary<string, Action<UnityWebRequest>> _handlers;
-        
-        public WebRequestUtility()
+        private Dictionary<string, Action<UnityWebRequest>> _handlers;
+
+        private void Awake()
         {
             _handlers = new Dictionary<string, Action<UnityWebRequest>>
                         {
@@ -32,7 +32,7 @@ namespace Blocto.Sdk.Core.Utility
                             {"500", InternalServerError}
                         };
         }
-        
+
         /// <summary>
         /// Send http request
         /// </summary>
