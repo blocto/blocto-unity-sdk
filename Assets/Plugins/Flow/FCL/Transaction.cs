@@ -1,16 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Flow.FCL.Extensions;
 using Flow.FCL.Models;
-using Flow.FCL.Models.Authz;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
-using Flow.Net.SDK.Extensions;
-using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Flow.FCL
 {
@@ -46,13 +41,14 @@ namespace Flow.FCL
         public virtual void SendTransaction(
             FclService service,
             FlowTransaction tx,
-            Action internalCallback,
             Action<string> callback = null
         )
         {
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
-            _walletProvider.SendTransaction(service, tx, internalCallback, callback);
+            _walletProvider.SendTransaction(service, tx, tx => {
+                                                             callback?.Invoke(tx);
+                                                         });
         }
 
         public FlowTransactionResult GetTransactionStatus(string transactionId)
