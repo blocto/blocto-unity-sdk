@@ -14,7 +14,7 @@ namespace Flow.FCL.Models
         /// App Name
         /// </summary>
         public string AppId { get; set; }
-        
+
         /// <summary>
         /// Random nonce as a hex string
         /// </summary>

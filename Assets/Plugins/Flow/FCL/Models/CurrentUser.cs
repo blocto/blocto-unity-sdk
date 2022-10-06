@@ -17,15 +17,15 @@ namespace Flow.FCL.Models
             Services = new List<FclService>();
             _walletProvider = walletProvider;
         }
-        
+
         public List<FclService> Services { get; set; }
 
         private AccountProofData AccountProofData { get; set; }
-        
+
         private readonly IWalletProvider _walletProvider;
-        
+
         private readonly IWebRequestUtils _webRequestUtils;
-        
+
         /// <summary>
         /// Returns the current user object.
         /// </summary>
@@ -34,7 +34,7 @@ namespace Flow.FCL.Models
         {
             return this;
         }
-        
+
         /// <summary>
         /// Calling this method will authenticate the current user via any wallet that supports FCL.
         /// Once called, FCL will initiate communication with the configured discovery.wallet endpoint which lets the user select a wallet to authenticate with.
@@ -43,11 +43,14 @@ namespace Flow.FCL.Models
         /// </summary>
         /// <param name="url">Authn url</param>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(string url, Action<CurrentUser, AccountProofData> callback = null)
+        public void Authenticate(
+            string url,
+            Action<CurrentUser, AccountProofData> callback = null
+        )
         {
             Authenticate(url, null, callback);
-        } 
-        
+        }
+
         /// <summary>
         /// Calling this method will authenticate the current user via any wallet that supports FCL.
         /// Once called, FCL will initiate communication with the configured discovery.wallet endpoint which lets the user select a wallet to authenticate with.
@@ -60,13 +63,13 @@ namespace Flow.FCL.Models
         public void Authenticate(string url, AccountProofData accountProofData = null, Action<CurrentUser, AccountProofData> callback = null)
         {
             var parameters = new Dictionary<string, object>();
-            if(accountProofData != null)
+            if (accountProofData != null)
             {
-                parameters = new Dictionary<string, object>
-                                 {
-                                     { "accountProofIdentifier", accountProofData.AppId },
-                                     { "accountProofNonce", accountProofData.Nonce }
-                                 };
+                parameters =
+                    new Dictionary<string, object> {
+                        { "accountProofIdentifier", accountProofData.AppId },
+                        { "accountProofNonce", accountProofData.Nonce }
+                    };
             }
             
             _walletProvider.Authenticate(url, parameters, item => {
@@ -118,13 +121,13 @@ namespace Flow.FCL.Models
         
         public void SignUserMessage(string message, Action<ExecuteResult<List<FlowSignature>>> callback = null)
         {
-            if(Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
+            if ( Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
             {
                 throw new Exception("Please connect wallet first.");
             }
-            
+
             var signService = Services.First(p => p.Type == ServiceTypeEnum.USERSIGNATURE);
-            _walletProvider.SignMessage(message, signService, callback);
+            _walletProvider.SignMessage (message, signService, callback);
         }
     }
 }
