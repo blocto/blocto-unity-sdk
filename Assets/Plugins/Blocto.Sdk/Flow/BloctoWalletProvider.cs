@@ -46,6 +46,11 @@ namespace Blocto.SDK.Flow
         public WebRequestUtility WebRequestUtility { get; set; }
         
         /// <summary>
+        /// Forced use of WebView
+        /// </summary>
+        public bool ForcedUseWebView { get; set; }
+        
+        /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
         /// <param name="goName">swift complete event then callback class name of unity</param>
@@ -106,7 +111,7 @@ namespace Blocto.SDK.Flow
         
         private Dictionary<bool, Action<FclService, FlowTransaction, Action<string>>> _transactionSdkMapper;
 
-        public bool _isInstalledApp = false;
+        private bool _isInstalledApp = false;
         
         public static string UniversalLink = "default";
         
@@ -135,6 +140,7 @@ namespace Blocto.SDK.Flow
                                                              provider._resolveUtility = resolveUtility;
                                                              provider._flowClient = flowClient;
                                                              provider._requestIdActionMapper = new Dictionary<string, string>();
+                                                             provider.ForcedUseWebView = false;
                                                              
                                                              return provider;
                                                          });
@@ -295,7 +301,7 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null)
         {
-            if(_isInstalledApp)
+            if(_isInstalledApp && ForcedUseWebView == false)
             {
                 var requestId = Guid.NewGuid();
                 _requestIdActionMapper.Add(requestId.ToString(), "authn");
@@ -315,27 +321,27 @@ namespace Blocto.SDK.Flow
                 $"Url: {sb}".ToLog();
                 _authenticateCallback = internalCallback;
                 StartCoroutine(OpenUrl(sb.ToString()));
+                return;
             }
-            else
+            
+            var authnResponse = WebRequestUtility.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
+            var endpoint = authnResponse.AuthnEndpoint();
+            var element = endpoint.IframeUrl.Split("?")[1].Split("&").ToList();
+            var thumbnailElement = element.FirstOrDefault(p => p.ToLower().Contains("thumbnail"));
+            var titleElement = element.FirstOrDefault(p => p.ToLower().Contains("title"));
+            if(thumbnailElement != null)
             {
-                var authnResponse = WebRequestUtility.GetResponse<AuthnAdapterResponse>(url, "POST", "application/json", parameters);
-                var endpoint = authnResponse.AuthnEndpoint();
-                var element = endpoint.IframeUrl.Split("?")[1].Split("&").ToList();
-                var thumbnailElement = element.FirstOrDefault(p => p.ToLower().Contains("thumbnail"));
-                var titleElement = element.FirstOrDefault(p => p.ToLower().Contains("title"));
-                if(thumbnailElement != null)
-                {
-                    BloctoWalletProvider.Thumbnail = thumbnailElement.Split("=")[1];
-                }
-                
-                if(titleElement != null)
-                {
-                    BloctoWalletProvider.Title = titleElement.Split("=")[1];
-                }
-
-                StartCoroutine(OpenUrl(endpoint.IframeUrl));
-                StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
+                BloctoWalletProvider.Thumbnail = thumbnailElement.Split("=")[1];
             }
+                
+            if(titleElement != null)
+            {
+                BloctoWalletProvider.Title = titleElement.Split("=")[1];
+            }
+
+            $"Oper Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
+            StartCoroutine(OpenUrl(endpoint.IframeUrl));
+            StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
         }
         
         /// <summary>
@@ -346,6 +352,12 @@ namespace Blocto.SDK.Flow
         /// <param name="internalCallback">complete transaction internal callback</param>
         public virtual void SendTransaction(FclService service, FlowTransaction tx, Action<string> internalCallback)
         {
+            if(ForcedUseWebView)
+            {
+                _transactionSdkMapper[false].Invoke(service, tx, internalCallback);
+                return;
+            }
+            
             var action = _transactionSdkMapper[_isInstalledApp];
             action.Invoke(service, tx, internalCallback);
         }
@@ -566,7 +578,7 @@ namespace Blocto.SDK.Flow
         /// <param name="callback">After, get endpoint response callback.</param>
         public void SignMessage(string message, FclService signService, Action<ExecuteResult<List<FlowSignature>>> callback = null)
         {
-            if(_isInstalledApp)
+            if(_isInstalledApp && ForcedUseWebView == false)
             {
                 var requestId = Guid.NewGuid();
                 _requestIdActionMapper.Add(requestId.ToString(), "signmessage");
@@ -581,46 +593,45 @@ namespace Blocto.SDK.Flow
                 
                 _signmessageCallback = callback;
                 StartCoroutine(OpenUrl(sb.ToString()));
+                return;
             }
-            else
-            {
-                var signUrl = signService.SignMessageAdapterEndpoint();
-                var hexMessage = message.StringToHex();
-                var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
-                var response = WebRequestUtility.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
-                var endpoint = response.SignMessageEndpoint();
-                
-                var sb = new StringBuilder(endpoint.IframeUrl);
-                sb.Append("&")
-                  .Append(Uri.EscapeDataString("thumbnail") + "=")
-                  .Append(BloctoWalletProvider.Thumbnail + "&")
-                  .Append(Uri.EscapeDataString("title") + "=")
-                  .Append(BloctoWalletProvider.Title);
-                var iframeUrl = sb.ToString();
+            
+            var signUrl = signService.SignMessageAdapterEndpoint();
+            var hexMessage = message.StringToHex();
+            var payload = _resolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
+            var response = WebRequestUtility.GetResponse<AuthnAdapterResponse>(signUrl, "POST", "application/json", payload);
+            var endpoint = response.SignMessageEndpoint();
+            
+            var webSb = new StringBuilder(endpoint.IframeUrl);
+            webSb.Append("&")
+                 .Append(Uri.EscapeDataString("thumbnail") + "=")
+                 .Append(BloctoWalletProvider.Thumbnail + "&")
+                 .Append(Uri.EscapeDataString("title") + "=")
+                 .Append(BloctoWalletProvider.Title);
+            var iframeUrl = webSb.ToString();
 
-                StartCoroutine(OpenUrl(iframeUrl));
-                StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, response => {
-                                                                                         var signature = response?.Data.First().SignatureStr();
-                                                                                         var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
-                                                                                         var addr = response?.Data.First().Address();
-                                                                                         var result = new ExecuteResult<List<FlowSignature>>
-                                                                                                      {
-                                                                                                          Data = new List<FlowSignature>
+            StartCoroutine(OpenUrl(iframeUrl));
+            StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, response => {
+                                                                                     var signature = response?.Data.First().SignatureStr();
+                                                                                     var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
+                                                                                     var addr = response?.Data.First().Address();
+                                                                                     var result = new ExecuteResult<List<FlowSignature>>
+                                                                                                  {
+                                                                                                      Data = new List<FlowSignature>
+                                                                                                             {
+                                                                                                                 new FlowSignature
                                                                                                                  {
-                                                                                                                     new FlowSignature
-                                                                                                                     {
-                                                                                                                         Address = new FlowAddress(addr),
-                                                                                                                         KeyId = keyId,
-                                                                                                                         Signature = Encoding.UTF8.GetBytes(signature!)
-                                                                                                                     }
-                                                                                                                 },
-                                                                                                          IsSuccessed = true,
-                                                                                                          Message = string.Empty
-                                                                                                      };
-                                                                                         
-                                                                                         callback?.Invoke(result);
-                                                                                     }));
-            }
+                                                                                                                     Address = new FlowAddress(addr),
+                                                                                                                     KeyId = keyId,
+                                                                                                                     Signature = Encoding.UTF8.GetBytes(signature!)
+                                                                                                                 }
+                                                                                                             },
+                                                                                                      IsSuccessed = true,
+                                                                                                      Message = string.Empty
+                                                                                                  };
+                                                                                     
+                                                                                     callback?.Invoke(result);
+                                                                                 }));
         }
         
         /// <summary>

@@ -188,6 +188,7 @@ public class MainController : MonoBehaviour
 
     private void ConnectWallet()
     {
+        $"Start ConnectWallet. {DateTime.Now:hh:mm:ss.fff}".ToLog();
         var accountProofData = new AccountProofData
                                {
                                    AppId = "com.blocto.flow.unitydemo",
@@ -393,7 +394,6 @@ public class MainController : MonoBehaviour
         var lastBlock = _fcl.FlowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         tx.ReferenceBlockId = lastBlock.Header.Id;
         _walletProvider._address = "0x068606b2acddc1ca";
-        _walletProvider._isInstalledApp = true;
         _walletProvider.SendTransaction(null, tx, tx => {});
     }
 }
