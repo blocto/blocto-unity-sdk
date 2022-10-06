@@ -266,7 +266,6 @@ namespace Blocto.SDK.Flow
         /// <returns></returns>
         private bool IsInstalledApp()
         {
-            
             var isInstallApp = false;
             var testDomain = "blocto://open";
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
@@ -278,11 +277,6 @@ namespace Blocto.SDK.Flow
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
-                    $"In android mehtod".ToLog();
-                    var number = _pluginInstance.Call<int>("add", 1, 3);
-                    $"Number: {number}".ToLog();
-                    var content = _pluginInstance.Call<string>("log", "Method test.");
-                    $"Content: {content}".ToLog();
                     isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", "com.portto.blocto.staging"); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
@@ -686,7 +680,14 @@ namespace Blocto.SDK.Flow
                 switch (Application.platform)
                 {
                     case RuntimePlatform.Android:
-                        _pluginInstance.Call("openSDK", "com.portto.blocto.staging", url, url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
+                        if(_isInstalledApp)
+                        {
+                            _pluginInstance.Call("openSDK", "com.portto.blocto.staging", url, url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
+                        }
+                        else
+                        {
+                            _pluginInstance.Call("webview", url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
+                        }
                         break;
                     case RuntimePlatform.IPhonePlayer:
                         BloctoWalletProvider.OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);

@@ -60,11 +60,7 @@ namespace Flow.FCL.Models
         /// <param name="url">Authn url</param>
         /// <param name="accountProofData">Flow account proof data</param>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(
-            string url,
-            AccountProofData accountProofData = null,
-            Action<CurrentUser, AccountProofData> callback = null
-        )
+        public void Authenticate(string url, AccountProofData accountProofData = null, Action<CurrentUser, AccountProofData> callback = null)
         {
             var parameters = new Dictionary<string, object>();
             if (accountProofData != null)
@@ -76,10 +72,7 @@ namespace Flow.FCL.Models
                     };
             }
 
-            _walletProvider
-                .Authenticate(url,
-                parameters,
-                item =>
+            _walletProvider.Authenticate(url,parameters, item =>
                 {
                     var response = item as AuthenticateResponse;
                     switch (response?.ResponseStatus)
@@ -107,32 +100,15 @@ namespace Flow.FCL.Models
 
                     if (accountProofData != null)
                     {
-                        var service =
-                            Services
-                                .FirstOrDefault(service =>
-                                    service.Type ==
-                                    ServiceTypeEnum.AccountProof);
-                        var nonce = service?.Data.Nonce;
+                        var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
                         foreach (var signature in service?.Data.Signatures)
                         {
-                            // accountProofData.Signature.Add(new Signature
-                            //                                {
-                            //                                    Addr = service?.Data.Address,
-                            //                                    KeyId = Convert.ToUInt32(signature.KeyId()),
-                            //                                    SignatureStr = signature.SignatureStr()
-                            //                                });
-                            accountProofData
-                                .Signature
-                                .Add(new FlowSignature()
-                                {
-                                    Address =
-                                        new FlowAddress(service?.Data.Address),
-                                    KeyId = Convert.ToUInt32(signature.KeyId()),
-                                    Signature =
-                                        Encoding
-                                            .UTF8
-                                            .GetBytes(signature.SignatureStr())
-                                });
+                            accountProofData.Signature.Add(new FlowSignature()
+                                                           {
+                                                               Address = new FlowAddress(service?.Data.Address),
+                                                               KeyId = Convert.ToUInt32(signature.KeyId()),
+                                                               Signature = Encoding.UTF8.GetBytes(signature.SignatureStr())
+                                                           });
                         }
 
                         AccountProofData = accountProofData;
@@ -145,22 +121,14 @@ namespace Flow.FCL.Models
                 });
         }
 
-        public void SignUserMessage(
-            string message,
-            Action<ExecuteResult<List<FlowSignature>>> callback = null
-        )
+        public void SignUserMessage(string message, Action<ExecuteResult<List<FlowSignature>>> callback = null)
         {
-            if (
-                Services
-                    .All(service =>
-                        service.Type != ServiceTypeEnum.USERSIGNATURE)
-            )
+            if ( Services.All(service => service.Type != ServiceTypeEnum.USERSIGNATURE))
             {
                 throw new Exception("Please connect wallet first.");
             }
 
-            var signService =
-                Services.First(p => p.Type == ServiceTypeEnum.USERSIGNATURE);
+            var signService = Services.First(p => p.Type == ServiceTypeEnum.USERSIGNATURE);
             _walletProvider.SignMessage (message, signService, callback);
         }
     }
