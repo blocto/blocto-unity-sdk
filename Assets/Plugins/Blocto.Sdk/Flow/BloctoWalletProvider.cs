@@ -283,6 +283,7 @@ namespace Blocto.SDK.Flow
                     break;
             }
             
+            $"Is installed app: {isInstallApp}".ToLog();
             return isInstallApp;
         }
 
@@ -311,8 +312,7 @@ namespace Blocto.SDK.Flow
                       .Append($"flow_nonce={parameters["accountProofNonce"]}");
                 }
                 
-                $"Nonce: {parameters["accountProofNonce"].ToString()}".ToLog();
-                
+                $"Url: {sb}".ToLog();
                 _authenticateCallback = internalCallback;
                 StartCoroutine(OpenUrl(sb.ToString()));
             }
@@ -740,7 +740,8 @@ namespace Blocto.SDK.Flow
         private string UniversalLinkTransactionHandler(string link)
         {
             var data = CheckContent(link, "tx_hash");
-            return data.MatchContent.First();
+            var tx = data.MatchContent.First().Split("=")[1];
+            return tx;
         }
 
         private List<FlowSignature> SignatureProcess((List<string> MatchContents, string RemainContent) data)

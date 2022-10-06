@@ -178,7 +178,6 @@ public class MainController : MonoBehaviour
                                                                           env: "testnet",
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
         
-        _walletProvider._isInstalledApp = true;
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
@@ -252,6 +251,7 @@ public class MainController : MonoBehaviour
     
     public void GetTxr()
     {
+        $"Tx: {_txId}".ToLog();
         var result = _fcl.GetTransactionStatus(_txId);
         if(result.IsSuccessed)
         {
@@ -337,6 +337,7 @@ public class MainController : MonoBehaviour
     
     private void SignUserMessage()
     {
+        _originMessage = _signmessageTxt.text;
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
                                                    {
                                                        if(result.IsSuccessed == false)
@@ -394,9 +395,5 @@ public class MainController : MonoBehaviour
         _walletProvider._address = "0x068606b2acddc1ca";
         _walletProvider._isInstalledApp = true;
         _walletProvider.SendTransaction(null, tx, tx => {});
-    }
-
-    private void OnDestroy()
-    {
     }
 }
