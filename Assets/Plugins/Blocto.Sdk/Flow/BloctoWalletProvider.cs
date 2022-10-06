@@ -273,40 +273,12 @@ namespace Blocto.SDK.Flow
                 testDomain = $"blocto-staging://open";
             }
             
-            $"InstalledApp.".ToLog();
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
                     isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", "com.portto.blocto.staging"); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
-                    isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
-                    break;
-            }
-            
-            return isInstallApp;
-        }
-
-        /// <summary>
-        /// Check specify app installed
-        /// </summary>
-        /// <returns></returns>
-        private bool IsInstalledApp()
-        {
-            var isInstallApp = false;
-            var testDomain = "blocto://open";
-            if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
-            {
-                testDomain = $"blocto-staging://open";
-            }
-            
-            switch (Application.platform)
-            {
-                case RuntimePlatform.Android:
-                    break;
-                case RuntimePlatform.IPhonePlayer:
-                    $"App domain: {_appSdkDomain}".ToLog();
-                
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
                     break;
             }

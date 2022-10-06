@@ -3,12 +3,10 @@ using System.Linq;
 using System.Text;
 using Flow.FCL.Models;
 using Flow.Net.SDK.Client.Unity.Unity;
-using Flow.Net.SDK.Extensions;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using UnityEngine;
 
 namespace Flow.FCL.Utility
@@ -23,15 +21,13 @@ namespace Flow.FCL.Utility
             _verifyUserSignatureScript =
                 @"import FCLCrypto from {address} pub fun main( address: Address, message: String, keyIndices: [Int], signatures: [String] ): Bool { return FCLCrypto.verifyUserSignatures(address: address, message: message, keyIndices: keyIndices, signatures: signatures) }";
 
-        private IFlowClient _flowClient;
+        private readonly IFlowClient _flowClient;
 
-        private IEncodeUtility _encodeUtility;
+        private readonly IEncodeUtility _encodeUtility;
 
         public AppUtility(IFlowClient flowClient)
         {
             _flowClient = flowClient;
-            var env = FlowClientLibrary.Config.Get("flow.network");
-            var contractAddress = FlowClientLibrary.Config.Get($"{env}.fclcrypto");
         }
 
         public AppUtility(GameObject gameObject, IEncodeUtility encodeUtility)
@@ -65,30 +61,6 @@ namespace Flow.FCL.Utility
                                     signatures
                                 }
                 }).ConfigureAwait(false).GetAwaiter().GetResult();
-            
-
-            $"message: {message}, hexmessage: { message.StringToHex()}, in AppUtility".ToLog();
-            var signatures = new CadenceArray(argumentSignatures);
-            var signatureIndexes = new CadenceArray(argumentIndex);
-            var response =
-                _flowClient
-                    .ExecuteScriptAtLatestBlockAsync(new FlowScript {
-                        Script = _verifyUserSignatureScript,
-                        Arguments =
-                            new List<ICadence> {
-                                new CadenceAddress(flowSignatures
-                                        .First()
-                                        .Address
-                                        .Address
-                                        .AddHexPrefix()),
-                                new CadenceString(message.StringToHex()),
-                                signatureIndexes,
-                                signatures
-                            }
-                    })
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
 
             return response.As<CadenceBool>().Value;
         }
@@ -108,8 +80,8 @@ namespace Flow.FCL.Utility
             var signatureStrs = accountProofData.Signature.Select(p => new CadenceString(Encoding.UTF8.GetString(p.Signature))).Cast<ICadence>().ToList();
             var signatures = new CadenceArray(signatureStrs);
             
-            var signatureIndexs = accountProofData.Signature.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList();
-            var signatureIndexes = new CadenceArray(signatureIndexs);
+            var signatureIndexes = accountProofData.Signature.Select(p => new CadenceNumber(CadenceNumberType.Int, p.KeyId.ToString())).Cast<ICadence>().ToList();
+            var argumentSignatures = new CadenceArray(signatureIndexes);
             
             var response = _flowClient.ExecuteScriptAtLatestBlockAsync(
                                new FlowScript
@@ -119,28 +91,11 @@ namespace Flow.FCL.Utility
                                                {
                                                    new CadenceAddress(accountProofData.Signature.First().Address.Address),
                                                    new CadenceString(message),
-                                                   signatureIndexes,
+                                                   argumentSignatures,
                                                    signatures
                                                }
                                }).ConfigureAwait(false).GetAwaiter().GetResult();
             
-            var signatures = new CadenceArray(signatureStrs);
-            var signatureIndexes = new CadenceArray(signatureIndexs);
-
-            var response = _flowClient .ExecuteScriptAtLatestBlockAsync(new FlowScript {
-                        Script = _verifyAccountProofScript,
-                        Arguments =
-                            new List<ICadence> {
-                                new CadenceAddress(accountProofData.Signature.First().Address.Address),
-                                new CadenceString(message),
-                                signatureIndexes,
-                                signatures
-                            }
-                    })
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
-
             return response.As<CadenceBool>().Value;
         }
     }
