@@ -19,9 +19,11 @@ namespace Blocto.Sdk.Core.Utility
 {
     public class WebRequestUtility : MonoBehaviour
     {
-        private readonly Dictionary<string, Action<UnityWebRequest>> _handlers;
+        public string BloctoAppId { get; set; }
         
-        public WebRequestUtility()
+        private Dictionary<string, Action<UnityWebRequest>> _handlers;
+
+        private void Awake()
         {
             _handlers = new Dictionary<string, Action<UnityWebRequest>>
                         {
@@ -30,7 +32,7 @@ namespace Blocto.Sdk.Core.Utility
                             {"500", InternalServerError}
                         };
         }
-        
+
         /// <summary>
         /// Send http request
         /// </summary>
@@ -75,7 +77,6 @@ namespace Blocto.Sdk.Core.Utility
         public TResponse GetResponse<TResponse>(string url, string method, string contentType, object parameter)
         {
             var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
-            client.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
             var jsonStr = default(string);
             
             jsonStr = parameter is JObject
@@ -123,7 +124,7 @@ namespace Blocto.Sdk.Core.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
-                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
+                $"Respone content: {Encoding.UTF8.GetString(tmp)}".ToLog();
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  
@@ -149,6 +150,8 @@ namespace Blocto.Sdk.Core.Utility
         /// <exception cref="ApiException{Error}"></exception>
         private void BadRequestHandler(UnityWebRequest unityWebRequest)
         {
+            var tmp = unityWebRequest.downloadHandler.data; 
+            $"Http 400, Reson: {Encoding.UTF8.GetString(tmp)}".ToLog();
             var objectResponse_ = ReadObjectResponseAsync<Error>(unityWebRequest);
             throw new ApiException<Error>("Bad Request", (int)unityWebRequest.responseCode, objectResponse_.Text, objectResponse_.Object, null); 
         }
@@ -179,16 +182,18 @@ namespace Blocto.Sdk.Core.Utility
         {
             var uri = new Uri(url, UriKind.RelativeOrAbsolute);
             var unityWebRequest = new UnityWebRequest(uri, method);
-            unityWebRequest.SetRequestHeader("Content-Type", contentType);
-            unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", "12a22f0b-c2ec-47ef-aa24-64115f94f781");
+            if(contentType != string.Empty)
+            {
+                unityWebRequest.SetRequestHeader("Content-Type", contentType);
+            }
             
+            unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", BloctoAppId);
             if(uploadHandlerRaw != null)
             {
                 unityWebRequest.uploadHandler = uploadHandlerRaw;
             }
             
             unityWebRequest.downloadHandler = downloadHandlerBuffer;
-            
             return unityWebRequest;
         }
         

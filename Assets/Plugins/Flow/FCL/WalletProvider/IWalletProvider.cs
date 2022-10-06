@@ -23,6 +23,14 @@ namespace Flow.FCL.WalletProvider
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null);
         
         /// <summary>
+        /// Send Transaction
+        /// </summary>
+        /// <param name="service">fcl preauth service</param>
+        /// <param name="tx">flow transaction</param>
+        /// <param name="internalCallback">completed transaction callback</param>
+        public void SendTransaction(FclService service, FlowTransaction tx, Action<string> internalCallback = null);
+        
+        /// <summary>
         /// Get authorizer signature
         /// </summary>
         /// <param name="iframeUrl">User approve page</param>
@@ -36,6 +44,6 @@ namespace Flow.FCL.WalletProvider
         /// <param name="message">Original message </param>
         /// <param name="signService">FCL signature service</param>
         /// <param name="callback">After, get endpoint response callback.</param>
-        public void SignMessage(string message, FclService signService, Action<ExecuteResult<FlowSignature>> callback = null);
+        public void SignMessage(string message, FclService signService, Action<ExecuteResult<List<FlowSignature>>> callback = null);
     }
 }

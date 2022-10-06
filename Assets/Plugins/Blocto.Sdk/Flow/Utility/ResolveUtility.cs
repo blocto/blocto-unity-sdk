@@ -10,9 +10,8 @@ using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.VisualScripting;
 
 namespace Blocto.Sdk.Flow.Utility
 {
@@ -56,6 +55,13 @@ namespace Blocto.Sdk.Flow.Utility
             
             var participators = ResolveUtility.GetAllAccount(authorizerData, tx.ProposalKey);
             
+            var tmpSigners = new Dictionary<string, int>();
+            if(tx.SignerList.Keys.Any())
+            {
+                tmpSigners.AddRange(tx.SignerList);
+            }
+            
+            tx.SignerList.Clear();
             if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
             {
                 tx.SignerList.Add(participators.Proposer.Addr, 0);
@@ -91,6 +97,16 @@ namespace Blocto.Sdk.Flow.Utility
                 tx.SignerList.Add(participators.Payer.Addr, tx.SignerList.Count);
             }
 
+            foreach (var (key, index) in tmpSigners)
+            {
+                if (tx.SignerList.Keys.Contains(key))
+                {
+                    continue;
+                }
+
+                tx.SignerList.Add(key, index + tx.SignerList.Count);
+            }
+            
             var transaction = tx;
             foreach (var authorization in participators.Authorizations.Where(authorization => !transaction.SignerList.ContainsKey(authorization.Addr)))
             {
@@ -140,7 +156,7 @@ namespace Blocto.Sdk.Flow.Utility
                                                                         });
             }
             
-            var message = EncodeUtility.GetEncodeMessage(tx);
+            var message = EncodeUtility.GetEncodeMessageWithDomainTag(tx);
             item.Add("message", message);
             
             var result = new List<JObject>();
@@ -161,21 +177,17 @@ namespace Blocto.Sdk.Flow.Utility
         {
             var payerAddress = tx.Payer.Address;
             var signer = tx.EnvelopeSignatures.First(p => p.Address.Address == payerAddress);
-            $"SignerKeys: {JsonConvert.SerializeObject(tx.EnvelopeSignatures)}, payer address {tx.Payer.Address}, signerKey: {JsonConvert.SerializeObject(signer)}".ToLog();
             var keyId = signer.KeyId;
             signable.Remove(SignablePropertyEnum.addr.ToString());
             signable.Remove(SignablePropertyEnum.keyId.ToString());
             signable.Add(SignablePropertyEnum.addr.ToString(), tx.Payer.Address);
             signable.Add(SignablePropertyEnum.keyId.ToString(), keyId.ToString());
             
-            $"Update completed addr and keyId".ToLog();
-            $"Payer signable: {JsonConvert.SerializeObject(signable)}".ToLog();
             var args = tx.Arguments.Select(cadence => CreageArg(cadence)).ToList();
             var voucher = CreateVoucher(tx, args, "payersignable");
             signable.Remove(SignablePropertyEnum.voucher.ToString());
             signable.Add(SignablePropertyEnum.voucher.ToString(), voucher);
             
-            $"Payer signable: {JsonConvert.SerializeObject(signable)}".ToLog();
             var message = EncodeUtility.EncodedCanonicalAuthorizationEnvelope(tx);
             signable.Remove(SignablePropertyEnum.message.ToString());
             signable.Add(SignablePropertyEnum.message.ToString(), message);

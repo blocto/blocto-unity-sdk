@@ -15,7 +15,7 @@ extern "C" {
           NSString* tmpWebUrl = [NSString stringWithUTF8String:webUrl];
           NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl];
          
-          NSLog(@"%@", failedFn);
+          NSLog(@"%@", go);
           
           UIWindow *keyWindow = nil;
           
@@ -51,6 +51,20 @@ extern "C" {
                // handle key window not found.
           }
      }
+
+     bool IsInstalled(const char* appUrl){
+         NSLog(@"In check installed blocto app");
+         NSString* tmpAppUrl = [NSString stringWithUTF8String:appUrl];
+         bool isInstalled = false;
+         isInstalled = [sessionHelper isInstallationWithUrlString:tmpAppUrl];
+
+         return isInstalled;
+     }
+
+    void WriteLog(){
+        printf("MainController Start or Awake");
+    }
+
 
      void CloseWindow()
      {

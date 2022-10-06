@@ -1,5 +1,7 @@
 #import "UnityAppController.h"
-#import <UniversalLink.h> 
+#import <UniversalLink.h>
+#import "UnityInterface.h"
+
 @interface BloctoAppController : UnityAppController
 @end
  
@@ -22,17 +24,42 @@ IMPL_APP_CONTROLLER_SUBCLASS (BloctoAppController)
 }
 
 
-- (BOOL)application:(UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray<id<UIUserActivityRestoring>> *_Nullable))restorationHandler {
+- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *_Nullable))restorationHandler {
+   
     
     if ([userActivity.activityType isEqualToString: NSUserActivityTypeBrowsingWeb]) {
         NSURL *url = userActivity.webpageURL;
         if ([url.query containsString:@"request_id"]) {
             NSString *query = [url query];
             [UniversalLink instance].URL = query;
+
+            UnitySendMessage("bloctowalletprovider", "UniversalLinkCallbackHandler", [UniversalLink instance].URL.UTF8String);
             return YES;
         }
     }
     
     return YES;
 }
+
+
+- (BOOL)application:(UIApplication*)application openURL:(NSURL*)url sourceApplication:(NSString*)sourceApplication annotation:(id)annotation
+{
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            message:@"In notification" delegate:self cancelButtonTitle:@"Cancel"
+            otherButtonTitles:@"OK", nil];
+    
+    [alert show];
+    return YES;
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
+{
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"UIAlertView"
+            message:@"In notification" delegate:self cancelButtonTitle:@"Cancel"
+            otherButtonTitles:@"OK", nil];
+    
+    [alert show];
+    return YES;
+}
+
 @end

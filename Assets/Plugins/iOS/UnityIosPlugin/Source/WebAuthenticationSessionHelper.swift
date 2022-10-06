@@ -11,6 +11,19 @@ import AuthenticationServices
         return Static.instance
     }
 
+    @objc public func isInstallation(urlString:String) -> Bool {
+        log(enable: true, message: "In swift isInstallation")
+        var isInstalled = false
+        if let appURL = URL(string: urlString) {
+            isInstalled = UIApplication.shared.canOpenURL(appURL)
+            print("Can open \"\(appURL)\": \(isInstalled)")
+            return isInstalled
+        }
+        
+        print("Can open blocto-staging://open: \(isInstalled)")
+        return isInstalled
+    }
+
     @objc public func openUrl(window: UIWindow, webUrl: String, appUrl: String, completion: ((URL?, Error?) -> Void)?){
         guard let requestWebUrl = URL(string: webUrl) else {
             completion?(nil, BloctoError.urlNotFound)
@@ -88,7 +101,6 @@ import AuthenticationServices
         log(enable: true, message: "In swift closeWindow")
         self.session?.cancel()
     }
-
 
     func log(enable: Bool, message: String) {
         guard enable else { return }
