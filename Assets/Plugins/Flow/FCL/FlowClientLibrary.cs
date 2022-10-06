@@ -17,7 +17,7 @@ namespace Flow.FCL
 {
     public class FlowClientLibrary : MonoBehaviour
     {
-        public IFlowClient FlowClient { get; set; }
+        public IFlowClient FlowClient { get; private set; }
         
         public static Config.Config Config { get; private set; }
 
@@ -33,6 +33,12 @@ namespace Flow.FCL
         
         private bool _isSuccessed;
         
+        /// <summary>
+        /// Create FlowClientLibrary Instance
+        /// </summary>
+        /// <param name="initialFun">Custom initial prcess</param>
+        /// <param name="config">FlowClientLibrary Config</param>
+        /// <returns></returns>
         public static FlowClientLibrary CreateClientLibrary(Func<Func<GameObject, IWalletProvider, IResolveUtility, FlowClientLibrary>,FlowClientLibrary> initialFun, Config.Config config = null)
         {
             if(config != null)
@@ -48,7 +54,7 @@ namespace Flow.FCL
                                             
                                             var factory = UtilFactory.CreateUtilFactory(gameObject, tmpFcl.FlowClient, resolveUtility);
                                             tmpFcl._currentUser = new CurrentUser(tmpFcl._walletProvider); 
-                                            tmpFcl._transaction = new Transaction(tmpFcl._walletProvider, tmpFcl.FlowClient, resolveUtility, factory);
+                                            tmpFcl._transaction = new Transaction(tmpFcl._walletProvider, tmpFcl.FlowClient, factory);
                                             return tmpFcl;
                                         });
             
@@ -147,7 +153,6 @@ namespace Flow.FCL
                 throw new Exception("Please connect wallet first.");
                 
             }
-            
            
             _transaction.SendTransaction(service, tx, callback);
         }

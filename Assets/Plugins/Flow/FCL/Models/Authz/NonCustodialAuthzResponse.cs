@@ -11,7 +11,7 @@ namespace Flow.FCL.Models.Authz
         public object Reason { get; set; }
         
         [JsonProperty("updates")]
-        public new AuthorizationUpdates AuthorizationUpdates { get; set; }
+        public AuthorizationUpdates AuthorizationUpdates { get; set; }
 
         [JsonProperty("local")]
         public AuthzLocal Local { get; set; }

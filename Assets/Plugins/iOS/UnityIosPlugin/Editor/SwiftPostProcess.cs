@@ -58,12 +58,12 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                 
                 if(queriesUrlTypeArray?.values.Any(p => p.AsString() == "blocto") == false)
                 {
-                    queriesUrlTypeArray?.AddString("blocto");
+                    queriesUrlTypeArray.AddString("blocto");
                 }
                 
                 if(queriesUrlTypeArray?.values.Any(p => p.AsString() == "blocto-staging") == false)
                 {
-                    queriesUrlTypeArray?.AddString("blocto-staging");
+                    queriesUrlTypeArray.AddString("blocto-staging");
                 }
                 
                 // var entitlements = new ProjectCapabilityManager(projPath, "Unity-iPhone/Unity-iPhoneReleaseForProfiling.entitlements", "Unity-iPhone");
@@ -112,39 +112,5 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             //
             // capabilityManager.WriteToFile();
         }
-
-        // public int callbackOrder { get; }
-        //
-        // /// <summary>
-        // /// エントリーポイント
-        // /// </summary>
-        // /// <param name="report">Report.</param>
-        // public void OnPostprocessBuild(BuildReport report) {
-        //     if (report.summary.platform == BuildTarget.iOS) {
-        //         iOSPostProcess(report.summary.outputPath);
-        //     }
-        // }
-        //
-        // /// <summary>
-        // /// iOS個別処理
-        // /// </summary>
-        // /// <param name="path">Path.</param>
-        // private void iOSPostProcess(string path) {
-        //     string projectPath = PBXProject.GetPBXProjectPath(path);
-        //
-        //     // iOS の ProjectCapabilityManagerに特定のパラメータをセット
-        //     var separator = Path.DirectorySeparatorChar;
-        //     string targetName = PBXProject.GetUnityTargetName();
-        //     var entitlementPath = projectPath + separator + targetName + separator + targetName + ".entitlements";
-        //     var entitlementFileName = Path.GetFileName(entitlementPath);
-        //     var unityTarget = PBXProject.GetUnityTargetName();
-        //     var relativeDestination = unityTarget + "/" + entitlementFileName;
-        //     var capabilityManager = new ProjectCapabilityManager(projectPath, relativeDestination, unityTarget);
-        //
-        //     // Universal-link 対応
-        //     capabilityManager.AddAssociatedDomains(new string[] { "applinks:ここに短縮URL記入" });
-        //
-        //     capabilityManager.WriteToFile();
-        // }
     }
 }

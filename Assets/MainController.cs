@@ -385,7 +385,7 @@ public class MainController : MonoBehaviour
                      GasLimit = 9999,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, value.ToString())
+                                     new CadenceNumber(CadenceNumberType.UFix64, value)
                                  },
                  };
         

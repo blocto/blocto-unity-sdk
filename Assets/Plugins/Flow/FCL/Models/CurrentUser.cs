@@ -43,10 +43,7 @@ namespace Flow.FCL.Models
         /// </summary>
         /// <param name="url">Authn url</param>
         /// <param name="callback">The callback will be called when the user authenticates and un-authenticates, making it easy to update the UI accordingly.</param>
-        public void Authenticate(
-            string url,
-            Action<CurrentUser, AccountProofData> callback = null
-        )
+        public void Authenticate(string url, Action<CurrentUser, AccountProofData> callback = null)
         {
             Authenticate(url, null, callback);
         }
@@ -100,8 +97,7 @@ namespace Flow.FCL.Models
                                                        if(accountProofData != null)
                                                        {
                                                            var service = Services.FirstOrDefault(service => service.Type == ServiceTypeEnum.AccountProof);
-                                                           var nonce = service?.Data.Nonce;
-                                                           foreach (var signature in service?.Data.Signatures)
+                                                           foreach (var signature in service?.Data.Signatures!)
                                                            {
                                                                accountProofData.Signature.Add(new FlowSignature()
                                                                                               {
@@ -128,6 +124,17 @@ namespace Flow.FCL.Models
 
             var signService = Services.First(p => p.Type == ServiceTypeEnum.USERSIGNATURE);
             _walletProvider.SignMessage (message, signService, callback);
+        }
+        
+        private void ApproveProcess(AuthenticateResponse response)
+        {
+            Addr = new FlowAddress(response.Data.Addr);
+            LoggedIn = true;
+            F_type = "USER";
+            F_vsn = response.FVsn;
+            Services = response.Data.Services.ToList();
+            ExpiresAt = response.Data.Expires;
+            ExpiresAt = response.Data.Expires;
         }
     }
 }
