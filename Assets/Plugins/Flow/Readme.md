@@ -39,24 +39,27 @@ using Flow.FCL.Config
 using Blocto.SDK.Flow;
 
 var config = new Config();
-        config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
-              .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
-              .Put("fcl.limit", "1000")
-              .Put("flow.network", "testnet");
+config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
+      .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
+      .Put("flow.network", "testnet");
         
- var walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
-        gameObject: gameObject,
-        bloctoAppIdentifier: {your's bloctoSDKAppId}
-    );
-    
- var fcl = new FlowClientLibrary.CreateClientLibrary(
-    gameObject: gameObject, 
-    initialFunc: GetFCL => {
-                var fcl = GetFCL.Invoke();
-                fcl.SetWalletProvider(_walletProvider);
-                fcl.SetResolveUtility(new ResolveUtility());
-                return fcl;
-            }, 
+var walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
+    initialFun: GetWallet => {
+                    var walletProvider = GetWallet.Invoke(
+                        gameObject,
+                        new FlowUnityWebRequest(gameObject, config.Get("accessNode.api")),
+                        new ResolveUtility());
+                    
+                    return walletProvider;
+                },
+    env: {"testnet" or "mainnet"},
+    bloctoAppIdentifier:Guid.Parse("d0c4c565-db60-4848-99c8-2bdfc6bd3576"));
+        
+var fcl = FlowClientLibrary.CreateClientLibrary(
+    initialFun: GetFCL => {
+                    var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
+                    return fcl;
+                }, 
     config: config);
 ```
 
@@ -76,17 +79,22 @@ using Flow.Net.Sdk.Core.Models;
 
 var userSignature = default(FlowSignature);
 var originalMessage = "SignMessage Test";
-_fcl.SignUserMessage(originalMessage, result => 
-                                            {
-                                                if(result.IsSuccessed == false)
-                                                {
-                                                    Debug.Log($"Get signmessage failed, Reason: {result.Message}");
-                                                    return;
-                                                }
-                                                
-                                                userSignature = result.Data;
-                                                Debug.Log($"Message: {originalMessage} \r\nSignature: {Encoding.UTF8.GetString(userSignature.Signature)} \r\nKeyId: {userSignature.KeyId}");
-                                            });
+fcl.SignUserMessage(
+    message: originalMessage,
+    callback: result => {
+                  if(result.IsSuccessed == false)
+                  {
+                      Debug.Log($"Get signmessage failed, Reason: {result.Message}");
+                      return;
+                  }
+                
+                  userSignature = result.Data;
+                  Debug.Log($"Message: {originalMessage} \r\n");
+                  foreach (var userSignature in result.Data)
+                  {
+                      Debug.Log($"Signature: {Encoding.UTF8.GetString(userSignature.Signature)} \r\nKeyId: {userSignature.KeyId}\");
+                  }
+              }); 
 ```
 
 The message could be signed by several private key of the same wallet address. Those signatures will be valid all together as long as their corresponding key weight sum up at least 1000.
