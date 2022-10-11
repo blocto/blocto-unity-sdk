@@ -22,6 +22,10 @@ After clone repository, the entire directory is the Unity project directory, ope
 In the project settings, you need to fill in your contracted team ID in Identification to be able to run the demo app in the iOS simulator.
 
 ![Signing Team ID](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FeMGV8s4Ne7fP0sAQgM5a%2FSigningTeamID.png?alt=media&token=102fdfcf-83d3-4f85-b21f-57a31244fa07)
+
+Please check `MainController` have been add to inspector of main camera
+![flowscene](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FdpQVQ7kBrVcFCdFIwmRL%2FMain%20Camera%20Inspector.png?alt=media&token=ba69b993-4e1d-4186-bded-170b6d476d18)
+
 ## Tutorials Demo App
 
 The demo app include five access to flow blockchain interactions
@@ -33,3 +37,4 @@ The demo app include five access to flow blockchain interactions
 * Mutate smart contract state
 
 More detailed description at [fcl-unity](https://github.com/portto/blocto-unity-sdk/tree/main/Assets/Plugins/Flow) and [blocto-unity-sdk](https://github.com/portto/blocto-unity-sdk/tree/main/Assets/Plugins/Blocto.Sdk)
+
