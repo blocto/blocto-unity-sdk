@@ -42,8 +42,6 @@ public class MainController : MonoBehaviour
         }
     }";
     
-    private string _url = "https://flow-wallet.blocto.app/authn?channel=back&authenticationId=h3KEsPgXh&fclVersion=1.1.0";
-    
     private Button _authnBtn;
     
     private Button _sendTransaction;
@@ -177,7 +175,6 @@ public class MainController : MonoBehaviour
                                                                                       }, 
                                                                           env: "testnet",
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
-        
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
@@ -338,6 +335,7 @@ public class MainController : MonoBehaviour
     
     private void SignUserMessage()
     {
+        $"Sign user message".ToLog();
         _originMessage = _signmessageTxt.text;
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
                                                    {
@@ -349,6 +347,10 @@ public class MainController : MonoBehaviour
                                                        
                                                        _flowSignatures = result.Data;
                                                        _signmessageTxt.text = $"Message: {_originMessage} \r\nSignature: {Encoding.UTF8.GetString(_flowSignatures.First().Signature)} \r\nKeyId: {_flowSignatures.First().KeyId}";
+                                                       foreach (var userSignature in result.Data)
+                                                       {
+                                                           Debug.Log($"Signature: {Encoding.UTF8.GetString(userSignature.Signature)} \r\nKeyId: {userSignature.KeyId}");
+                                                       }
                                                    });    
     }
     
@@ -362,7 +364,6 @@ public class MainController : MonoBehaviour
     {
         if(Input.GetKey(KeyCode.Escape))
         {
-            $"Get key [KeyCode.Escape]".ToLog();
             _walletProvider.CloseWebView();
         }
     }
