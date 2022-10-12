@@ -23,7 +23,7 @@ In the project settings, you need to fill in your contracted team ID in Identifi
 
 ![Signing Team ID](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FeMGV8s4Ne7fP0sAQgM5a%2FSigningTeamID.png?alt=media&token=102fdfcf-83d3-4f85-b21f-57a31244fa07)
 
-Please check `MainController` have been add to inspector of main camera
+Please check `MainController` has been add to inspector of main camera
 ![flowscene](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MFJEAgz-LrhDYkRm4sv%2Fuploads%2FdpQVQ7kBrVcFCdFIwmRL%2FMain%20Camera%20Inspector.png?alt=media&token=ba69b993-4e1d-4186-bded-170b6d476d18)
 
 ## Tutorials Demo App
