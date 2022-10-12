@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Models;
 using Flow.FCL.Models.Authz;
 using Flow.Net.Sdk.Core.Models;
@@ -9,11 +8,6 @@ namespace Flow.FCL.WalletProvider
 {
     public interface IWalletProvider
     {
-        /// <summary>
-        /// Web request object
-        /// </summary>
-        public WebRequestUtility WebRequestUtility { get; set; }
-        
         /// <summary>
         /// User connect wallet get account
         /// </summary>

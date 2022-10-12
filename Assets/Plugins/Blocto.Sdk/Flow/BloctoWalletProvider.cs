@@ -43,7 +43,7 @@ namespace Blocto.SDK.Flow
         /// <summary>
         /// HTTP utility
         /// </summary>
-        public WebRequestUtility WebRequestUtility { get; set; }
+        private WebRequestUtility WebRequestUtility;
         
         /// <summary>
         /// Forced use of WebView
@@ -113,9 +113,11 @@ namespace Blocto.SDK.Flow
 
         private bool _isInstalledApp = false;
         
-        public static string UniversalLink = "default";
+        private string _androidPackageName = "com.portto.blocto";
         
-        public Dictionary<string, string> _requestIdActionMapper;
+        private static string env;
+        
+        private Dictionary<string, string> _requestIdActionMapper;
         
         private List<Func<string, (int Index, string Name, string Value)>> _authnReturnParsers;
         
@@ -149,10 +151,12 @@ namespace Blocto.SDK.Flow
             bloctoWalletProvider._isCancelRequest = false;
             bloctoWalletProvider._bloctoAppIdentifier = bloctoAppIdentifier;
             bloctoWalletProvider.WebRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+            BloctoWalletProvider.env = env.ToLower();
             
             if(env.ToLower() == "testnet")
             {
                 bloctoWalletProvider._backedApiDomain = bloctoWalletProvider._backedApiDomain.Replace("api", "api-dev");
+                bloctoWalletProvider._androidPackageName = $"{bloctoWalletProvider._androidPackageName}.staging";
             } 
             
             if(Application.platform == RuntimePlatform.Android)
@@ -161,7 +165,6 @@ namespace Blocto.SDK.Flow
             }
             
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
-            
             return bloctoWalletProvider;
         }
 
@@ -282,7 +285,7 @@ namespace Blocto.SDK.Flow
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
-                    isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", "com.portto.blocto.staging"); 
+                    isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
@@ -690,9 +693,9 @@ namespace Blocto.SDK.Flow
                 switch (Application.platform)
                 {
                     case RuntimePlatform.Android:
-                        if(_isInstalledApp)
+                        if(_isInstalledApp && ForcedUseWebView == false)
                         {
-                            _pluginInstance.Call("openSDK", "com.portto.blocto.staging", url, url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
+                            _pluginInstance.Call("openSDK", _androidPackageName, url, url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
                         }
                         else
                         {
