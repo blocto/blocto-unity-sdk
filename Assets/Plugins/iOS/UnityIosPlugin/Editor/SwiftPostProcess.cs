@@ -5,6 +5,7 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Callbacks;
 using UnityEditor.iOS.Xcode;
+using UnityEngine;
 
 namespace Plugins.iOS.UnityIosPlugin.Editor
 {
@@ -66,22 +67,15 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                     queriesUrlTypeArray.AddString("blocto-staging");
                 }
                 
-                // var entitlements = new ProjectCapabilityManager(projPath, "Unity-iPhone/Unity-iPhoneReleaseForProfiling.entitlements", "Unity-iPhone");
-                // entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
-                
-                //Apply
-                // entitlements.WriteToFile();
-                // proj.AddCapability(targetGuid, PBXCapabilityType.AssociatedDomains, "Unity-iPhone/iPhoneReleaseForProfiling.entitlements");
-                // proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", "Unity-iPhoneReleaseForProfiling.entitlements");
-                
-                //OnProstProcessBuildIOS(buildPath);
+                var fileName = OnProstProcessBuildIOS(projPath);
+                proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", fileName);
                 
                 plist.WriteToFile(plistPath);
                 proj.WriteToFile(projPath);
             }
         }
         
-        private static void OnProstProcessBuildIOS(string pathToBuiltProject)
+        private static string OnProstProcessBuildIOS(string pathToBuiltProject)
         {
             //This is the default path to the default pbxproj file. Yours might be different
             string projectPath = "/Unity-iPhone.xcodeproj/project.pbxproj";
@@ -90,27 +84,24 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             //Set the entitlements file name to what you want but make sure it has this extension
             string entitlementsFileName = "Unity-iPhoneReleaseForRunning.entitlements";
             
-            // var entitlements = new ProjectCapabilityManager(pathToBuiltProject + projectPath, entitlementsFileName, targetName);
-            // entitlements.AddAssociatedDomains(new string[] { "applinks:657f-220-136-194-114.jp.ngrok.io?mode=developer" });
-            //Apply
-            // entitlements.WriteToFile();
             
-            
-            // string projectPath = PBXProject.GetPBXProjectPath(path);
-            //
             // // iOS の ProjectCapabilityManagerに特定のパラメータをセット
-            // var separator = Path.DirectorySeparatorChar;
-            // string targetName = PBXProject.GetUnityTargetName();
-            // var entitlementPath = projectPath + separator + targetName + separator + targetName + ".entitlements";
-            // var entitlementFileName = Path.GetFileName(entitlementPath);
-            // var unityTarget = PBXProject.GetUnityTargetName();
-            // var relativeDestination = unityTarget + "/" + entitlementFileName;
-            // var capabilityManager = new ProjectCapabilityManager(projectPath, relativeDestination, unityTarget);
-            //
-            // // Universal-link 対応
-            // capabilityManager.AddAssociatedDomains(new string[] { "applinks:ここに短縮URL記入" });
-            //
-            // capabilityManager.WriteToFile();
+            var separator = Path.DirectorySeparatorChar;
+            var entitlementPath = default(string);
+            if(Debug.isDebugBuild)
+            {
+                entitlementPath = pathToBuiltProject + separator + targetName + separator + targetName + "Debug.entitlements";
+            }
+            
+            var entitlementFileName = Path.GetFileName(entitlementPath);
+            var relativeDestination = targetName + "/" + entitlementFileName;
+            var capabilityManager = new ProjectCapabilityManager(pathToBuiltProject, relativeDestination, targetName);
+            
+            // Universal-link 対応
+            capabilityManager.AddAssociatedDomains(new string[] { "applinks:aabb-61-216-44-25.jp.ngrok.io?mode=developer" });
+            
+            capabilityManager.WriteToFile();
+            return relativeDestination;
         }
     }
 }
