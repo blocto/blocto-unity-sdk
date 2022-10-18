@@ -29,11 +29,7 @@ namespace Flow.FCL
             _resolveUtility = utilFactory.CreateResolveUtility();
         }
 
-        public virtual void SendTransaction(
-            FclService service,
-            FlowTransaction tx,
-            Action<string> callback = null
-        )
+        public virtual void SendTransaction(FclService service, FlowTransaction tx, Action<string> callback = null)
         {
             var lastBlock = _flowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             tx.ReferenceBlockId = lastBlock.Header.Id;
