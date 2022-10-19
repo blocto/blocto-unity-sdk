@@ -5,7 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Blocto.SDK.Flow;
+using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Flow;
 using Blocto.Sdk.Flow.Utility;
 using Flow.FCL;
 using Flow.FCL.Config;
@@ -15,7 +16,6 @@ using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
@@ -237,7 +237,7 @@ public class MainController : MonoBehaviour
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, value.ToString())
+                                     new CadenceNumber(CadenceNumberType.UFix64, value)
                                  },
                  };
         
