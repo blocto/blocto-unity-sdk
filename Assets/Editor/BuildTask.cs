@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Editor;
 using UnityEditor;
 
 /// <summary>
@@ -9,19 +10,37 @@ using UnityEditor;
 public sealed class BuildTask
 {
     /// <summary>
-    /// 名称
+    /// 名稱
     /// </summary>
     public string ProductName;
+    
     /// <summary>
-    /// 目标平台
+    /// 目標平台
     /// </summary>
     public BuildTarget BuildTarget;
+    
     /// <summary>
-    /// 打包路径
+    /// 打包路徑
     /// </summary>
     public string BuildPath;
+
     /// <summary>
-    /// 打包场景
+    /// 是否為輸出 .unitypackage
+    /// </summary>
+    public bool IsExportPackage { get; set; }
+
+    /// <summary>
+    /// Package Type, ex: FCL, Blocto-unity-sdk
+    /// </summary>
+    public PackageTypeEnum PackageType { get; set; }
+
+    /// <summary>
+    /// 版號
+    /// </summary>
+    public string BuildVersion { get; set; }
+    
+    /// <summary>
+    /// 打包場景
     /// </summary>
     public List<SceneAsset> SceneAssets = new List<SceneAsset>(0);
 }

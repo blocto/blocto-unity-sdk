@@ -8,7 +8,7 @@ using UnityEngine;
 public sealed class BuildProfile : ScriptableObject
 {
     /// <summary>
-    /// 打包任务列表
+    /// 打包任務列表
     /// </summary>
     public List<BuildTask> BuildTasks = new List<BuildTask>(0);
 }
