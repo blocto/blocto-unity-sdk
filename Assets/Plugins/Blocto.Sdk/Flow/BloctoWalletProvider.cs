@@ -161,7 +161,7 @@ namespace Blocto.SDK.Flow
             
             if(Application.platform == RuntimePlatform.Android)
             {
-                bloctoWalletProvider.InitializePlugins("com.blocto.unity.PluginActivity");
+                bloctoWalletProvider.InitializePlugins("com.blocto.unity.UtilityActivity");
             }
             
             bloctoWalletProvider._isInstalledApp = bloctoWalletProvider.IsInstalledApp();
@@ -289,6 +289,9 @@ namespace Blocto.SDK.Flow
                     break;
                 case RuntimePlatform.IPhonePlayer:
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
+                    break;
+                case RuntimePlatform.OSXEditor:
+                    isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
                     break;
             }
             
@@ -699,8 +702,10 @@ namespace Blocto.SDK.Flow
                         }
                         else
                         {
+                            $"Call android webview".ToLog();
                             _pluginInstance.Call("webview", url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
                         }
+                        
                         break;
                     case RuntimePlatform.IPhonePlayer:
                         BloctoWalletProvider.OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
