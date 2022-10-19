@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Flow.Net.SDK.Extensions
+namespace Blocto.Sdk.Core.Extension
 {
     public static class LogExtension
     {

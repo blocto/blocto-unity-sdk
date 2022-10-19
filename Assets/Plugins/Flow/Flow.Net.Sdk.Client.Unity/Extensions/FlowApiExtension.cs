@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Blocto.Sdk.Core.Extension;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;

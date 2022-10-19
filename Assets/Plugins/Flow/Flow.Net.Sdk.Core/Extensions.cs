@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Blocto.Sdk.Core.Extension;
 
 namespace Flow.Net.Sdk.Core
 {
@@ -37,7 +38,7 @@ namespace Flow.Net.Sdk.Core
         
         public static List<byte> StringToBytes(this string input)
         {
-            input = RemoveHexPrefix(input); 
+            input = input.RemoveHexPrefix(); 
             return Enumerable.Range(0, input.Length)
                              .Where(x => x % 2 == 0)
                              .Select(x => Convert.ToByte(input.Substring(x, 2), 16))
@@ -83,7 +84,7 @@ namespace Flow.Net.Sdk.Core
         {
             try
             {
-                hex = RemoveHexPrefix(hex);
+                hex = hex.RemoveHexPrefix();
 
                 if (IsHexString(hex))
                 {
@@ -108,7 +109,7 @@ namespace Flow.Net.Sdk.Core
                 if (str.Length == 0)
                     return false;
 
-                str = RemoveHexPrefix(str);
+                str = str.RemoveHexPrefix();
 
                 var regex = new Regex(@"^[0-9a-f]+$");
                 return regex.IsMatch(str) && str.Length % 2 == 0;
@@ -119,17 +120,17 @@ namespace Flow.Net.Sdk.Core
             }
         }
 
-        public static string RemoveHexPrefix(this string hex)
-        {
-            try
-            {
-                return hex.Substring(hex.StartsWith("0x") ? 2 : 0);
-            }
-            catch (Exception exception)
-            {
-                throw new FlowException("Failed to remove hex prefix", exception);
-            }
-        }
+        // public static string RemoveHexPrefix(this string hex)
+        // {
+        //     try
+        //     {
+        //         return hex.Substring(hex.StartsWith("0x") ? 2 : 0);
+        //     }
+        //     catch (Exception exception)
+        //     {
+        //         throw new FlowException("Failed to remove hex prefix", exception);
+        //     }
+        // }
 
         public static string AddHexPrefix(this string hex)
         {

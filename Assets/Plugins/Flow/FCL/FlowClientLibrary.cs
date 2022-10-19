@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Blocto.Sdk.Core.Extension;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;

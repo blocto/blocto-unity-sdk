@@ -6,7 +6,6 @@ using Blocto.Sdk.Core.Utility;
 using Flow.FCL.Utility;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 
 namespace Blocto.Sdk.Flow.Utility

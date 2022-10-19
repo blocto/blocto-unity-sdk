@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Blocto.Sdk.Core.Extension;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
 using Flow.Net.SDK.Extensions;
@@ -17,7 +18,6 @@ using UnityEngine.Networking;
 
 namespace Flow.FCL.Utility
 {
-    // 再打 wallet webapp 的時候請帶上 Blocto-Application-Identifier 這個 Header
     public class WebRequestUtils : MonoBehaviour, IWebRequestUtils
     {
         private readonly Dictionary<string, Action<UnityWebRequest>> _handlers;
