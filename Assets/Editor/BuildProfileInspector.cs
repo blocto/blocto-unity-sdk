@@ -165,7 +165,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                                              "Assets/Plugins/Dll",
                                              "Assets/Plugins/System.ComponentModel.Annotations.dll"
                                          };
-                        AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"FCL.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                        AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/FCL.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                         Debug.Log("FCL export successed.");
                     break;
                 case PackageTypeEnum.BloctoUnitySDK:
@@ -181,7 +181,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                         directories.Add($"Assets/Plugins/Android");
                         directories.Add($"Assets/Plugins/iOS/UnityIosPlugin");
                         directories.Add($"Assets/Plugins/System.ComponentModel.Annotations.dll");
-                        AssetDatabase.ExportPackage(directories.ToArray(), $"Blocto-unity-sdk.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                        AssetDatabase.ExportPackage(directories.ToArray(), $"release/blocto-unity-sdk/Blocto-unity-sdk.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                         Debug.Log("Blocto-unity-SDK export successed.");
                     break;
             }
