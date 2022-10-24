@@ -67,6 +67,11 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                     queriesUrlTypeArray.AddString("blocto-staging");
                 }
                 
+                if(queriesUrlTypeArray?.values.Any(p => p.AsString() == "blocto-dev") == false)
+                {
+                    queriesUrlTypeArray.AddString("blocto-dev");
+                }
+                
                 var fileName = OnProstProcessBuildIOS(projPath);
                 proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", fileName);
                 
@@ -98,7 +103,7 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             var capabilityManager = new ProjectCapabilityManager(pathToBuiltProject, relativeDestination, targetName);
             
             // Universal-link 対応
-            capabilityManager.AddAssociatedDomains(new string[] { "applinks:aabb-61-216-44-25.jp.ngrok.io?mode=developer" });
+            capabilityManager.AddAssociatedDomains(new string[] { "applinks:18e1-220-136-211-126.jp.ngrok.io?mode=developer" });
             
             capabilityManager.WriteToFile();
             return relativeDestination;

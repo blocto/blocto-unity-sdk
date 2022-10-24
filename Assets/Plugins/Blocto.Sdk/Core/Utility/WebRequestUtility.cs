@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Blocto.Sdk.Core.Extension;
 using Flow.Net.SDK.Client.Unity.Models.Apis;
 using Flow.Net.SDK.Client.Unity.Models.Enums;
-using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;

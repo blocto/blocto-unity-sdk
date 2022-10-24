@@ -1,12 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace Blocto.Sdk.Core.Extension
 {
-    public static class UniversalLinkExtension
+    public static class LinkExtension
     {
+        public static (int Index, string Name, string Value) AddressParser(this string text)
+        {
+            var value = text.Split("=")[1];
+            return (0, "address", value);
+        }
+        
+        public static (int Index, string Name, string Value) SignatureParser(this string text)
+        {
+            var keyValue = text.Split("=");
+            var propertiesPattern = @"(?<=\[)(.*)(?=\])";
+
+            var match = Regex.Match(keyValue[0], propertiesPattern);
+            if (!match.Success)
+            {
+                throw new Exception("App sdk return value format error");
+            }
+
+            var elements = match.Captures.FirstOrDefault()?.Value.Split("][");
+            return (Convert.ToInt32(elements?[0]), elements?[1], keyValue[1]);
+        }
+        
         // private static List<string> _keywords = new List<string>()
         //                                         {
         //                                             "request_id",

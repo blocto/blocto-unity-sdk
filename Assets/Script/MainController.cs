@@ -16,7 +16,6 @@ using Flow.Net.SDK.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
