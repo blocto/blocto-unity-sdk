@@ -82,15 +82,9 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
         
         private static string OnProstProcessBuildIOS(string pathToBuiltProject)
         {
-            //This is the default path to the default pbxproj file. Yours might be different
-            string projectPath = "/Unity-iPhone.xcodeproj/project.pbxproj";
-            //Default target name. Yours might be different
-            string targetName = "Unity-iPhone";
-            //Set the entitlements file name to what you want but make sure it has this extension
-            string entitlementsFileName = "Unity-iPhoneReleaseForRunning.entitlements";
-            
-            
-            // // iOS の ProjectCapabilityManagerに特定のパラメータをセット
+            var targetName = "Unity-iPhone";
+
+            // iOS の ProjectCapabilityManagerに特定のパラメータをセット
             var separator = Path.DirectorySeparatorChar;
             var entitlementPath = default(string);
             if(Debug.isDebugBuild)
