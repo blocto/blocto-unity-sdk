@@ -1,7 +1,6 @@
 ﻿using System;
 using Solnet.Rpc.Messages;
 using System.Text;
-using System.Threading.Tasks;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
 using Newtonsoft.Json;
@@ -23,7 +22,7 @@ namespace Solnet.Rpc.Core.Http
             this._webRequestUtility = webRequestUtility;
         }
 
-        protected async Task<RequestResult<T>> SendRequest<T>(JsonRpcRequest req)
+        protected RequestResult<T> SendRequest<T>(JsonRpcRequest req)
         {
             var requestJson = JsonConvert.SerializeObject(req);
 
@@ -31,24 +30,13 @@ namespace Solnet.Rpc.Core.Http
             // HttpResponseMessage response = null;
             // RequestResult<T> result = null;
 
-            var result = await Task.Run(() => {
-                                            try
-                                            {
-                                                var payload = Encoding.UTF8.GetBytes(requestJson);
-                                                var uploadHandler = new UploadHandlerRaw(payload);
-                                                var request = _webRequestUtility.CreateUnityWebRequest(url, "POST", "appliction/json", new DownloadHandlerBuffer(), uploadHandler);
-                                                var response = _webRequestUtility.ProcessWebRequest<JsonRpcResponse<T>>(request);
-                                                    
-                                                var result = new RequestResult<T>(request, response);
-                                                return result;
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                e.Message.ToLog();
-                                                return default;
-                                            }
-                                        });
+            var payload = Encoding.UTF8.GetBytes(requestJson);
+            var uploadHandler = new UploadHandlerRaw(payload);
+            var request = _webRequestUtility.CreateUnityWebRequest(url, "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
+            var response = _webRequestUtility.ProcessWebRequest<JsonRpcResponse<T>>(request);
+            var result = new RequestResult<T>(response);
             return result;
+            
             // using (var request = new UnityWebRequest(url, "POST"))
             // {
             //     byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(requestJson);

@@ -6,6 +6,8 @@ using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Flow.Model;
+using Solnet.Rpc.Builders;
+using Solnet.Rpc.Models;
 // using Solnet.Rpc;
 // using Solnet.Rpc.Builders;
 // using Solnet.Rpc.Models;
@@ -106,16 +108,18 @@ namespace Blocto.Sdk.Solana
         }
         
         
-        // public void SignAndSendTransaction(string fromAddress, Transaction transaction)
-        // {
-        //     byte[] tx = new TransactionBuilder()
-        //                .SetRecentBlockHash(transaction.RecentBlockHash)
-        //                .SetFeePayer(transaction.FeePayer)
-        //                .AddInstruction(transaction.Instructions.First())
-        //                .BuildExecludeSign();        
-        //     var stx = tx.Select(b => (sbyte)b).ToArray();
-        //     var message = stx.ToHex();
-        // }
+        public void SignAndSendTransaction(string fromAddress, Transaction transaction)
+        {
+            byte[] tx = new TransactionBuilder()
+                       .SetRecentBlockHash(transaction.RecentBlockHash)
+                       .SetFeePayer(transaction.FeePayer)
+                       .AddInstruction(transaction.Instructions.First())
+                       .BuildExecludeSign();        
+            
+            var stx = tx.Select(b => (sbyte)b).ToArray();
+            var message = stx.ToHex();
+            $"Message: {message}".ToLog();
+        }
         
         
         

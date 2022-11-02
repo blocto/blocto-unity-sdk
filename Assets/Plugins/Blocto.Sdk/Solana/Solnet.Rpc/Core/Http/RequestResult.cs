@@ -3,6 +3,7 @@ using Solnet.Rpc.Models;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using Blocto.Sdk.Core.Extension;
 using Solnet.Rpc.Messages;
 using UnityEngine.Networking;
 
@@ -77,11 +78,10 @@ namespace Solnet.Rpc.Core.Http
             Result = result;
         }
 
-        public RequestResult(UnityWebRequest unityWebRequest, JsonRpcResponse<T> response)
+        public RequestResult(JsonRpcResponse<T> response)
         {
-            HttpStatusCode = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), unityWebRequest.responseCode.ToString());
-            WasHttpRequestSuccessful = unityWebRequest.isDone;
             Result = response.Result;
+            WasHttpRequestSuccessful = true;
         }
         
         /// <summary>
