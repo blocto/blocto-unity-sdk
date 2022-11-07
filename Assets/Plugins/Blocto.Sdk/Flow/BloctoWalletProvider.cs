@@ -49,8 +49,9 @@ namespace Blocto.SDK.Flow
         /// Forced use of WebView
         /// </summary>
         public bool ForcedUseWebView { get; set; }
-        
-        /// <summary>
+
+        #if UNITY_IOS
+       /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
         /// <param name="goName">swift complete event then callback class name of unity</param>
@@ -86,7 +87,8 @@ namespace Blocto.SDK.Flow
         /// </summary>
         /// <returns></returns>
         [DllImport("__Internal")]
-        private static extern string UniversalLink_Reset();
+        private static extern string UniversalLink_Reset(); 
+        #endif
         
         /// <summary>
         /// Android instance
@@ -288,7 +290,9 @@ namespace Blocto.SDK.Flow
                     isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
+                    #if UNITY_IOS
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
+                    #endif
                     break;
                 case RuntimePlatform.OSXEditor:
                     isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
@@ -708,7 +712,9 @@ namespace Blocto.SDK.Flow
                         
                         break;
                     case RuntimePlatform.IPhonePlayer:
+                        #if UNITY_IOS
                         BloctoWalletProvider.OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
+                        #endif
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
