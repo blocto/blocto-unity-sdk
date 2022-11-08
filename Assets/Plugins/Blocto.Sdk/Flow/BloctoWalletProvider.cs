@@ -158,7 +158,8 @@ namespace Blocto.SDK.Flow
             if(env.ToLower() == "testnet")
             {
                 bloctoWalletProvider._backedApiDomain = bloctoWalletProvider._backedApiDomain.Replace("api", "api-dev");
-                bloctoWalletProvider._androidPackageName = $"{bloctoWalletProvider._androidPackageName}.staging";
+                bloctoWalletProvider._androidPackageName = $"{bloctoWalletProvider._androidPackageName}.dev";
+                bloctoWalletProvider._appSdkDomain = bloctoWalletProvider._appSdkDomain.Replace("blocto.app", "dev.blocto.app");
             } 
             
             if(Application.platform == RuntimePlatform.Android)
@@ -281,7 +282,7 @@ namespace Blocto.SDK.Flow
             var testDomain = "blocto://open";
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
-                testDomain = $"blocto-staging://open";
+                testDomain = $"blocto-dev://open";
             }
             
             switch (Application.platform)
