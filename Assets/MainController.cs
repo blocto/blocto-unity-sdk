@@ -73,6 +73,8 @@ public class MainController : MonoBehaviour
     private InputField _transactionValueTxt;
     
     private InputField _queryResultTxt;
+
+    private Toggle _forceUseWebViewToggle;
     
     private FlowUnityWebRequest _flowWebRequest;
     
@@ -156,6 +158,10 @@ public class MainController : MonoBehaviour
         tmp = GameObject.Find("QueryBtn");
         _queryBtn = tmp.GetComponent<Button>();
         _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
+        
+        tmp = GameObject.Find("WebSdkToggle");
+        _forceUseWebViewToggle = tmp.GetComponent<Toggle>();
+        _forceUseWebViewToggle.onValueChanged.AddListener(ForceUseWebView);
     }
 
     void Start()
@@ -179,7 +185,7 @@ public class MainController : MonoBehaviour
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                                      return fcl;
                                                                  }, config);
-        
+        _walletProvider.ForcedUseWebView = true;
         DontDestroyOnLoad (_walletProvider);
     }
 
@@ -230,14 +236,16 @@ public class MainController : MonoBehaviour
     
     private void Transaction()
     {
-        var value = _transactionValueTxt.text;
+        var value = Convert.ToDecimal(_transactionValueTxt.text);
+        $"Value: {value:#0.00000000}".ToLog();
+        
         var tx = new FlowTransaction
                  {
                      Script = MainController._mutateScript,
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, value.ToString())
+                                     new CadenceNumber(CadenceNumberType.UFix64, $"{value:#0.00000000}")
                                  },
                  };
         
@@ -259,7 +267,7 @@ public class MainController : MonoBehaviour
                     _txResultTxt.text = $"Execution: Failure \r\nErrorMessage: {result.Message}";
                     break;
                 case TransactionExecution.Success:
-                    _txResultTxt.text = $"BlockId: {result.Data.BlockId} \r\nExecution: {result.Data.Execution} \r\nStatus: {result.Data.Status}";
+                    _txResultTxt.text = $"Tx hash: {_txId} \r\nExecution: {result.Data.Execution} \r\nStatus: {result.Data.Status}";
                     break;
                 case TransactionExecution.Pending:
                     _txResultTxt.text = $"{result.Message}";
@@ -377,6 +385,12 @@ public class MainController : MonoBehaviour
             accountProofData: accountProofData,
             fclCryptoContract: "0x5b250a8a85b44a67");
         Debug.Log($"User is verify: {isVerify}"); 
+    }
+    
+    private void ForceUseWebView(bool value)
+    {
+        $"Toggle value: {value}".ToLog();
+        _walletProvider.ForcedUseWebView = value;
     }
     
     public void Test()
