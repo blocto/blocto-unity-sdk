@@ -5097,7 +5097,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: GetLastestTx
+  m_Text: GetLatestTx
 --- !u!222 &2143044143
 CanvasRenderer:
   m_ObjectHideFlags: 0
