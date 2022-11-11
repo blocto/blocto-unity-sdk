@@ -98,7 +98,7 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             var capabilityManager = new ProjectCapabilityManager(pathToBuiltProject, relativeDestination, targetName);
             
             // Universal-link 対応
-            capabilityManager.AddAssociatedDomains(new string[] { "applinks:aabb-61-216-44-25.jp.ngrok.io?mode=developer" });
+            // capabilityManager.AddAssociatedDomains(new string[] { "applinks:aabb-61-216-44-25.jp.ngrok.io?mode=developer" });
             
             capabilityManager.WriteToFile();
             return relativeDestination;
