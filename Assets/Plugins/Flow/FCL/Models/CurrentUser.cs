@@ -20,7 +20,7 @@ namespace Flow.FCL.Models
 
         public List<FclService> Services { get; set; }
 
-        private AccountProofData AccountProofData { get; set; }
+        public AccountProofData AccountProofData { get; set; }
 
         private readonly IWalletProvider _walletProvider;
 
