@@ -539,7 +539,7 @@ namespace Blocto.Sdk.Flow.Utility
             return (proposer, payer, authorizations);
         }
 
-        private async Task<FlowProposalKey> GetProposerKey(FlowAccount account, uint keyId)
+        private FlowProposalKey GetProposerKey(FlowAccount account, uint keyId)
         {
             var proposalKey = account.Keys.First(p => p.Index == keyId);
             return new FlowProposalKey

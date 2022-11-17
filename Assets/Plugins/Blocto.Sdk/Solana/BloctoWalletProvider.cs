@@ -6,12 +6,10 @@ using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Flow.Model;
+using Blocto.Sdk.Solana.Model;
+using Solnet.Rpc;
 using Solnet.Rpc.Builders;
 using Solnet.Rpc.Models;
-// using Solnet.Rpc;
-// using Solnet.Rpc.Builders;
-// using Solnet.Rpc.Models;
-// using Solnet.Wallet;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -19,9 +17,11 @@ namespace Blocto.Sdk.Solana
 {
     public class BloctoWalletProvider : BaseWalletProvider
     {
-        // public IRpcClient SolanaClient { get; set; }
+        public IRpcClient SolanaClient { get; set; }
         
         private static string env;
+        
+        private static readonly string chainName = "solana";
         
         private Action<string> _connectWalletCallback;
         
@@ -42,7 +42,7 @@ namespace Blocto.Sdk.Solana
             webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             try
             {
-                // bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet);
+                bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet, webRequestUtility);
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
                 bloctoWalletProvider.isCancelRequest = false;
                 bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
@@ -85,8 +85,8 @@ namespace Blocto.Sdk.Solana
             {
                 var appSb = new StringBuilder(appSdkDomain);
                 appSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                  .Append($"blockchain=ethereum" + "&")
-                  .Append($"method=request_account" + "&")
+                  .Append($"blockchain={BloctoWalletProvider.chainName}" + "&")
+                  .Append($"method={ActionNameEnum.Request_Account.ToString().ToLower()}" + "&")
                   .Append($"request_id={requestId}");
                 url = appSb.ToString();
                 
@@ -98,8 +98,8 @@ namespace Blocto.Sdk.Solana
             $"WebSDK domain: {webSdkDomain}".ToLog();
             var webSb = new StringBuilder(webSdkDomain);
             webSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                 .Append($"blockchain=ethereum" + "&")
-                 .Append($"method=request_account" + "&")
+                 .Append($"blockchain={BloctoWalletProvider.chainName}" + "&")
+                 .Append($"method={ActionNameEnum.Request_Account.ToString().ToLower()}" + "&")
                  .Append($"request_id={requestId}");
             url = webSb.ToString();
             
@@ -108,18 +108,66 @@ namespace Blocto.Sdk.Solana
         }
         
         
-        public void SignAndSendTransaction(string fromAddress, Transaction transaction)
+        public void SignAndSendTransaction(string fromAddress, Transaction transaction, Action<string> callBack)
         {
-            byte[] tx = new TransactionBuilder()
+            var url = default(string);
+            var requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), "SIGNANDSENETRANSACTION");
+            _connectWalletCallback = callBack;
+            
+            var tx = new TransactionBuilder()
                        .SetRecentBlockHash(transaction.RecentBlockHash)
                        .SetFeePayer(transaction.FeePayer)
                        .AddInstruction(transaction.Instructions.First())
                        .BuildExecludeSign();        
             
             var stx = tx.Select(b => (sbyte)b).ToArray();
-            var message = stx.ToHex();
+            var message = tx.ToHex();
             $"Message: {message}".ToLog();
+            
+            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
+            if(isInstalledApp && ForceUseWebView == false)
+            {
+                var appSb = new StringBuilder(appSdkDomain);
+                appSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
+                     .Append($"method={ActionNameEnum.Sign_And_Send_Transaction.ToString().ToLower()}" + "&")
+                     .Append($"blockchain={chainName}" + "&")
+                     .Append($"from={fromAddress}" + "&")
+                     .Append($"message={message}" + "&")
+                     .Append($"is_invoke_wrapped=false" + "&")
+                     .Append($"request_id={requestId}");
+                url = appSb.ToString();
+                
+                $"Url: {url}".ToLog();
+                StartCoroutine(OpenUrl(url));
+                return;
+            }
+            
+            // https: //dev.blocto.app/sdk?
+            // app_id=57f397df-263c-4e97-b61f-15b67b9ce285
+            //     request_id=09a4f0be-f510-4bc8-b5f2-1ad3a7e625de
+            //     method=sign_and_send_transaction
+            // blockchain=solana
+            // from=CXxPxb5GAkqjVKxb3PkxFZmUus9YrTVuUoLWee4gm8ZR
+            // message=01000103ab5e9de22540782ca12919306e8e1811d9e8f2bd1f54886b21837ec5c01a47442f044d6abceb87a88416562a21f1bb49e216f5f7a829bc88763a2b0664680fa3dfc7f2af100827ea33addbb9d430e457f5311bb905cb3a86a721bc58d72b270161f49fde4c3574bdf140d520f2b70dc1a0ffe160c9712cd135bf89c0d61465d701020201000500c78aa900
+            //     is_invoke_wrapped=false
+                    
+            $"WebSDK domain: {webSdkDomain}".ToLog();
+            var webSb = new StringBuilder(webSdkDomain);
+            webSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
+                 .Append($"method={ActionNameEnum.Sign_And_Send_Transaction.ToString().ToLower()}" + "&")
+                 .Append($"blockchain={chainName}" + "&")
+                 .Append($"from={fromAddress}" + "&")
+                 .Append($"message={message}" + "&")
+                 .Append($"is_invoke_wrapped=false" + "&")
+                 .Append($"request_id={requestId}");
+            url = webSb.ToString();
+            
+            $"Url: {url}".ToLog();
+            StartCoroutine(OpenUrl(url));
         }
+        
+        
         
         
         

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
@@ -51,21 +52,22 @@ public class SolanaController : MonoBehaviour
         _forceUseWebViewToggle.onValueChanged.AddListener(ForceUseWebView);
         
         _webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-        // _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
-        //         gameObject: gameObject,
-        //         env: "testnet",
-        //         bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
-        //     );
+        _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
+                gameObject: gameObject,
+                env: "testnet",
+                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
+            );
+        
+        _bloctoWalletProvider.ForceUseWebView = true;
     }
-
 
     private void ConnectWallet()
     {
         // $"Connect wallet.".ToLog();
-        // _bloctoWalletProvider.RequestAccount(address => {
-        //                                         _walletAddreass = address;
-        //                                         _accountTxt.text = address;
-        //                                     });
+        _bloctoWalletProvider.RequestAccount(address => {
+                                                _walletAddreass = address;
+                                                _accountTxt.text = address;
+;                                            });
     }
     
     private void SignMessage()
@@ -75,7 +77,7 @@ public class SolanaController : MonoBehaviour
     private void ForceUseWebView(bool value)
     {
         $"Toggle value: {value}".ToLog();
-        // _bloctoWalletProvider.ForceUseWebView = value;
+        _bloctoWalletProvider.ForceUseWebView = value;
     }
     
     // public async Task<string> GetTestEventWrapper(SynchronizationContext _context)
@@ -93,23 +95,27 @@ public class SolanaController : MonoBehaviour
     
     private void TestEvent()
     {
+        $"Now: {DateTime.Now:HH:mm:ss.fff}".ToLog();
         var solanaClient = ClientFactory.GetClient(Cluster.DevNet, _webRequestUtility);
         var response = solanaClient.GetLatestBlockHash();
         $"block hash: {response.Result.Value.Blockhash}".ToLog();
+        $"Now: {DateTime.Now:HH:mm:ss.fff}".ToLog();
         
         var address = "CXxPxb5GAkqjVKxb3PkxFZmUus9YrTVuUoLWee4gm8ZR";
         var feePayer = new PublicKey("CXxPxb5GAkqjVKxb3PkxFZmUus9YrTVuUoLWee4gm8ZR");
-        var blockHash = "5ado6ywC4oW6q5EMCSFKqr9CZ4EjrmAodxPUc1JHmUJt";
+        var blockHash = "2z9wUPAMB2gKuc6YzQh7KspfvBuoRwQDiZYkChRnSurV";
         
-        var txInstruction = ValueProgram.CreateSetValaueInstruction(1111111, address);
+        var txInstruction = ValueProgram.CreateSetValaueInstruction(5566, address);
         Transaction tx = new()
                          {
-                             RecentBlockHash = blockHash,
+                             RecentBlockHash = response.Result.Value.Blockhash,
                              FeePayer = feePayer,
                              Instructions = new List<TransactionInstruction>{ txInstruction }
                          };
         
-        _bloctoWalletProvider.SignAndSendTransaction(address, tx);
+        _bloctoWalletProvider.SignAndSendTransaction(address, tx, txhash => {
+                                                                      $"Tx hash: {txhash}".ToLog();
+                                                                  });
     }
     
     // private async Task<string> GetRecentBlockIdAsync()

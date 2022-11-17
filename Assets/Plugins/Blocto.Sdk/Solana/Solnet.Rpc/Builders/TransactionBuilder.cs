@@ -58,13 +58,16 @@ namespace Solnet.Rpc.Builders
                 _serializedMessage = _messageBuilder.Build();
             MemoryStream buffer = new(signaturesLength.Length + _signatures.Count * SignatureLength + _serializedMessage.Length);
 
-            buffer.Write(signaturesLength);
-            foreach (string signature in _signatures)
+            if(_signatures.Count > 0)
             {
-                buffer.Write(Encoders.Base58.DecodeData(signature));
+                buffer.Write(signaturesLength);
+                foreach (string signature in _signatures)
+                {
+                    buffer.Write(Encoders.Base58.DecodeData(signature));
+                }
             }
+            
             buffer.Write(_serializedMessage);
-
             return buffer.ToArray();
         }
 

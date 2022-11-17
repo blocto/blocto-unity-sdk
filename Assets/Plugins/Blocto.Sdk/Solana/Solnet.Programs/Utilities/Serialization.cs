@@ -18,11 +18,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 8-bit unsigned integer value to write.</param>
         /// <param name="offset">The offset at which to write the 8-bit unsigned integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteU8(this byte[] data, byte value, int offset)
+        public static int WriteU8(this byte[] data, byte value, int offset)
         {
             if (offset > data.Length - sizeof(byte))
                 throw new ArgumentOutOfRangeException(nameof(offset));
             data[offset] = value;
+            return sizeof(byte);
         }
         /// <summary>
         /// Write a boolean to the byte array at the given offset.
@@ -31,11 +32,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The boolean value to write.</param>
         /// <param name="offset">The offset at which to write the 8-bit unsigned integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static unsafe void WriteBool(this byte[] data, bool value, int offset)
+        public static unsafe int WriteBool(this byte[] data, bool value, int offset)
         {
             if (offset > data.Length - sizeof(byte))
                 throw new ArgumentOutOfRangeException(nameof(offset));
             data[offset] =  *((byte*)(&value));;
+            return sizeof(bool);
         }
 
         /// <summary>
@@ -45,12 +47,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 16-bit unsigned integer value to write.</param>
         /// <param name="offset">The offset at which to write the 16-bit unsigned integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteU16(this byte[] data, ushort value, int offset)
+        public static int WriteU16(this byte[] data, ushort value, int offset)
         {
             if (offset + sizeof(ushort) > data.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            // BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(offset, sizeof(ushort)), value);
-            BinaryPrimitives.WriteUInt16BigEndian(data.AsSpan(offset, sizeof(ushort)), value);
+            BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(offset, sizeof(ushort)), value);
+            return sizeof(ushort);
         }
 
         /// <summary>
@@ -60,12 +62,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 32-bit unsigned integer value to write.</param>
         /// <param name="offset">The offset at which to write the 32-bit unsigned integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteU32(this byte[] data, uint value, int offset)
+        public static int WriteU32(this byte[] data, uint value, int offset)
         {
             if (offset + sizeof(uint) > data.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            // BinaryPrimitives.WriteUInt32LittleEndian(data.AsSpan(offset, sizeof(uint)), value);
-            BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(offset, sizeof(uint)), value);
+            BinaryPrimitives.WriteUInt32LittleEndian(data.AsSpan(offset, sizeof(uint)), value);
+            return sizeof(uint);
         }
 
         /// <summary>
@@ -75,12 +77,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 64-bit unsigned integer value to write.</param>
         /// <param name="offset">The offset at which to write the 64-bit unsigned integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteU64(this byte[] data, ulong value, int offset)
+        public static int WriteU64(this byte[] data, ulong value, int offset)
         {
             if (offset + sizeof(ulong) > data.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            // BinaryPrimitives.WriteUInt64LittleEndian(data.AsSpan(offset, sizeof(ulong)), value);
-            BinaryPrimitives.WriteUInt64BigEndian(data.AsSpan(offset, sizeof(ulong)), value);
+            BinaryPrimitives.WriteUInt64LittleEndian(data.AsSpan(offset, sizeof(ulong)), value);
+            return sizeof(ulong);
         }
 
         /// <summary>
@@ -90,11 +92,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 8-bit signed integer value to write.</param>
         /// <param name="offset">The offset at which to write the 8-bit signed integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteS8(this byte[] data, sbyte value, int offset)
+        public static int WriteS8(this byte[] data, sbyte value, int offset)
         {
             if (offset > data.Length - sizeof(sbyte))
                 throw new ArgumentOutOfRangeException(nameof(offset));
             data[offset] = (byte)value;
+            return sizeof(sbyte);
         }
 
         /// <summary>
@@ -104,12 +107,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 16-bit signed integer value to write.</param>
         /// <param name="offset">The offset at which to write the 16-bit signed integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteS16(this byte[] data, short value, int offset)
+        public static int WriteS16(this byte[] data, short value, int offset)
         {
             if (offset + sizeof(short) > data.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            // BinaryPrimitives.WriteInt16LittleEndian(data.AsSpan(offset, sizeof(short)), value);
-            BinaryPrimitives.WriteInt16BigEndian(data.AsSpan(offset, sizeof(short)), value);
+            BinaryPrimitives.WriteInt16LittleEndian(data.AsSpan(offset, sizeof(short)), value);
+            return sizeof(short);
         }
 
         /// <summary>
@@ -119,12 +122,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 32-bit signed integer value to write.</param>
         /// <param name="offset">The offset at which to write the 32-bit signed integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteS32(this byte[] data, int value, int offset)
+        public static int WriteS32(this byte[] data, int value, int offset)
         {
             if (offset + sizeof(int) > data.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            // BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(offset, sizeof(int)), value);
-            BinaryPrimitives.WriteInt32BigEndian(data.AsSpan(offset, sizeof(int)), value);
+            BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(offset, sizeof(int)), value);
+            return sizeof(int);
         }
 
         /// <summary>
@@ -134,12 +137,12 @@ namespace Solnet.Programs.Utilities
         /// <param name="value">The 64-bit signed integer value to write.</param>
         /// <param name="offset">The offset at which to write the 64-bit signed integer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is too big for the data array.</exception>
-        public static void WriteS64(this byte[] data, long value, int offset)
+        public static int WriteS64(this byte[] data, long value, int offset)
         {
             if (offset + sizeof(long) > data.Length)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            // BinaryPrimitives.WriteInt64LittleEndian(data.AsSpan(offset, sizeof(long)), value);
-            BinaryPrimitives.WriteInt64BigEndian(data.AsSpan(offset, sizeof(long)), value);
+            BinaryPrimitives.WriteInt64LittleEndian(data.AsSpan(offset, sizeof(long)), value);
+            return sizeof(long);
         }
 
         /// <summary>

@@ -187,7 +187,11 @@ namespace Blocto.Sdk.Core.Utility
                 unityWebRequest.SetRequestHeader("Content-Type", contentType);
             }
             
-            unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", BloctoAppId);
+            if(url.ToLower().Contains("blocto"))
+            {
+                unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", BloctoAppId);
+            }
+            
             if(uploadHandlerRaw != null)
             {
                 unityWebRequest.uploadHandler = uploadHandlerRaw;

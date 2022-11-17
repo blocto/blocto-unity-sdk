@@ -34,7 +34,7 @@ namespace Script.Model
         
         private static PublicKey ACCOUNT_PUBLIC_KEY_MAINNET_BETA;
         
-        private const int INSTRUCTION_SET_VALUE = 0;
+        private const int INSTRUCTION_SET_VALUE = 5;
         
         public static PublicKey ProgramId()
         {
@@ -49,9 +49,10 @@ namespace Script.Model
         // val buffer = BorshBuffer.allocate(Byte.SIZE_BYTES + Int.SIZE_BYTES)
         public static TransactionInstruction CreateSetValaueInstruction(int value, string walletAddress)
         {
+            var index = ValueProgram.MethodOffset;
             var data = new byte[ValueProgram.SIZE_BITS + ValueProgram.SIZE_BYTES];
-            data.WriteU8(Convert.ToByte(ValueProgram.INSTRUCTION_SET_VALUE), ValueProgram.MethodOffset);
-            data.WriteS32(value, ValueProgram.MethodOffset);
+            index += data.WriteU8(Convert.ToByte(ValueProgram.INSTRUCTION_SET_VALUE), index);
+            index += data.WriteS32(value, index);
             
             List<AccountMeta> keys = new()
                                      {
