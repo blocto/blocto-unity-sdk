@@ -4,10 +4,10 @@ The repository contains fcl-unity, blocto-unity-sdk and demo app. This demo appl
 
 ## Requirements
 
-* Unity version 2021.3.5f1
+* Unity version 2021.3.12f1
 * .Net Core version >= 2.1
 * iOS version >= 13
-* Android version >= 11
+* Android version >= 7.1
 
 ## Get Started
 
