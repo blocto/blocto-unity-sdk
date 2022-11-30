@@ -34,7 +34,7 @@ namespace Script.Model
         
         private static PublicKey ACCOUNT_PUBLIC_KEY_MAINNET_BETA;
         
-        private const int INSTRUCTION_SET_VALUE = 5;
+        private const int INSTRUCTION_SET_VALUE = 0;
         
         public static PublicKey ProgramId()
         {

@@ -4,6 +4,9 @@ using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Plugins.Blocto.Sdk.Core.Converts;
+using Solnet.Rpc.Types;
 using UnityEngine.Networking;
 
 namespace Solnet.Rpc.Core.Http
@@ -15,16 +18,23 @@ namespace Solnet.Rpc.Core.Http
     {
         private WebRequestUtility _webRequestUtility;
         
-        private string url;
+        private JsonSerializerSettings _jsonSerializerSettings;
+        
+        private string _url;
         protected JsonRpcClient(string url, WebRequestUtility webRequestUtility)
         {
-            this.url = url;
-            this._webRequestUtility = webRequestUtility;
+            _url = url;
+            _webRequestUtility = webRequestUtility;
+            _jsonSerializerSettings = new JsonSerializerSettings
+                                      {
+                                          ContractResolver = new CamelCasePropertyNamesContractResolver()
+                                      };
+            _jsonSerializerSettings.Converters.Add(new EncodingConverter());
         }
 
         protected RequestResult<T> SendRequest<T>(JsonRpcRequest req)
         {
-            var requestJson = JsonConvert.SerializeObject(req);
+            var requestJson = JsonConvert.SerializeObject(req, _jsonSerializerSettings);
 
             //UnityEngine.Debug.Log($"\tRequest: {requestJson}");
             // HttpResponseMessage response = null;
@@ -32,7 +42,7 @@ namespace Solnet.Rpc.Core.Http
 
             var payload = Encoding.UTF8.GetBytes(requestJson);
             var uploadHandler = new UploadHandlerRaw(payload);
-            var request = _webRequestUtility.CreateUnityWebRequest(url, "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
+            var request = _webRequestUtility.CreateUnityWebRequest(_url, "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
             var response = _webRequestUtility.ProcessWebRequest<JsonRpcResponse<T>>(request);
             var result = new RequestResult<T>(response);
             return result;
