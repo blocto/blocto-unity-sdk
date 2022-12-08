@@ -280,7 +280,7 @@ namespace Blocto.SDK.Flow
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
-            if(FlowClientLibrary.Config.Get("flow.network", "dev") == "dev")
+            if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
                 testDomain = $"blocto-dev://open";
             }
