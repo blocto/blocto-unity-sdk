@@ -39,7 +39,7 @@ using Flow.FCL.Config
 using Blocto.SDK.Flow;
 
 var config = new Config();
-config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
+config.Put("discovery.wallet", "https://flow-wallet-dev.blocto.app/api/flow/authn")
       .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
       .Put("flow.network", "testnet");
         
