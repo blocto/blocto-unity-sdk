@@ -169,7 +169,7 @@ public class MainController : MonoBehaviour
         var config = new Config();
         config.Put("discovery.wallet", "https://flow-wallet-dev.blocto.app/api/flow/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
-              .Put("flow.network", "testnet");
+              .Put("flow.network", "dev");
         
         _walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(initialFun: GetWallet => {
                                                                                           var walletProvider = GetWallet.Invoke(
@@ -179,7 +179,7 @@ public class MainController : MonoBehaviour
                                                                                           
                                                                                           return walletProvider;
                                                                                       }, 
-                                                                          env: "testnet",
+                                                                          env: "dev",
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                                      var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());

@@ -39,9 +39,9 @@ using Flow.FCL.Config
 using Blocto.SDK.Flow;
 
 var config = new Config();
-config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
+config.Put("discovery.wallet", "https://flow-wallet-dev.blocto.app/api/flow/authn")
       .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
-      .Put("flow.network", "testnet");
+      .Put("flow.network", "dev");
         
 var walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
     initialFun: GetWallet => {
@@ -52,7 +52,7 @@ var walletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                     
                     return walletProvider;
                 },
-    env: {"testnet" or "mainnet"},
+    env: {"dev" or "mainnet"},
     bloctoAppIdentifier:Guid.Parse("d0c4c565-db60-4848-99c8-2bdfc6bd3576"));
         
 var fcl = FlowClientLibrary.CreateClientLibrary(
