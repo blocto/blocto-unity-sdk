@@ -39,6 +39,10 @@ public class SolanaController : MonoBehaviour
     
     private Button _partialSignBtn;
     
+    private Button _openSetValueResultLinkBtn;
+    
+    private Button _openTransferResultLinkBtn;
+    
     private InputField _walletTxt;
     
     private InputField _receptionAddressTxt;
@@ -87,9 +91,9 @@ public class SolanaController : MonoBehaviour
         var randomSol = (value / 100).ToString("N2");
         _transferValueTxt.text = randomSol;
         
-        tmp = GameObject.Find("TransferOpenExpolrerBtn");
-        _partialSignBtn = tmp.GetComponent<Button>();
-        _partialSignBtn.onClick.AddListener(TransferOpenExplorer);
+        tmp = GameObject.Find("TransferOpenExplorerBtn");
+        _openTransferResultLinkBtn = tmp.GetComponent<Button>();
+        _openTransferResultLinkBtn.onClick.AddListener(TransferOpenExplorer);
         
         tmp = GameObject.Find("TransferResultTxt");
         _transferResultTxt = tmp.GetComponent<InputField>();

@@ -380,7 +380,7 @@ GameObject:
   - component: {fileID: 160768189}
   - component: {fileID: 160768188}
   m_Layer: 5
-  m_Name: TransferOpenExpolrerBtn
+  m_Name: TransferOpenExplorerBtn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -471,7 +471,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 12f84513775174c19a9617e255acbdbc, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0923af59087c44f759f73862feda002d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1650,7 +1650,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 519420028}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7f16e790791342dd9080f5a50b230fb, type: 3}
+  m_Script: {fileID: 11500000, guid: 96f099ba9e9cf451e8ffaabbcfef90d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &524861479
@@ -3701,7 +3701,7 @@ GameObject:
   - component: {fileID: 1596976945}
   - component: {fileID: 1596976944}
   m_Layer: 5
-  m_Name: OpenExpolrerBtn
+  m_Name: OpenExplorerBtn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3792,7 +3792,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 12f84513775174c19a9617e255acbdbc, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0923af59087c44f759f73862feda002d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
