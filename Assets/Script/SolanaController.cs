@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Solana;
+using Blocto.Sdk.Solana.Model;
 using Script.Model;
 using Solnet.Programs;
 using Solnet.Programs.Utilities;
@@ -128,7 +129,7 @@ public class SolanaController : MonoBehaviour
         _webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
         _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
-                env: "testnet",
+                env: EnvEnum.Devnet,
                 bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
             );
     }
