@@ -44,5 +44,9 @@
         </activity>
     </application>
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <queries>
+        <package android:name="com.portto.blocto" />
+        <package android:name="com.portto.blocto.staging" />
+        <package android:name="com.portto.blocto.dev" />
+    </queries>
 </manifest>

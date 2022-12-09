@@ -49,8 +49,9 @@ namespace Blocto.Sdk.Flow
         /// Forced use of WebView
         /// </summary>
         public bool ForcedUseWebView { get; set; }
-        
-        /// <summary>
+
+        #if UNITY_IOS
+       /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
         /// <param name="goName">swift complete event then callback class name of unity</param>
@@ -86,7 +87,8 @@ namespace Blocto.Sdk.Flow
         /// </summary>
         /// <returns></returns>
         [DllImport("__Internal")]
-        private static extern string UniversalLink_Reset();
+        private static extern string UniversalLink_Reset(); 
+        #endif
         
         /// <summary>
         /// Android instance
@@ -156,7 +158,8 @@ namespace Blocto.Sdk.Flow
             if(env.ToLower() == "testnet")
             {
                 bloctoWalletProvider._backedApiDomain = bloctoWalletProvider._backedApiDomain.Replace("api", "api-dev");
-                bloctoWalletProvider._androidPackageName = $"{bloctoWalletProvider._androidPackageName}.staging";
+                bloctoWalletProvider._androidPackageName = $"{bloctoWalletProvider._androidPackageName}.dev";
+                bloctoWalletProvider._appSdkDomain = bloctoWalletProvider._appSdkDomain.Replace("blocto.app", "dev.blocto.app");
             } 
             
             if(Application.platform == RuntimePlatform.Android)
@@ -279,7 +282,7 @@ namespace Blocto.Sdk.Flow
             var testDomain = "blocto://open";
             if(FlowClientLibrary.Config.Get("flow.network", "testnet") == "testnet")
             {
-                testDomain = $"blocto-staging://open";
+                testDomain = $"blocto-dev://open";
             }
             
             switch (Application.platform)
@@ -288,7 +291,9 @@ namespace Blocto.Sdk.Flow
                     isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
+                    #if UNITY_IOS
                     isInstallApp = BloctoWalletProvider.IsInstalled(testDomain);
+                    #endif
                     break;
                 case RuntimePlatform.OSXEditor:
                     isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
@@ -708,7 +713,9 @@ namespace Blocto.Sdk.Flow
                         
                         break;
                     case RuntimePlatform.IPhonePlayer:
+                        #if UNITY_IOS
                         BloctoWalletProvider.OpenUrl("bloctowalletprovider", "DeeplinkHandler", url, url);
+                        #endif
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
