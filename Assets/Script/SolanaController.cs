@@ -89,7 +89,7 @@ public class SolanaController : MonoBehaviour
         
         tmp = GameObject.Find("TransferOpenExpolrerBtn");
         _partialSignBtn = tmp.GetComponent<Button>();
-        _partialSignBtn.onClick.AddListener(TransferOpenExpolorer);
+        _partialSignBtn.onClick.AddListener(TransferOpenExplorer);
         
         tmp = GameObject.Find("TransferResultTxt");
         _transferResultTxt = tmp.GetComponent<InputField>();
@@ -118,9 +118,9 @@ public class SolanaController : MonoBehaviour
         _transactonResultTxt = tmp.GetComponent<InputField>();
         _transactonResultTxt.readOnly = true;
         
-        tmp = GameObject.Find("OpenExpolrerBtn");
+        tmp = GameObject.Find("OpenExplorerBtn");
         _partialSignBtn = tmp.GetComponent<Button>();
-        _partialSignBtn.onClick.AddListener(OpenExpolorer);
+        _partialSignBtn.onClick.AddListener(OpenExplorer);
         
         tmp = GameObject.Find("WebSdkToggle");
         _forceUseWebViewToggle = tmp.GetComponent<Toggle>();
@@ -201,13 +201,13 @@ public class SolanaController : MonoBehaviour
         _getValueResultTxt.text = value.ToString();
     }
     
-    private void OpenExpolorer()
+    private void OpenExplorer()
     {
         var url = $"https://explorer.solana.com/tx/{_transactonResultTxt.text}?cluster=devnet";
         Application.OpenURL(url);
     }
     
-    private void TransferOpenExpolorer()
+    private void TransferOpenExplorer()
     {
         var url = $"https://explorer.solana.com/tx/{_transferResultTxt.text}?cluster=devnet";
         Application.OpenURL(url);
