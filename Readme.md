@@ -9,6 +9,11 @@ The repository contains fcl-unity, blocto-unity-sdk and demo app. This demo appl
 * iOS version >= 13
 * Android version >= 7.1
 
+## Support Chain
+
+* Flow
+* Solana
+
 ## Get Started
 
 You can browse this repository and find your desired utility or you can clone this repository to run demo app. 
