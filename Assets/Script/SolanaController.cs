@@ -136,6 +136,7 @@ public class SolanaController : MonoBehaviour
     private void ConnectWallet()
     {
         _bloctoWalletProvider.RequestAccount(address => {
+                                                 Debug.Log($"Address: {address}");
                                                 _walletAddreass = address;
                                                 _walletTxt.text = address;
 ;                                            });
@@ -178,7 +179,6 @@ public class SolanaController : MonoBehaviour
         var instructions = new List<TransactionInstruction>
                            {
                                SystemProgram.Transfer(new PublicKey(_walletAddreass), new PublicKey(_receptionAddressTxt.text), realSol),
-                               // MemoProgram.NewMemo(new PublicKey(_walletAddreass), "Hello from jamis test.")
                            };
         var tx = new Transaction
                  {
@@ -239,27 +239,27 @@ public class SolanaController : MonoBehaviour
         
         var wallet = new Wallet(_mnemonicWords);
         var index = (new Random().Next(1, 1000));
-        var newAccount = wallet.GetAccount(index);
-        $"New account: {newAccount.PublicKey}".ToLog();
+        var signer = wallet.GetAccount(index);
+        $"New account: {signer.PublicKey}".ToLog();
         var createAccountInstruction = SystemProgram.CreateAccount(
             new PublicKey(_walletAddreass), 
-            newAccount,
+            signer,
             minimumBalance.Result,
             10,
             ValueProgram.ProgramId());
-        Transaction tx = new()
+        var transaction = new Transaction
                          {
                              RecentBlockHash = response.Result.Value.Blockhash,
                              FeePayer = feePayer,
                              Instructions = new List<TransactionInstruction>{ txInstruction, createAccountInstruction }
                          };
         
-        var newTx = _bloctoWalletProvider.ConvertToProgramWalletTransaction(_walletAddreass, tx);
-        newTx.PartialSign(new List<Account>{ newAccount });
-        _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, newTx, txhash => {
+        var convertedTransaction = _bloctoWalletProvider.ConvertToProgramWalletTransaction(_walletAddreass, transaction);
+        convertedTransaction.PartialSign(new List<Account>{ signer });
+        _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, convertedTransaction, txhash => {
                                                                       $"Tx hash: {txhash}".ToLog();
                                                                       _transactonResultTxt.text = txhash;
-                                                                  }, new List<Account>{ newAccount });
+                                                                  });
     }
     
     // private async Task<string> GetRecentBlockIdAsync()

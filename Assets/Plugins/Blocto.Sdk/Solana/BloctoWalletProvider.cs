@@ -124,7 +124,7 @@ namespace Blocto.Sdk.Solana
         }
         
         
-        public void SignAndSendTransaction(string fromAddress, Transaction transaction, Action<string> callBack, List<Account> signers = null)
+        public void SignAndSendTransaction(string fromAddress, Transaction transaction, Action<string> callBack)
         {
             var url = default(string);
             var requestId = Guid.NewGuid();
