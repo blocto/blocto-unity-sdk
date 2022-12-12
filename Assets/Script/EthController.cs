@@ -2,6 +2,7 @@ using System;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Ethereum;
 using Blocto.Sdk.Ethereum.Model.Eth;
+using Blocto.Sdk.Ethereum.Utility;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -85,8 +86,11 @@ public class EthController : MonoBehaviour
     private void TestEvent()
     {
         var address = "0xFdE70b0920d17f3Ac8fe2Fbb5C979014CD41206A";
-        var to = "0x9E168ADDE6654E977C7C22Cc6057ac31b";
-        _bloctoWalletProvider.SendTransaction(address, to, 0.01m, "", txId => {
+        var to = "0xbF721ABA214E36b710d7C367F4a34BF0f3acdb2D";
+        
+        var value = EthConvert.ToWei(0.001m);
+        var valueHex = value.ToString("X");
+        _bloctoWalletProvider.SendTransaction(address, to, 0.001m, "", txId => {
                                                                                      $"TxId: {txId}".ToLog();
                                                                                  });
         // _bloctoWalletProvider.SignMessage("I am Jamis", SignTypeEnum.Personal_Sign, address, signature => {

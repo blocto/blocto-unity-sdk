@@ -60,7 +60,7 @@ namespace Blocto.Sdk.Ethereum
                     bloctoWalletProvider.backedApiDomain = bloctoWalletProvider.backedApiDomain.Replace("api", "api-dev");
                     bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.staging";
                     bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
-                    bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-testnet.blocto.app");
+                    bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
                 } 
             
                 if(Application.platform == RuntimePlatform.Android)
@@ -156,21 +156,22 @@ namespace Blocto.Sdk.Ethereum
         
         public void SendTransaction(string fromAddress, string toAddress, decimal value, string data, Action<string> callback)
         {
-            var transactionValue = EthConvert.ToWei(value);
-            transactionValue = 1;
+            
+            var transactionValue = EthConvert.ToWei(0.0001);
             var valueHex = transactionValue.ToString("X");
+            $"Transaction Value: {transactionValue}, to string: {transactionValue.ToString()}, Value hex: {valueHex}".ToLog();
             
             
             var requestId = Guid.NewGuid();
             requestIdActionMapper.Add(requestId.ToString(), "SENDTRANSACTION");
             
-            var sb = new StringBuilder("https://wallet-testnet.blocto.app/sdk?");
+            var sb = new StringBuilder("https://wallet-dev.blocto.app/sdk?");
             sb.Append($"app_id={bloctoAppIdentifier}" + "&")
               .Append("blockchain=ethereum" + "&")
               .Append("method=send_transaction" + "&")
               .Append($"from={fromAddress}" + "&")
               .Append($"to={toAddress}" + "&")
-              .Append($"value={transactionValue}" + "&")
+              .Append($"value=0x{valueHex}" + "&")
               // .Append($"value=1" + "&")
               .Append($"data={data.StringToHex()}" + "&")
               .Append($"request_id={requestId}");
