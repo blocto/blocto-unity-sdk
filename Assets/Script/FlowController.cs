@@ -22,7 +22,7 @@ using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
 using Random = System.Random;
 
 [SuppressMessage("ReSharper", "InterpolatedStringExpressionIsNotIFormattable")]
-public class MainController : MonoBehaviour
+public class FlowController : MonoBehaviour
 {
     static string _script = "import FungibleToken from 0x9a0766d93b6608b7\nimport FlowToken from 0x7e60df042a9c0868\n\ntransaction(amount: UFix64, to: Address) {\n\n    // The Vault resource that holds the tokens that are being transferred\n    let sentVault: @FungibleToken.Vault\n\n    prepare(signer: AuthAccount) {\n\n        // Get a reference to the signer's stored vault\n        let vaultRef = signer.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)\n            ?? panic(\"Could not borrow reference to the owner's Vault!\")\n\n        // Withdraw tokens from the signer's stored vault\n        self.sentVault <- vaultRef.withdraw(amount: amount)\n    }\n\n    execute {\n\n        // Get the recipient's public account object\n        let recipient = getAccount(to)\n\n        // Get a reference to the recipient's Receiver\n        let receiverRef = recipient.getCapability(/public/flowTokenReceiver)\n            .borrow<&{FungibleToken.Receiver}>()\n            ?? panic(\"Could not borrow receiver reference to the recipient's Vault\")\n\n        // Deposit the withdrawn tokens in the recipient's receiver\n        receiverRef.deposit(from: <-self.sentVault)\n    }\n}";
     
@@ -58,6 +58,10 @@ public class MainController : MonoBehaviour
     
     private Button _transactionBtn;
     
+    private Button _openSetValueResultLinkBtn;
+    
+    private Button _openTransferResultLinkBtn;
+    
     private InputField _accountTxt;
     
     private InputField _resultTxt;
@@ -73,6 +77,10 @@ public class MainController : MonoBehaviour
     private InputField _transactionValueTxt;
     
     private InputField _queryResultTxt;
+    
+    private InputField _setValueResultTxt;
+
+    private Toggle _forceUseWebViewToggle;
     
     private FlowUnityWebRequest _flowWebRequest;
     
@@ -98,11 +106,11 @@ public class MainController : MonoBehaviour
     
     private void Awake()
     {
-        var tmp = GameObject.Find("AuthnBtn");
+        var tmp = GameObject.Find("ConnectWalletBtn");
         _authnBtn = tmp.GetComponent<Button>();
         _authnBtn.onClick.AddListener(ConnectWallet);
         
-        tmp = GameObject.Find("SendTransactionBtn");
+        tmp = GameObject.Find("TransferBtn");
         _sendTransaction = tmp.GetComponent<Button>();
         _sendTransaction.onClick.AddListener(SendTransaction);
         
@@ -114,54 +122,58 @@ public class MainController : MonoBehaviour
         _verifyMessageBtn = tmp.GetComponent<Button>();
         _verifyMessageBtn.onClick.AddListener(VerifyUserMessage);
         
-        tmp = GameObject.Find("GetLastTxBtn");
-        _getAccountBtn = tmp.GetComponent<Button>();
-        _getAccountBtn.onClick.AddListener(GetTxr);
-        
-        tmp = GameObject.Find("TransactionBtn");
+        tmp = GameObject.Find("SetValueBtn");
         _getAccountBtn = tmp.GetComponent<Button>();
         _getAccountBtn.onClick.AddListener(Transaction);
         
-        tmp = GameObject.Find("TestBtn");
-        _getAccountBtn = tmp.GetComponent<Button>();
-        _getAccountBtn.onClick.AddListener(Test);
+        tmp = GameObject.Find("TransferOpenExplorerBtn");
+        _openTransferResultLinkBtn = tmp.GetComponent<Button>();
+        _openTransferResultLinkBtn.onClick.AddListener(OpenTransferExplorer);
         
-        tmp = GameObject.Find("AccountTxt");
+        tmp = GameObject.Find("SetValueOpenExplorerBtn");
+        _openSetValueResultLinkBtn = tmp.GetComponent<Button>();
+        _openSetValueResultLinkBtn.onClick.AddListener(OpenSetValueExplorer);
+        
+        tmp = GameObject.Find("WalletTxt");
         _accountTxt = tmp.GetComponent<InputField>();
         
         tmp = GameObject.Find("SignMessageTxt");
         _signmessageTxt = tmp.GetComponent<InputField>();
         _signmessageTxt.text = "user input any message";
         
-        tmp = GameObject.Find("TransactionAmountTxt");
+        tmp = GameObject.Find("TransferValueTxt");
         _transactionAmountTxt = tmp.GetComponent<InputField>();
         _transactionAmountTxt.text = ((new Random().Next(10, 40)) /10).ToString("N8");
         
-        tmp = GameObject.Find("TransactionToTxt");
+        tmp = GameObject.Find("ReceptionAddressTxt");
         _transactionToTxt = tmp.GetComponent<InputField>();
         _transactionToTxt.text = "0xe2c2f0fd9fdec656";
         
-        tmp = GameObject.Find("TxResultTxt");
-        _txResultTxt = tmp.GetComponent<InputField>();
-        
-        tmp = GameObject.Find("TransactionValueTxt");
+        tmp = GameObject.Find("SetValueTxt");
         _transactionValueTxt = tmp.GetComponent<InputField>();
         
-        tmp = GameObject.Find("QueryResultTxt");
+        tmp = GameObject.Find("ValueResultTxt");
         _queryResultTxt = tmp.GetComponent<InputField>();
         
-        tmp = GameObject.Find("ResultTxt");
+        tmp = GameObject.Find("TransferResultTxt");
         _resultTxt = tmp.GetComponent<InputField>();
         
-        tmp = GameObject.Find("QueryBtn");
+        tmp = GameObject.Find("SetValueResultTxt");
+        _setValueResultTxt = tmp.GetComponent<InputField>();
+        
+        tmp = GameObject.Find("GetValueBtn");
         _queryBtn = tmp.GetComponent<Button>();
         _queryBtn.onClick.AddListener(delegate { ExecuteQuery(); });
+        
+        tmp = GameObject.Find("WebSdkToggle");
+        _forceUseWebViewToggle = tmp.GetComponent<Toggle>();
+        _forceUseWebViewToggle.onValueChanged.AddListener(ForceUseWebView);
     }
 
     void Start()
     {
         var config = new Config();
-        config.Put("discovery.wallet", "https://flow-wallet-testnet.blocto.app/api/flow/authn")
+        config.Put("discovery.wallet", "https://flow-wallet-dev.blocto.app/api/flow/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
               .Put("flow.network", "testnet");
         
@@ -176,10 +188,10 @@ public class MainController : MonoBehaviour
                                                                           env: "testnet",
                                                                           bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
-                                                                     var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
-                                                                     return fcl;
-                                                                 }, config);
-        
+                                                         var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
+                                                         return fcl;
+                                                     }, config);
+        _walletProvider.ForcedUseWebView = true;
         DontDestroyOnLoad (_walletProvider);
     }
 
@@ -224,26 +236,29 @@ public class MainController : MonoBehaviour
 
         _fcl.Mutate(tx, txId => {
                             _txId = txId;
-                            _resultTxt.text = $"https://testnet.flowscan.org/transaction/{_txId}";
+                            _resultTxt.text = txId;
                         });
     }
     
     private void Transaction()
     {
-        var value = _transactionValueTxt.text;
+        $"set value: {_transactionValueTxt.text}".ToLog();
+        var value = Convert.ToDecimal(_transactionValueTxt.text);
+        $"Value: {value:#0.00000000}".ToLog();
+        
         var tx = new FlowTransaction
                  {
-                     Script = MainController._mutateScript,
+                     Script = FlowController._mutateScript,
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, value)
+                                     new CadenceNumber(CadenceNumberType.UFix64, $"{value:#0.00000000}")
                                  },
                  };
         
         _fcl.Mutate(tx, txId => { 
                             _txId = txId;
-                            _resultTxt.text = $"https://testnet.flowscan.org/transaction/{_txId}";
+                            _setValueResultTxt.text = txId;
                         });
     }
     
@@ -259,7 +274,7 @@ public class MainController : MonoBehaviour
                     _txResultTxt.text = $"Execution: Failure \r\nErrorMessage: {result.Message}";
                     break;
                 case TransactionExecution.Success:
-                    _txResultTxt.text = $"BlockId: {result.Data.BlockId} \r\nExecution: {result.Data.Execution} \r\nStatus: {result.Data.Status}";
+                    _txResultTxt.text = $"Tx hash: {_txId} \r\nExecution: {result.Data.Execution} \r\nStatus: {result.Data.Status}";
                     break;
                 case TransactionExecution.Pending:
                     _txResultTxt.text = $"{result.Message}";
@@ -304,7 +319,7 @@ public class MainController : MonoBehaviour
         
         var flowScript = new FlowScript
                          {
-                             Script = MainController._queryScript,
+                             Script = FlowController._queryScript,
                          };
         
         var result = await _fcl.QueryAsync(flowScript);
@@ -354,6 +369,18 @@ public class MainController : MonoBehaviour
                                                    });    
     }
     
+    private void OpenSetValueExplorer()
+    {
+        var url = $"https://testnet.flowscan.org/transaction/{_setValueResultTxt.text}";
+        Application.OpenURL(url);
+    }
+    
+    private void OpenTransferExplorer()
+    {
+        var url = $"https://testnet.flowscan.org/transaction/{_resultTxt.text}";
+        Application.OpenURL(url);
+    }
+    
     private async void GetAccount()
     {
         var account = await _fcl.FlowClient.GetAccountAtLatestBlockAsync("f086a545ce3c552d");
@@ -379,22 +406,9 @@ public class MainController : MonoBehaviour
         Debug.Log($"User is verify: {isVerify}"); 
     }
     
-    public void Test()
+    private void ForceUseWebView(bool value)
     {
-        var value = _transactionValueTxt.text;
-        var tx = new FlowTransaction
-                 {
-                     Script = MainController._mutateScript,
-                     GasLimit = 9999,
-                     Arguments = new List<ICadence>
-                                 {
-                                     new CadenceNumber(CadenceNumberType.UFix64, value)
-                                 },
-                 };
-        
-        var lastBlock = _fcl.FlowClient.GetLatestBlockAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        tx.ReferenceBlockId = lastBlock.Header.Id;
-        _walletProvider._address = "0x068606b2acddc1ca";
-        _walletProvider.SendTransaction(null, tx, tx => {});
+        $"Toggle value: {value}".ToLog();
+        _walletProvider.ForcedUseWebView = value;
     }
 }

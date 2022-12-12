@@ -66,21 +66,17 @@ Assets/Plugins/iOS/.vscode
 Assets/Plugins/iOS/UnityIosPlugin/.DS_Store
 Assets/Plugins/iOS/.DS_Store
 .DS_Store
-android install build
-android install build_BurstDebugInformation_DoNotShip
-ios install build
-ios install build_BurstDebugInformation_DoNotShip
 flow-unity-sdk/Library
 flow-unity-sdk/Logs
 flow-unity-sdk/obj
 flow-unity-sdk/Temp
-ios install
-android install_BurstDebugInformation_DoNotShip
-ios install_BurstDebugInformation_DoNotShip
-UserSettings
 UserSettings
 Assets/Plugins/Flow/*/obj
 ios project
 ios project_BurstDebugInformation_DoNotShip
 android project_BurstDebugInformation_DoNotShip
 release
+andorid project_BurstDebugInformation_DoNotShip
+andorid project_BackUpThisFolder_ButDontShipItWithYourGame
+com.blocto.flow.unityapp
+ProjectSettings/ProjectSettings.asset

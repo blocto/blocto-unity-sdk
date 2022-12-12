@@ -23,5 +23,11 @@ namespace Blocto.Sdk.Core.Extension
             var prefix = isPrefix ? "0x" : "";
             return $"{prefix}{string.Concat(value.Select(b => b.ToString("x2")).ToArray())}";
         }
+        
+        public static string ToHex(this sbyte[] value, bool isPrefix = false)
+        {
+            var prefix = isPrefix ? "0x" : "";
+            return $"{prefix}{string.Concat(value.Select(b => b.ToString("x2")).ToArray())}";
+        }
     }
 }

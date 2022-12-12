@@ -119,6 +119,7 @@ namespace Flow.FCL
             this._currentUser.Services = null;
             this._currentUser.LoggedIn = false;
             this._currentUser.ExpiresAt = default;
+            this._currentUser.AccountProofData = new AccountProofData();
             callback?.Invoke();
         }
         

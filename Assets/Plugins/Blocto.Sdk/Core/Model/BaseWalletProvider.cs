@@ -74,7 +74,6 @@ namespace Blocto.Sdk.Core.Model
         public void Awake()
         {
             requestIdActionMapper = new Dictionary<string, string>();
-            ForceUseWebView = false;
         }
 
         /// <summary>
@@ -123,6 +122,7 @@ namespace Blocto.Sdk.Core.Model
         /// <returns></returns>
         protected IEnumerator OpenUrl(string url, bool forcedUseWebView)
         {
+            $"ForcedUseWebView: {forcedUseWebView}".ToLog();
             try
             {
                 switch (Application.platform)
@@ -130,11 +130,12 @@ namespace Blocto.Sdk.Core.Model
                     case RuntimePlatform.Android:
                         if(isInstalledApp && forcedUseWebView == false)
                         {
+                            $"Call android app, url: {url}".ToLog();
                             pluginInstance.Call("openSDK", androidPackageName, url, url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
                         }
                         else
                         {
-                            $"Call android webview".ToLog();
+                            $"Call android webview, url: {url}".ToLog();
                             pluginInstance.Call("webview", url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
                         }
                         
