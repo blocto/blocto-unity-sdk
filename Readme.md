@@ -35,7 +35,7 @@ Please check `Script` has been add to inspector of main camera
 
 The demo app include five access to flow blockchain interactions
 
-* Interact with Flow networks (Mainnet-beta, Testnet)
+* Interact with Flow networks (Mainnet-beta, Testnet), Solana networks (Mainnet, Devnet)
 * Sign and verify messages
 * Send transactions
 * Query smart contract state
