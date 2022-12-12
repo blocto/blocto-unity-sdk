@@ -67,6 +67,11 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                     queriesUrlTypeArray.AddString("blocto-staging");
                 }
                 
+                if(queriesUrlTypeArray?.values.Any(p => p.AsString() == "blocto-dev") == false)
+                {
+                    queriesUrlTypeArray.AddString("blocto-dev");
+                }
+                
                 var fileName = OnProstProcessBuildIOS(projPath);
                 proj.SetBuildProperty(targetGuid, "CODE_SIGN_ENTITLEMENTS", fileName);
                 
