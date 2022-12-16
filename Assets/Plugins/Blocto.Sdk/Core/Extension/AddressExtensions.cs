@@ -1,4 +1,4 @@
-using Blocto.Sdk.Ethereum.Utility;
+using Nethereum.Util;
 
 namespace Blocto.Sdk.Core.Extension
 {
