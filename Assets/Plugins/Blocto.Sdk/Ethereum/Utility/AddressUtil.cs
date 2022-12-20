@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Ethereum.Extension;
 
 namespace Blocto.Sdk.Ethereum.Utility
 {

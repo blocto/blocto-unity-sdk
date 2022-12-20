@@ -1,4 +1,4 @@
-namespace Flow.Net.SDK.Client.Unity.Models.Enums
+namespace Blocto.Sdk.Core.Model
 {
     public struct ObjectResponseResult<T>
     {

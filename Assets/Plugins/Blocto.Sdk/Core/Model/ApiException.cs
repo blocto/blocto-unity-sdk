@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 // ReSharper disable TooManyDependencies
 
-namespace Flow.Net.SDK.Client.Unity.Models.Enums
+namespace Blocto.Sdk.Core.Model
 {
     public partial class ApiException : Exception
     {

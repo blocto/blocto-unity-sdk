@@ -1,6 +1,6 @@
 using Blocto.Sdk.Ethereum.Utility;
 
-namespace Blocto.Sdk.Core.Extension
+namespace Blocto.Sdk.Ethereum.Extension
 {
     public static class AddressExtensions
     {

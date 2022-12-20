@@ -1,4 +1,4 @@
-using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Ethereum.Extension;
 using Blocto.Sdk.Ethereum.Model.Hex;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

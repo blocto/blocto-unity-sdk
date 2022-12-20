@@ -6,8 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Blocto.Sdk.Core.Extension;
-using Flow.Net.SDK.Client.Unity.Models.Apis;
-using Flow.Net.SDK.Client.Unity.Models.Enums;
+using Blocto.Sdk.Core.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -104,7 +103,7 @@ namespace Blocto.Sdk.Core.Utility
         /// <param name="unityWebRequest">UnityWebRequest instance</param>
         /// <typeparam name="T">Return type</typeparam>
         /// <returns></returns>
-        /// <exception cref="ApiException{Error}"></exception>
+        /// <exception cref="ApiException"></exception>
         /// <exception cref="ApiException"></exception>
         public T ProcessWebRequest<T>(UnityWebRequest unityWebRequest)
         {
