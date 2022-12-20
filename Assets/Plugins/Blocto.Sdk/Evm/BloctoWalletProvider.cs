@@ -17,6 +17,8 @@ namespace Blocto.Sdk.Evm
 {
     public class BloctoWalletProvider : BaseWalletProvider
     {
+        public ChainEnum Chain { get; set; }
+        
         public EthereumClient EthereumClient { get; private set; }
         
         public string NodeUrl { get; set;}
@@ -64,6 +66,7 @@ namespace Blocto.Sdk.Evm
                 }
             
                 bloctoWalletProvider.isInstalledApp = bloctoWalletProvider.IsInstalledApp(BloctoWalletProvider.env);
+                bloctoWalletProvider.ForceUseWebView = true;
             }
             catch (Exception e)
             {
@@ -86,9 +89,9 @@ namespace Blocto.Sdk.Evm
             {
                 var appSb = new StringBuilder(appSdkDomain);
                 appSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                  .Append($"blockchain=ethereum" + "&")
-                  .Append($"method=request_account" + "&")
-                  .Append($"request_id={requestId}");
+                     .Append($"blockchain=ethereum" + "&")
+                     .Append($"method=request_account" + "&")
+                     .Append($"request_id={requestId}");
                 url = appSb.ToString();
                 
                 $"Url: {url}".ToLog();
@@ -123,12 +126,12 @@ namespace Blocto.Sdk.Evm
             {
                 var appSb = new StringBuilder(appSdkDomain);
                 appSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-                  .Append("blockchain=ethereum" + "&")
-                  .Append("method=sign_message" + "&")
-                  .Append($"from={address}" + "&")
-                  .Append($"type={signType.GetEnumDescription()}" + "&")
-                  .Append($"message={Uri.EscapeUriString(originMessage)}" + "&")
-                  .Append($"request_id={requestId}");
+                     .Append("blockchain=ethereum" + "&")
+                     .Append("method=sign_message" + "&")
+                     .Append($"from={address}" + "&")
+                     .Append($"type={signType.GetEnumDescription()}" + "&")
+                     .Append($"message={Uri.EscapeUriString(originMessage)}" + "&")
+                     .Append($"request_id={requestId}");
                 
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb.ToString()));
@@ -137,12 +140,12 @@ namespace Blocto.Sdk.Evm
             
             var webSb = new StringBuilder(webSdkDomain);
             webSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-              .Append("blockchain=ethereum" + "&")
-              .Append("method=sign_message" + "&")
-              .Append($"from={address}" + "&")
-              .Append($"type={signType.GetEnumDescription()}" + "&")
-              .Append($"message={Uri.EscapeUriString(originMessage)}" + "&")
-              .Append($"request_id={requestId}");
+                 .Append("blockchain=ethereum" + "&")
+                 .Append("method=sign_message" + "&")
+                 .Append($"from={address}" + "&")
+                 .Append($"type={signType.GetEnumDescription()}" + "&")
+                 .Append($"message={Uri.EscapeUriString(originMessage)}" + "&")
+                 .Append($"request_id={requestId}");
             
             $"Url: {webSb}".ToLog();
             StartCoroutine(OpenUrl(webSb.ToString()));
@@ -150,28 +153,43 @@ namespace Blocto.Sdk.Evm
         
         public void SendTransaction(string fromAddress, string toAddress, decimal value, string data, Action<string> callback)
         {
-            var transactionValue = EthConvert.ToWei(0.0001m);
+            var transactionValue = EthConvert.ToWei(value);
             var valueHex = transactionValue.ToString("X");
             $"Transaction Value: {transactionValue}, to string: {transactionValue.ToString()}, Value hex: {valueHex}".ToLog();
             
             
             var requestId = Guid.NewGuid();
             requestIdActionMapper.Add(requestId.ToString(), "SENDTRANSACTION");
-            
-            var sb = new StringBuilder("https://wallet-dev.blocto.app/sdk?");
-            sb.Append($"app_id={bloctoAppIdentifier}" + "&")
-              .Append("blockchain=ethereum" + "&")
-              .Append("method=send_transaction" + "&")
-              .Append($"from={fromAddress}" + "&")
-              .Append($"to={toAddress}" + "&")
-              .Append($"value=0x{valueHex}" + "&")
-              // .Append($"value=1" + "&")
-              .Append($"data={data.ToHexUTF8()}" + "&")
-              .Append($"request_id={requestId}");
-            
-            $"Url: {sb}".ToLog();
             _sendTransactionCallback = callback;
-            StartCoroutine(OpenUrl(sb.ToString()));
+            if(isInstalledApp && ForceUseWebView == false)
+            {
+                var appSb = new StringBuilder(appSdkDomain);
+                appSb.Append($"app_id={bloctoAppIdentifier}" + "&")
+                     .Append("blockchain=ethereum" + "&")
+                     .Append("method=send_transaction" + "&")
+                     .Append($"from={fromAddress}" + "&")
+                     .Append($"to={toAddress}" + "&")
+                     .Append($"value=0x{valueHex}" + "&")
+                     .Append($"data={data}" + "&")
+                     .Append($"request_id={requestId}");
+                
+                $"Url: {appSb}".ToLog();
+                StartCoroutine(OpenUrl(appSb.ToString()));
+                return;
+            }
+            
+            var webSb = new StringBuilder(webSdkDomain);
+            webSb.Append($"app_id={bloctoAppIdentifier}" + "&")
+                 .Append("blockchain=ethereum" + "&")
+                 .Append("method=send_transaction" + "&")
+                 .Append($"from={fromAddress}" + "&")
+                 .Append($"to={toAddress}" + "&")
+                 .Append($"value=0x{valueHex}" + "&")
+                 .Append($"data={data}" + "&")
+                 .Append($"request_id={requestId}");
+            
+            $"Url: {webSb}".ToLog();
+            StartCoroutine(OpenUrl(webSb.ToString()));
         }
         
         public TResult QueryForSmartContract<TResult>(Uri abiUrl, string contractAddress, string queryMethod)
@@ -186,13 +204,12 @@ namespace Blocto.Sdk.Evm
             return funData;
         }
         
-        public void SetContractValue(Uri abiUrl, string contractAddress, string method)
+        public void SetContractValue(Uri abiUrl,  string contractAddress, string method)
         {
             var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
             var web3 = new Web3(NodeUrl);
             var contract = web3.Eth.GetContract(api.Result, contractAddress);
-            
-            $"Contract value: {funData}".ToLog(); 
+            var serValue = contract.GetFunction("setValue");
         }
         
         /// <summary>
@@ -218,6 +235,10 @@ namespace Blocto.Sdk.Evm
                     case "SIGNMESSAGE":
                         var signature = UniversalLinkHandler(item.RemainContent, "signature=");
                         _signMessageCallback.Invoke(signature);
+                        break;
+                    case "SENDTRANSACTION":
+                        var sendTransaction = UniversalLinkHandler(item.RemainContent, "tx_hash");
+                        _sendTransactionCallback.Invoke(sendTransaction);
                         break;
                 }
             }
