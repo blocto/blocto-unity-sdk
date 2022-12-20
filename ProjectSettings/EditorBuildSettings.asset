@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/FlowScene.unity
-    guid: 3d64fadbb5ef240f1a6e6552bd1afd7e
+    path: Assets/Scenes/SolanaScene.unity
+    guid: b53557c203d2146f8a72d9fcb741dc82
   m_configObjects: {}

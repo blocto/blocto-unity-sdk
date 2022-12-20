@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Flow.Net.Sdk.Utility.NEthereum.Hex;
+using Blocto.Sdk.Core.Extension;
 
 namespace Flow.Net.Sdk.Utility
 {

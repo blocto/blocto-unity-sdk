@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Blocto.Sdk.Core.Model;
+using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Flow.Model;
 using Blocto.Sdk.Flow.Utility;
@@ -20,12 +21,11 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Blocto.SDK.Flow
+namespace Blocto.Sdk.Flow
 {
     public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider, IWalletProvider
     {

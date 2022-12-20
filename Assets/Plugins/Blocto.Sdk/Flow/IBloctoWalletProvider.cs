@@ -1,6 +1,5 @@
-using Flow.FCL.WalletProvider;
 
-namespace Blocto.SDK.Flow
+namespace Blocto.Sdk.Flow
 {
     public interface IBloctoWalletProvider 
     {

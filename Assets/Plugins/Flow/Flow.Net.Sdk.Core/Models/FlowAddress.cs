@@ -1,4 +1,6 @@
-﻿namespace Flow.Net.Sdk.Core.Models
+﻿using Blocto.Sdk.Core.Extension;
+
+namespace Flow.Net.Sdk.Core.Models
 {
     public class FlowAddress
     {
