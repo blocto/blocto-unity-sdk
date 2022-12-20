@@ -17,7 +17,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
     private BuildProfile profile;
     private bool boolValue;
     private int selGridInt = 0;
-    private string[] selStrings = { "FCL", "Blocto-unity-SDK" };
+    private string[] selStrings = { "FCL", "Blocto-unity-SDK", "Portto.Blocto.Core", "Portto.Blocto.Solana" };
 
     private void OnEnable() { profile = target as BuildProfile; }
 
@@ -133,19 +133,16 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
 
     private void TaskHandler()
     {
-        if (EditorUtility.DisplayDialog("提醒", "打包需要耗费一定時間,是否確定開始?", "確定", "取消"))
+        StringBuilder sb = new StringBuilder();
+        sb.Append("打包報告:\r\n");
+        for (int i = 0; i < profile.BuildTasks.Count; i++)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("打包報告:\r\n");
-            for (int i = 0; i < profile.BuildTasks.Count; i++)
-            {
-                EditorUtility.DisplayProgressBar("Build", "Building...", i + 1 / profile.BuildTasks.Count);
-                var task = profile.BuildTasks[i];
-                var report = TaskExecuteor(task);
-            }
-
-            EditorUtility.ClearProgressBar();
+            EditorUtility.DisplayProgressBar("Build", "Building...", i + 1 / profile.BuildTasks.Count);
+            var task = profile.BuildTasks[i];
+            var report = TaskExecuteor(task);
         }
+
+        EditorUtility.ClearProgressBar();
     }
 
     private BuildReport TaskExecuteor(BuildTask task)
@@ -153,6 +150,11 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
         var report = default(BuildReport);
         if(task.IsExportPackage)
         {
+            var directories = new List<string>();
+            
+            var timeVersion = $"{DateTime.UtcNow.DayOfYear}{(DateTime.UtcNow.Hour * 60) + DateTime.UtcNow.Minute}";
+            var version = $"{task.BuildVersion}.{timeVersion}";
+            
             switch (task.PackageType)
             {
                 case PackageTypeEnum.FCL:
@@ -166,27 +168,57 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                                              "Assets/Plugins/Dll",
                                              "Assets/Plugins/System.ComponentModel.Annotations.dll"
                                          };
-                        AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/FCL.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
-                        Debug.Log("FCL export successed.");
+                    AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/FCL.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("FCL export successed.");
                     break;
                 case PackageTypeEnum.BloctoUnitySDK:
-                        var directories = new List<string>();
-                        var bloctoSdkDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk");
-                        var bloctoSdkDirPaths = bloctoSdkDirInfo.GetDirectories().Select(p => {
-                                                                                             var tmp = p.FullName.Split("Assets/")[1];
-                                                                                             return $"Assets/{tmp}";
-                                                                                         }).ToList();
-                        
-                        var timeVersion = $"{DateTime.UtcNow.DayOfYear}{(DateTime.UtcNow.Hour * 60) + DateTime.UtcNow.Minute}";
-                        var version = $"{task.BuildVersion}.{timeVersion}";
-                        
-                        directories.AddRange(bloctoSdkDirPaths);
-                        directories.Add("Assets/Dll");
-                        directories.Add($"Assets/Plugins/Android");
-                        directories.Add($"Assets/Plugins/iOS/UnityIosPlugin");
-                        directories.Add($"Assets/Plugins/System.ComponentModel.Annotations.dll");
-                        AssetDatabase.ExportPackage(directories.ToArray(), $"release/blocto-unity-sdk/Blocto-unity-sdk.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
-                        Debug.Log("Blocto-unity-SDK export successed.");
+                    var bloctoSdkDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk");
+                    var bloctoSdkDirPaths = bloctoSdkDirInfo.GetDirectories().Select(p => {
+                                                                                         var tmp = p.FullName.Split("Assets/")[1];
+                                                                                         return $"Assets/{tmp}";
+                                                                                     }).ToList();
+                    directories.AddRange(bloctoSdkDirPaths);
+                    directories.Add("Assets/Plugins/Dll");
+                    directories.Add($"Assets/Plugins/Android");
+                    directories.Add($"Assets/Plugins/iOS/UnityIosPlugin");
+                    directories.Add($"Assets/Plugins/System.ComponentModel.Annotations.dll");
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/blocto-unity-sdk/Blocto-unity-sdk.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Blocto-unity-SDK export successed.");
+                    break;
+                case PackageTypeEnum.Core:
+                    var coreOutputPath = $"release/{task.BuildVersion}";
+                    if(Directory.Exists(coreOutputPath) == false)
+                    {
+                        Directory.CreateDirectory(coreOutputPath);
+                    }
+                    
+                    var coreDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Core");
+                    var coreDirPaths = coreDirInfo.GetDirectories().Select(p => {
+                                                                               var tmp = p.FullName.Split("Assets/")[1];
+                                                                               return $"Assets/{tmp}";
+                                                                           }).ToList(); 
+                    directories.AddRange(coreDirPaths);
+                    directories.Add("Assets/Plugins/Dll");
+                    directories.Add($"Assets/Plugins/Android");
+                    directories.Add($"Assets/Plugins/iOS/UnityIosPlugin");
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Core.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Portto.Blocto.Core export successed.");
+                    break;
+                case PackageTypeEnum.Solana:
+                    var solanaOutputPath = $"release/{task.BuildVersion}";
+                    if(Directory.Exists(solanaOutputPath) == false)
+                    {
+                        Directory.CreateDirectory(solanaOutputPath);
+                    }
+
+                    var solanaDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Solana");
+                    var solanaDirPaths = solanaDirInfo.GetDirectories().Select(p => {
+                                                                               var tmp = p.FullName.Split("Assets/")[1];
+                                                                               return $"Assets/{tmp}";
+                                                                           }).ToList(); 
+                    directories.AddRange(solanaDirPaths);
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Solana.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Protto.Blocto.Solana export successed.");
                     break;
             }
         }
