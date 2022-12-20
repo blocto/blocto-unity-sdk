@@ -83,13 +83,9 @@ public class SolanaController : MonoBehaviour
         tmp = GameObject.Find("ReceptionAddressTxt");
         _receptionAddressTxt = tmp.GetComponent<InputField>();
         _receptionAddressTxt.readOnly = true;
-        _receptionAddressTxt.text = "7YJX4s9uxnaXP6DmmRhAPWyptNvq9HCAtfAVUPMEq7GU";
         
         tmp = GameObject.Find("TransferValueTxt");
         _transferValueTxt = tmp.GetComponent<InputField>();
-        var value = (Decimal)(new Random().Next(1, 9));
-        var randomSol = (value / 100).ToString("N2");
-        _transferValueTxt.text = randomSol;
         
         tmp = GameObject.Find("TransferOpenExplorerBtn");
         _openTransferResultLinkBtn = tmp.GetComponent<Button>();
