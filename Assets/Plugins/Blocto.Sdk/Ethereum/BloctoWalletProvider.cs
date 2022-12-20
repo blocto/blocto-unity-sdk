@@ -60,7 +60,7 @@ namespace Blocto.Sdk.Ethereum
                     bloctoWalletProvider.backedApiDomain = bloctoWalletProvider.backedApiDomain.Replace("api", "api-dev");
                     bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.staging";
                     bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
-                    bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-testnet.blocto.app");
+                    bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
                 } 
             
                 if(Application.platform == RuntimePlatform.Android)

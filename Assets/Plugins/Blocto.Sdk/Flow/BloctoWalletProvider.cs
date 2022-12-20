@@ -103,7 +103,7 @@ namespace Blocto.Sdk.Flow
         
         private Guid _bloctoAppIdentifier;
         
-        private string _appSdkDomain = "https://staging.blocto.app/sdk?";
+        private string _appSdkDomain = "https://blocto.app/sdk?";
         
         private string _backedApiDomain = "https://api.blocto.app";
         
