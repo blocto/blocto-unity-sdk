@@ -12,7 +12,7 @@ using Flow.Net.Sdk.Core.Models;
 using Flow.Net.SDK.Extensions;
 using UnityEngine;
 
-namespace Flow.Net.SDK.Client.Unity.Unity
+namespace Flow.Net.Sdk.Client.Unity.Unity
 {
     public class FlowUnityWebRequest : IFlowClient
     {

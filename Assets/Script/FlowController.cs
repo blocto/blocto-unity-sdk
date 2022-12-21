@@ -12,7 +12,7 @@ using Flow.FCL;
 using Flow.FCL.Config;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
-using Flow.Net.SDK.Client.Unity.Unity;
+using Flow.Net.Sdk.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;

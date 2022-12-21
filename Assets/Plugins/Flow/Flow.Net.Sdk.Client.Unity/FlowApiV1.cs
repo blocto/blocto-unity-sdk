@@ -17,7 +17,7 @@ using ArgumentNullException = System.ArgumentNullException;
 // ReSharper disable TooManyArguments
 // ReSharper disable MethodTooLong
 
-namespace Flow.Net.SDK.Client.Unity.Unity
+namespace Flow.Net.Sdk.Client.Unity.Unity
 {
 
     public partial class FlowApiV1 : MonoBehaviour

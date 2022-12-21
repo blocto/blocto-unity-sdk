@@ -1,4 +1,5 @@
-﻿using Blocto.Sdk.Core.Extension;
+﻿
+using Flow.Net.Sdk.Utility;
 
 namespace Flow.Net.Sdk.Core.Models
 {

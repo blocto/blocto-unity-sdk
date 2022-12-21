@@ -2,16 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Blocto.Sdk.Core.Extension;
 using Flow.FCL.Models;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
-using Flow.Net.SDK.Client.Unity.Unity;
+using Flow.Net.Sdk.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Flow.Net.SDK.Extensions;
 using UnityEngine;
 
 namespace Flow.FCL
@@ -233,7 +231,7 @@ namespace Flow.FCL
             }
             catch (Exception e)
             {
-                $"Execute script error: {e.Message}".ToLog();
+                Debug.Log($"Execute script error: {e.Message}");
                 _errorMessage = e.Message;
             }
         }
