@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 
-namespace Flow.Net.SDK.Client.Unity.Models.Apis
+namespace Flow.Net.Sdk.Client.Unity.Models.Apis
 {
     public partial class Transaction
     {

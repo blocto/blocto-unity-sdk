@@ -7,8 +7,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Blocto.Sdk.Core.Model;
-using Flow.Net.SDK.Client.Unity.Models.Apis;
+using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
@@ -18,7 +17,7 @@ using ArgumentNullException = System.ArgumentNullException;
 // ReSharper disable TooManyArguments
 // ReSharper disable MethodTooLong
 
-namespace Flow.Net.SDK.Client.Unity.Unity
+namespace Flow.Net.Sdk.Client.Unity.Unity
 {
 
     public partial class FlowApiV1 : MonoBehaviour

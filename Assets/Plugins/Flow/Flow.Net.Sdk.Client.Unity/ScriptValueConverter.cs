@@ -1,9 +1,9 @@
 using System;
 using System.Text;
-using Flow.Net.SDK.Client.Unity.Models.Apis;
+using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Newtonsoft.Json;
 
-namespace Flow.Net.SDK.Client.Unity.Unity
+namespace Flow.Net.Sdk.Client.Unity.Unity
 {
     public class ScriptValueConverter : JsonConverter
     {
