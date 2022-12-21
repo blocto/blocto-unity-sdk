@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 
-namespace Flow.Net.SDK.Client.Unity.Models.Apis
+namespace Flow.Net.Sdk.Client.Unity.Models.Apis
 {
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.0.22.0 (Newtonsoft.Json v11.0.0.0)")]
     public partial class TransactionBody
