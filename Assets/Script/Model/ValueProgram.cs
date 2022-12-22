@@ -11,10 +11,10 @@ namespace Script.Model
     {
         static ValueProgram()
         {
-            PROGRAM_ID_DEVNET = new PublicKey("G4YkbRN4nFQGEUg4SXzPsrManWzuk8bNq9JaMhXepnZ6");
-            ACCOUNT_PUBLIC_KEY_DEVNET = new PublicKey("4AXy5YYCXpMapaVuzKkz25kVHzrdLDgKN3TiQvtf1Eu8");
-            PROGRAM_ID_MAINNET_BETA = new PublicKey("EN2Ln23fzm4qag1mHfx7FDJwDJog5u4SDgqRY256ZgFt");
-            ACCOUNT_PUBLIC_KEY_MAINNET_BETA = new PublicKey("EajAHVxAVvf4yNUu37ZEh8QS7Lk5bw9yahTGiTSL1Rwt");
+            PROGRAM_ID_DEVNET = new PublicKey("your address");
+            ACCOUNT_PUBLIC_KEY_DEVNET = new PublicKey("your address");
+            PROGRAM_ID_MAINNET_BETA = new PublicKey("your address");
+            ACCOUNT_PUBLIC_KEY_MAINNET_BETA = new PublicKey("your address");
         }
         
         /// <summary>
