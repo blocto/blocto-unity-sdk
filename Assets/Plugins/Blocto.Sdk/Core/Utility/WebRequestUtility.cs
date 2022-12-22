@@ -107,7 +107,8 @@ namespace Blocto.Sdk.Core.Utility
             jsonStr = parameter is JObject
                           ? parameter.ToString()
                           : JsonConvert.SerializeObject(parameter);
-            
+            $"Url: {url}".ToLog();
+            $"Request body: {jsonStr}".ToLog();
             var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
             var uploadHandler = new UploadHandlerRaw(requestBytes);
             client.uploadHandler = uploadHandler;

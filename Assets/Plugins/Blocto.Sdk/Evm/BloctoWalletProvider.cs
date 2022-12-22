@@ -89,7 +89,7 @@ namespace Blocto.Sdk.Evm
             {
                 var appSb = new StringBuilder(appSdkDomain);
                 appSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                     .Append($"blockchain=ethereum" + "&")
+                     .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
                      .Append($"method=request_account" + "&")
                      .Append($"request_id={requestId}");
                 url = appSb.ToString();
@@ -102,7 +102,7 @@ namespace Blocto.Sdk.Evm
             $"WebSDK domain: {webSdkDomain}".ToLog();
             var webSb = new StringBuilder(webSdkDomain);
             webSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                 .Append($"blockchain=ethereum" + "&")
+                 .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
                  .Append($"method=request_account" + "&")
                  .Append($"request_id={requestId}");
             url = webSb.ToString();
@@ -126,7 +126,7 @@ namespace Blocto.Sdk.Evm
             {
                 var appSb = new StringBuilder(appSdkDomain);
                 appSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-                     .Append("blockchain=ethereum" + "&")
+                     .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
                      .Append("method=sign_message" + "&")
                      .Append($"from={address}" + "&")
                      .Append($"type={signType.GetEnumDescription()}" + "&")
@@ -140,7 +140,7 @@ namespace Blocto.Sdk.Evm
             
             var webSb = new StringBuilder(webSdkDomain);
             webSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-                 .Append("blockchain=ethereum" + "&")
+                 .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
                  .Append("method=sign_message" + "&")
                  .Append($"from={address}" + "&")
                  .Append($"type={signType.GetEnumDescription()}" + "&")
@@ -165,7 +165,7 @@ namespace Blocto.Sdk.Evm
             {
                 var appSb = new StringBuilder(appSdkDomain);
                 appSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-                     .Append("blockchain=ethereum" + "&")
+                     .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
                      .Append("method=send_transaction" + "&")
                      .Append($"from={fromAddress}" + "&")
                      .Append($"to={toAddress}" + "&")
@@ -180,7 +180,7 @@ namespace Blocto.Sdk.Evm
             
             var webSb = new StringBuilder(webSdkDomain);
             webSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-                 .Append("blockchain=ethereum" + "&")
+                 .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
                  .Append("method=send_transaction" + "&")
                  .Append($"from={fromAddress}" + "&")
                  .Append($"to={toAddress}" + "&")

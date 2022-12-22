@@ -11,6 +11,7 @@ using Blocto.Sdk.Evm.Utility;
 using Nethereum.ABI;
 using Nethereum.Util;
 using Nethereum.Web3;
+using Script.Model;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -160,7 +161,7 @@ public class EvmController : MonoBehaviour
             _walletProviderDict.Add(envIndex, _bloctoWalletProvider);
             
             var chainIndex = _chainDL.value;
-            var chainName = (ChainEnum)Enum.Parse()
+            var chainName = (ChainEnum)Enum.Parse(typeof(ChainEnum), _chains[chainIndex], true);
             _bloctoWalletProvider.Chain = chainName;
         }
         else
@@ -224,24 +225,23 @@ public class EvmController : MonoBehaviour
     
     private void GetValue()
     {
-        _bloctoWalletProvider.NodeUrl = "https://rinkeby.blocto.app";
-        var abiUrl = new Uri("https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address=0x58F385777aa6699b81f741Dd0d5B272A34C1c774");
-        var queryResult = _bloctoWalletProvider.QueryForSmartContract<int>(abiUrl, "0x58F385777aa6699b81f741Dd0d5B272A34C1c774", "value");
+        _bloctoWalletProvider.NodeUrl = EvmChain.ETHEREUM.TestnetRpcUrl;
+        var abiUrl = new Uri($"https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address={EvmChain.ETHEREUM.TestnetContractAddress}");
+        var queryResult = _bloctoWalletProvider.QueryForSmartContract<int>(abiUrl, EvmChain.ETHEREUM.TestnetContractAddress, "value");
         _valueResultTxt.text = queryResult.ToString();
     }
     
     private void SetValue()
     {
         var address = _accountTxt.text;
-        var contractAddress = "0x58F385777aa6699b81f741Dd0d5B272A34C1c774";
-        var abiUrl = new Uri("https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address=0x58F385777aa6699b81f741Dd0d5B272A34C1c774");
+        var abiUrl = new Uri($"https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address={EvmChain.ETHEREUM.TestnetContractAddress}");
         var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
         var web3 = new Web3("https://rinkeby.blocto.app");
-        var contract = web3.Eth.GetContract(api.Result, contractAddress);
+        var contract = web3.Eth.GetContract(api.Result, EvmChain.ETHEREUM.TestnetContractAddress);
         var setValue = contract.GetFunction("setValue");
         var data = setValue.GetData(new object[]{ Convert.ToUInt64(_setValueTxt.text) });
         $"Set Value: {_setValueTxt.text}, encode data: {data}".ToLog();
-        _bloctoWalletProvider.SendTransaction(address, contractAddress, 0, data, txId => {
+        _bloctoWalletProvider.SendTransaction(address, EvmChain.ETHEREUM.TestnetContractAddress, 0, data, txId => {
                                                                                      $"TxId: {txId}".ToLog();
                                                                                      _setValueResultTxt.text = txId;
                                                                                  });

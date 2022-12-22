@@ -295,7 +295,6 @@ namespace Blocto.Sdk.Flow
                     #endif
                     break;
                 case RuntimePlatform.OSXEditor:
-                    isInstallApp = _pluginInstance.Call<bool>("isInstalledApp", _androidPackageName); 
                     break;
             }
             
