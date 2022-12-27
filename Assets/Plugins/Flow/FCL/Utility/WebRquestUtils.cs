@@ -5,10 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Blocto.Sdk.Core.Extension;
-using Flow.Net.SDK.Client.Unity.Models.Apis;
-using Flow.Net.SDK.Client.Unity.Models.Enums;
-using Flow.Net.SDK.Extensions;
+using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -98,7 +95,7 @@ namespace Flow.FCL.Utility
             if(status is "200" or "204")
             {
                 var tmp = unityWebRequest.downloadHandler.data;
-                $"Response content: {Encoding.UTF8.GetString(tmp)}".ToLog();
+                Debug.Log($"Response content: {Encoding.UTF8.GetString(tmp)}");
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 unityWebRequest.Dispose();
                 return objectResponse_.Object;  

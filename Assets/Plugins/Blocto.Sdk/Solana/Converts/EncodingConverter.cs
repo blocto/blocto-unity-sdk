@@ -2,7 +2,7 @@ using System;
 using Newtonsoft.Json;
 using Solnet.Rpc.Types;
 
-namespace Plugins.Blocto.Sdk.Core.Converts
+namespace Blocto.Sdk.Solana.Converts
 {
     public class EncodingConverter : JsonConverter<BinaryEncoding>
     {

@@ -50,7 +50,7 @@ namespace Blocto.Sdk.Flow
         public bool ForcedUseWebView { get; set; }
 
         #if UNITY_IOS
-       /// <summary>
+        /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
         /// <param name="goName">swift complete event then callback class name of unity</param>
@@ -102,7 +102,7 @@ namespace Blocto.Sdk.Flow
         
         private Guid _bloctoAppIdentifier;
         
-        private string _appSdkDomain = "https://staging.blocto.app/sdk?";
+        private string _appSdkDomain = "https://blocto.app/sdk?";
         
         private string _backedApiDomain = "https://api.blocto.app";
         
@@ -621,26 +621,26 @@ namespace Blocto.Sdk.Flow
 
             StartCoroutine(OpenUrl(iframeUrl));
             StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, response => {
-                                                                                     var signature = response?.Data.First().SignatureStr();
-                                                                                     var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
-                                                                                     var addr = response?.Data.First().Address();
-                                                                                     var result = new ExecuteResult<List<FlowSignature>>
-                                                                                                  {
-                                                                                                      Data = new List<FlowSignature>
-                                                                                                             {
-                                                                                                                 new FlowSignature
-                                                                                                                 {
-                                                                                                                     Address = new FlowAddress(addr),
-                                                                                                                     KeyId = keyId,
-                                                                                                                     Signature = Encoding.UTF8.GetBytes(signature!)
-                                                                                                                 }
-                                                                                                             },
-                                                                                                      IsSuccessed = true,
-                                                                                                      Message = string.Empty
-                                                                                                  };
+                                                                                    var signature = response?.Data.First().SignatureStr();
+                                                                                    var keyId = Convert.ToUInt32(response?.Data.First().KeyId());
+                                                                                    var addr = response?.Data.First().Address();
+                                                                                    var result = new ExecuteResult<List<FlowSignature>>
+                                                                                                 {
+                                                                                                     Data = new List<FlowSignature>
+                                                                                                            {
+                                                                                                                new FlowSignature
+                                                                                                                {
+                                                                                                                    Address = new FlowAddress(addr),
+                                                                                                                    KeyId = keyId,
+                                                                                                                    Signature = Encoding.UTF8.GetBytes(signature!)
+                                                                                                                }
+                                                                                                            },
+                                                                                                     IsSuccessed = true,
+                                                                                                     Message = string.Empty
+                                                                                                 };
                                                                                      
-                                                                                     callback?.Invoke(result);
-                                                                                 }));
+                                                                                    callback?.Invoke(result);
+                                                                                }));
         }
         
         /// <summary>
@@ -655,13 +655,28 @@ namespace Blocto.Sdk.Flow
         {
             var response = default(TResponse);
             var isApprove = false;
-            _isCancelRequest = false;
+            
+            //// Polling requests are only sent on Android or iOS, because an error action in the editor can cause too many requests to be sent 
+            if(Application.platform == RuntimePlatform.Android || Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                _isCancelRequest = false;
+            }
+            else
+            {
+                _isCancelRequest = true;    
+            }
+            
             while (isApprove == false && _isCancelRequest == false)
             {
                 var webRequest = WebRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
                 response = WebRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                 isApprove = response!.ResponseStatus is ResponseStatusEnum.APPROVED or ResponseStatusEnum.DECLINED ? true : false;
                 yield return new WaitForSeconds(0.5f);
+            }
+            
+            if(response is null)
+            {
+                yield break;
             }
 
             if (response!.ResponseStatus == ResponseStatusEnum.PENDING || _isCancelRequest)
@@ -716,7 +731,7 @@ namespace Blocto.Sdk.Flow
                         #endif
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new Exception("This platform does not support open webview.");
                 }
             }
             catch (Exception e)

@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Blocto.Sdk.Core.Extension;
-using Flow.Net.SDK.Client.Unity.Models.Apis;
+using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
+using Flow.Net.Sdk.Utility;
 using Newtonsoft.Json;
-using Event = Flow.Net.SDK.Client.Unity.Models.Apis.Event;
+using Event = Flow.Net.Sdk.Client.Unity.Models.Apis.Event;
 
 namespace Flow.Net.SDK.Extensions
 {

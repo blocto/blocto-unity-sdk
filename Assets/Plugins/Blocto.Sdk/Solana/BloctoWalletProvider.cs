@@ -300,6 +300,12 @@ namespace Blocto.Sdk.Solana
             if(requestIdActionMapper.ContainsKey(item.RequestId))
             {
                 var action = requestIdActionMapper[item.RequestId];
+                if(item.RemainContent.Contains("error="))
+                {
+                    var errorMessage = UniversalLinkHandler(item.RemainContent, "error=");
+                    throw new Exception($"{errorMessage}");
+                }
+                
                 switch (action)
                 {
                     case "CONNECTWALLET":

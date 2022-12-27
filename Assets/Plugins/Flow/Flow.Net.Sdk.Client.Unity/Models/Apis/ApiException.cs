@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 // ReSharper disable TooManyDependencies
 
-namespace Flow.Net.SDK.Client.Unity.Models.Enums
+namespace Flow.Net.Sdk.Client.Unity.Models.Apis
 {
     public partial class ApiException : Exception
     {

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Blocto.Sdk.Core.Extension;
 
 namespace Flow.Net.Sdk.Utility
 {

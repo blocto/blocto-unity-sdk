@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Blocto.Sdk.Core.Extension
+namespace Flow.Net.Sdk.Utility
 {
     public static class HexByteConvertorExtensions
     {

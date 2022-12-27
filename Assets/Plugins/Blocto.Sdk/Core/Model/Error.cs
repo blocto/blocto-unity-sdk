@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Flow.Net.Sdk.Client.Unity.Models.Apis
+// namespace Flow.Net.Sdk.Client.Unity.Models.Apis
+namespace Blocto.Sdk.Core.Model
 {
 public partial class Error
 {

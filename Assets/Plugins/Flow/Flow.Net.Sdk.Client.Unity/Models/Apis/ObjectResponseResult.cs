@@ -1,4 +1,4 @@
-namespace Flow.Net.SDK.Client.Unity.Models.Enums
+namespace Flow.Net.Sdk.Client.Unity.Models.Apis
 {
     public struct ObjectResponseResult<T>
     {
