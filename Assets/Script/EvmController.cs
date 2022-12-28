@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using Blocto.Sdk.Core.Extension;
@@ -7,9 +8,6 @@ using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
 using Blocto.Sdk.Evm.Model.Eth;
-using Blocto.Sdk.Evm.Utility;
-using Nethereum.ABI;
-using Nethereum.Util;
 using Nethereum.Web3;
 using Script.Model;
 using UnityEngine;
@@ -34,6 +32,16 @@ public class EvmController : MonoBehaviour
     private Button _transferOpenExplorerBtn;
     
     private Button _setValueOpenExplorerBtn;
+    
+    private Button _ethSignBtn;
+    
+    private Button _personalSignBtn;
+    
+    private Button _typedDataV3Btn;
+    
+    private Button _typedDataV4Btn;
+    
+    private Button _typedDataBtn;
     
     private InputField _accountTxt;
     
@@ -67,6 +75,10 @@ public class EvmController : MonoBehaviour
     
     private List<string> _chains;
     
+    private ChainInformation _selectedChain;
+    
+    private EvmChains _evmChains;
+    
     public void Awake()
     {
         var tmp = GameObject.Find("ConnectWalletBtn");
@@ -97,6 +109,26 @@ public class EvmController : MonoBehaviour
         _setValueOpenExplorerBtn = tmp.GetComponent<Button>();
         _setValueOpenExplorerBtn.onClick.AddListener(SetValueOpenExplorer);
         
+        tmp = GameObject.Find("EthSignBtn");
+        _ethSignBtn = tmp.GetComponent<Button>();
+        _ethSignBtn.onClick.AddListener(EthSignSample);
+        
+        tmp = GameObject.Find("PersonalSignBtn");
+        _personalSignBtn = tmp.GetComponent<Button>();
+        _personalSignBtn.onClick.AddListener(PersonalSignSample);
+        
+        tmp = GameObject.Find("TypedDataV3Btn");
+        _typedDataV3Btn = tmp.GetComponent<Button>();
+        _typedDataV3Btn.onClick.AddListener(TypedDataV3);
+        
+        tmp = GameObject.Find("TypedDataV4Btn");
+        _typedDataV4Btn = tmp.GetComponent<Button>();
+        _typedDataV4Btn.onClick.AddListener(TypedDataV4);
+        
+        tmp = GameObject.Find("TypedDataBtn");
+        _typedDataBtn = tmp.GetComponent<Button>();
+        _typedDataBtn.onClick.AddListener(TypedData);
+        
         tmp = GameObject.Find("WalletTxt");
         _accountTxt = tmp.GetComponent<InputField>();
         
@@ -105,7 +137,7 @@ public class EvmController : MonoBehaviour
         
         tmp = GameObject.Find("ReceptionAddressTxt");
         _receptionAddressTxt = tmp.GetComponent<InputField>();
-        _receptionAddressTxt.text = "0xbF721ABA214E36b710d7C367F4a34BF0f3acdb2D";
+        _receptionAddressTxt.text = "0xd291Eb0048de837A469B3c1A1E9615F0A7860276";
         
         tmp = GameObject.Find("TransferValueTxt");
         _transferValueTxt = tmp.GetComponent<InputField>();
@@ -129,6 +161,7 @@ public class EvmController : MonoBehaviour
         tmp = GameObject.Find("ChainDL");
         _chainDL = tmp.GetComponent<Dropdown>();
         _chainDL.onValueChanged.AddListener(ChainChanged);
+        _chainDL.value = 0;
         
         tmp = GameObject.Find("WebSdkToggle");
         _forceUseWebViewToggle = tmp.GetComponent<Toggle>();
@@ -136,6 +169,7 @@ public class EvmController : MonoBehaviour
         
         _webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
         _walletProviderDict = new Dictionary<int, BloctoWalletProvider>();
+        _selectedChain = EvmChain.ETHEREUM;
         _chains = new List<string>
                   {
                       "ethereum",
@@ -143,6 +177,8 @@ public class EvmController : MonoBehaviour
                       "polygon",
                       "avalanche"
                   };
+        
+        // ReadAppSetting();
     }
 
 
@@ -158,11 +194,12 @@ public class EvmController : MonoBehaviour
                 bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
             );
             
-            _walletProviderDict.Add(envIndex, _bloctoWalletProvider);
+            _bloctoWalletProvider.ForceUseWebView = _forceUseWebViewToggle.isOn;
             
             var chainIndex = _chainDL.value;
             var chainName = (ChainEnum)Enum.Parse(typeof(ChainEnum), _chains[chainIndex], true);
             _bloctoWalletProvider.Chain = chainName;
+            _walletProviderDict.Add(envIndex, _bloctoWalletProvider);
         }
         else
         {
@@ -179,11 +216,38 @@ public class EvmController : MonoBehaviour
     {
         $"Chain index: {index}, ChainDD value: {_chainDL.value}".ToLog();
         var chainIndex = _chainDL.value;
-        Enum.TryParse(_chains[chainIndex], out ChainEnum chainName);
+        var chain = (ChainEnum)Enum.Parse(typeof(ChainEnum), _chains[chainIndex], true);
         if(_bloctoWalletProvider != null)
         {
-            _bloctoWalletProvider.Chain = chainName;
+            _bloctoWalletProvider.Chain = chain;
         }
+
+        // switch (chain)
+        // {
+        //     case ChainEnum.Ethereum:
+        //         _selectedChain = EvmChain.ETHEREUM;
+        //         break;
+        //     case ChainEnum.BSC:
+        //         _selectedChain = EvmChain.BNB_CHAIN;
+        //         break;
+        //     case ChainEnum.Polygon:
+        //         _selectedChain = EvmChain.POLYGON;
+        //         break;
+        //     case ChainEnum.Avalanche:
+        //         _selectedChain = EvmChain.AVALANCHE;
+        //         break;
+        //     default:
+        //         throw new ArgumentOutOfRangeException();
+        // }
+
+        _selectedChain = chain switch
+                         {
+                             ChainEnum.Ethereum => EvmChain.ETHEREUM,
+                             ChainEnum.BSC => EvmChain.BNB_CHAIN,
+                             ChainEnum.Polygon => EvmChain.POLYGON,
+                             ChainEnum.Avalanche => EvmChain.AVALANCHE,
+                             _ => throw new ArgumentOutOfRangeException()
+                         };
     }
     
     private void EnvChanged(int index)
@@ -207,49 +271,133 @@ public class EvmController : MonoBehaviour
     
     private void SendTransaction()
     {
+        var receptionAddress = default(string);
+        _accountTxt.text = "0x57FDcA3F5961A8D8715e15b6770311668f3eD4DB";
         var address = _accountTxt.text;
-        var receptionAddress = _receptionAddressTxt.text;
-        var value = Convert.ToDecimal(_transferValueTxt.text);
-        $"Transfer value: {value}".ToLog();
-        _bloctoWalletProvider.SendTransaction(address, receptionAddress, value, "", txId => {
-                                                                                        $"TxId: {txId}".ToLog();
-                                                                                        _transferResultTxt.text = txId;
-                                                                                    }); 
+        // var value = Convert.ToUInt64(_transferValueTxt.text) * 1000000000000000000;
+        var value = Convert.ToUInt64(_transferValueTxt.text) * 100000000;
+        if(_selectedChain.Title == "BNB Chain")
+        {
+            _receptionAddressTxt.text = "0xd291Eb0048de837A469B3c1A1E9615F0A7860276";
+            receptionAddress = EvmChain.BLT.TestnetContractAddress;
+            var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={EvmChain.BLT.TestnetContractAddress}");
+            var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
+            $"ABI json: {api.Result}".ToLog();
+        
+            var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
+            var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? EvmChain.BLT.MainnetContractAddress : EvmChain.BLT.TestnetContractAddress);
+            var transfer = contract.GetFunction("transfer");
+            var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, value });
+            $"Reception address: {_receptionAddressTxt.text}, Set Value: {value}, encode data: {data}".ToLog();
+            _bloctoWalletProvider.SendTransaction(
+                address, 
+                receptionAddress, 
+                0, 
+                data, 
+                txId => {
+                    $"TxId: {txId}".ToLog();
+                    _transferResultTxt.text = txId;
+                });
+        }
+        else
+        {
+            receptionAddress = _receptionAddressTxt.text;
+            $"Transfer value: {value}".ToLog();
+            _bloctoWalletProvider.SendTransaction(address, receptionAddress, value, "", txId => {
+                                                                                            $"TxId: {txId}".ToLog();
+                                                                                            _transferResultTxt.text = txId;
+                                                                                        }); 
+        }
     }
     
     private void TransferOpenExplorer()
     {
-        var url = $"https://rinkeby.etherscan.io/tx/{_transferResultTxt.text}";
+        var url = $"https://{_selectedChain.TestnetExplorerDomain}/tx/{_transferResultTxt.text}";
         Application.OpenURL(url);
     }
     
     private void GetValue()
     {
-        _bloctoWalletProvider.NodeUrl = EvmChain.ETHEREUM.TestnetRpcUrl;
-        var abiUrl = new Uri($"https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address={EvmChain.ETHEREUM.TestnetContractAddress}");
-        var queryResult = _bloctoWalletProvider.QueryForSmartContract<int>(abiUrl, EvmChain.ETHEREUM.TestnetContractAddress, "value");
+        var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={_selectedChain.TestnetContractAddress}");
+        _bloctoWalletProvider.NodeUrl = IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl;
+        var queryResult = _bloctoWalletProvider.QueryForSmartContract<int>(
+            abiUrl, 
+            _envDL.value == 0 ? _selectedChain.MainnetContractAddress : _selectedChain.TestnetContractAddress,
+            "value");
         _valueResultTxt.text = queryResult.ToString();
     }
-    
+
     private void SetValue()
     {
         var address = _accountTxt.text;
-        var abiUrl = new Uri($"https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address={EvmChain.ETHEREUM.TestnetContractAddress}");
+        var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={_selectedChain.TestnetContractAddress}");
         var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
-        var web3 = new Web3("https://rinkeby.blocto.app");
-        var contract = web3.Eth.GetContract(api.Result, EvmChain.ETHEREUM.TestnetContractAddress);
+        
+        var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
+        var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? _selectedChain.MainnetContractAddress : _selectedChain.TestnetContractAddress);
         var setValue = contract.GetFunction("setValue");
         var data = setValue.GetData(new object[]{ Convert.ToUInt64(_setValueTxt.text) });
         $"Set Value: {_setValueTxt.text}, encode data: {data}".ToLog();
-        _bloctoWalletProvider.SendTransaction(address, EvmChain.ETHEREUM.TestnetContractAddress, 0, data, txId => {
-                                                                                     $"TxId: {txId}".ToLog();
-                                                                                     _setValueResultTxt.text = txId;
-                                                                                 });
+        _bloctoWalletProvider.SendTransaction(
+            address, 
+            _envDL.value == 0 ? _selectedChain.MainnetContractAddress : _selectedChain.TestnetContractAddress, 
+            0, 
+            data, 
+            txId => {
+                $"TxId: {txId}".ToLog();
+                _setValueResultTxt.text = txId;
+            });
+    }
+    
+    private bool IsMainnet()
+    {
+        return _envDL.value == 0 ? true : false;
     }
     
     private void SetValueOpenExplorer()
     {
-        var url = $"https://rinkeby.etherscan.io/tx/{_setValueResultTxt.text}";
+        var url = $"https://{_selectedChain.TestnetExplorerDomain}/tx/{_setValueResultTxt.text}";
         Application.OpenURL(url);
+    }
+    
+    private void EthSignSample()
+    {
+        _signMessageTxt.text = _evmChains.EthSignSample.EthSign;
+    }
+    
+    private void PersonalSignSample()
+    {
+        _signMessageTxt.text = _evmChains.EthSignSample.PersonalSign;
+    }
+    
+    private void TypedDataV3()
+    {
+        var len = _evmChains.EthSignSample.TypedDataV3.Length;
+        var data = _evmChains.EthSignSample.TypedDataV3.Substring(1, len - 1);
+        _signMessageTxt.text = data;
+    }
+    
+    private void TypedDataV4()
+    {
+        var len = _evmChains.EthSignSample.TypedDataV4.Length;
+        var data = _evmChains.EthSignSample.TypedDataV4.Substring(1, len - 1);
+        _signMessageTxt.text = data;
+    }
+    
+    private void TypedData()
+    {
+        var len = _evmChains.EthSignSample.TypedData.Length;
+        var data = _evmChains.EthSignSample.TypedData.Substring(1, len - 1);
+        _signMessageTxt.text = data;
+    }
+    
+    private void ReadAppSetting()
+    {
+        var path = "Assets/Editor/Configs/EvmAppSettings.yaml";
+        var reader = new StreamReader(path); 
+        var deSerializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
+        var content = reader.ReadToEnd();
+        _evmChains = deSerializer.Deserialize<EvmChains>(content);       
+        reader.Close(); 
     }
 }
