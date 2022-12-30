@@ -143,11 +143,9 @@ public class FlowController : MonoBehaviour
         
         tmp = GameObject.Find("TransferValueTxt");
         _transactionAmountTxt = tmp.GetComponent<InputField>();
-        _transactionAmountTxt.text = ((new Random().Next(10, 40)) /10).ToString("N8");
         
         tmp = GameObject.Find("ReceptionAddressTxt");
         _transactionToTxt = tmp.GetComponent<InputField>();
-        _transactionToTxt.text = "0xe2c2f0fd9fdec656";
         
         tmp = GameObject.Find("SetValueTxt");
         _transactionValueTxt = tmp.GetComponent<InputField>();

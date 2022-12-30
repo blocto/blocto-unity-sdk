@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Solana.Model;
 using UnityEngine;
 
 namespace Blocto.Sdk.Core.Model
@@ -80,11 +82,11 @@ namespace Blocto.Sdk.Core.Model
         /// Check specify app installed
         /// </summary>
         /// <returns></returns>
-        protected bool IsInstalledApp(string env)
+        protected bool IsInstalledApp(EnvEnum env)
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
-            if(env == "testnet")
+            if(env == EnvEnum.Devnet)
             {
                 testDomain = $"blocto-dev://open";
             }
@@ -170,6 +172,19 @@ namespace Blocto.Sdk.Core.Model
             }
                 
             return (matchElements, elements.Count > 0 ? string.Join("&", elements) : string.Empty);
+        }
+        
+        protected string GenerateUrl(string domain, Dictionary<string, string> parameters)
+        {
+            var url = new StringBuilder(domain);
+            url.Append($"app_id={bloctoAppIdentifier.ToString()}" + "&");
+            foreach (var parameter in parameters)
+            {
+                url.Append($"{parameter.Key}={parameter.Value}" + "&");
+            }
+            
+            url.Append($"platform=sdk_unity");
+            return url.ToString();
         }
         
         /// <summary>

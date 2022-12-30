@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Blocto.Sdk.Core.Extension;
@@ -30,6 +31,30 @@ namespace Blocto.Sdk.Core.Utility
                             {"404", NotFoundHandler},
                             {"500", InternalServerError}
                         };
+        }
+        
+        /// <summary>
+        /// Send http request
+        /// </summary>
+        /// <param name="url">Endpoint url</param>
+        /// <param name="method">HTTP method</param>
+        /// <param name="contentType">Header content type</param>
+        /// <typeparam name="TResponse">Return type</typeparam>
+        /// <returns></returns>
+        public TResponse GetResponse<TResponse>(string url, HttpMethod method, string contentType)
+        {
+            Debug.Log($"Get response, url: {url}");
+            var client = CreateUnityWebRequest(url, method.ToString(), contentType, new DownloadHandlerBuffer());;
+            
+            try
+            {
+                var result = ProcessWebRequest<TResponse>(client);
+                return result;
+            }
+            finally
+            {
+                client?.Dispose();
+            }
         }
 
         /// <summary>
@@ -81,7 +106,8 @@ namespace Blocto.Sdk.Core.Utility
             jsonStr = parameter is JObject
                           ? parameter.ToString()
                           : JsonConvert.SerializeObject(parameter);
-            
+            $"Url: {url}".ToLog();
+            $"Request body: {jsonStr}".ToLog();
             var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
             var uploadHandler = new UploadHandlerRaw(requestBytes);
             client.uploadHandler = uploadHandler;

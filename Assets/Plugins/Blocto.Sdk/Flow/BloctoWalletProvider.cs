@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Utility;
-using Blocto.Sdk.Flow.Model;
 using Blocto.Sdk.Flow.Utility;
 using Flow.FCL;
 using Flow.FCL.Extensions;
@@ -103,7 +102,7 @@ namespace Blocto.Sdk.Flow
         
         private Guid _bloctoAppIdentifier;
         
-        private string _appSdkDomain = "https://staging.blocto.app/sdk?";
+        private string _appSdkDomain = "https://blocto.app/sdk?";
         
         private string _backedApiDomain = "https://api.blocto.app";
         

@@ -83,7 +83,7 @@ namespace Blocto.Sdk.Solana
                     bloctoWalletProvider.InitializePlugins("com.blocto.unity.UtilityActivity");
                 }
             
-                bloctoWalletProvider.isInstalledApp = bloctoWalletProvider.IsInstalledApp(BloctoWalletProvider.env.ToString().ToLower());
+                bloctoWalletProvider.isInstalledApp = bloctoWalletProvider.IsInstalledApp(BloctoWalletProvider.env);
                 bloctoWalletProvider._appendTxdict = new Dictionary<string, Dictionary<string, string>>();
                 bloctoWalletProvider.ForceUseWebView = true;
             }
