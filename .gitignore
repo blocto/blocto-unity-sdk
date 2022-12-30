@@ -71,13 +71,5 @@ flow-unity-sdk/Logs
 flow-unity-sdk/obj
 flow-unity-sdk/Temp
 UserSettings
-Assets/Plugins/Flow/*/obj
-ios project
-ios project_BurstDebugInformation_DoNotShip
-android project_BurstDebugInformation_DoNotShip
 release
-andorid project_BurstDebugInformation_DoNotShip
-andorid project_BackUpThisFolder_ButDontShipItWithYourGame
-com.blocto.flow.unityapp
 ProjectSettings/ProjectSettings.asset
-Assets/Script/Model/EvmChain.cs
