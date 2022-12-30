@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Solana;
-using Blocto.Sdk.Solana.Model;
 using Script.Model;
 using Solnet.Programs;
 using Solnet.Programs.Utilities;
