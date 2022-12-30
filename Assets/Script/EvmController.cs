@@ -8,6 +8,7 @@ using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
 using Blocto.Sdk.Evm.Model.Eth;
+using Blocto.Sdk.Solana.Model;
 using Nethereum.Web3;
 using Script.Model;
 using UnityEngine;
@@ -77,7 +78,9 @@ public class EvmController : MonoBehaviour
     
     private ChainInformation _selectedChain;
     
-    private EvmChains _evmChains;
+    private SignTypeEnum _signType;
+    
+    private EthSignSample _ethSignSample;
     
     public void Awake()
     {
@@ -178,6 +181,7 @@ public class EvmController : MonoBehaviour
                       "avalanche"
                   };
         
+        _ethSignSample = new EthSignSample();
         // ReadAppSetting();
     }
 
@@ -190,7 +194,7 @@ public class EvmController : MonoBehaviour
         {
             _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
-                env: envIndex == 0 ? "mainnet" : "testnet",
+                env: envIndex == 0 ? EnvEnum.Mainnet : EnvEnum.Devnet,
                 bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
             );
             
@@ -257,10 +261,12 @@ public class EvmController : MonoBehaviour
     
     private void SignMessage()
     {
-        _bloctoWalletProvider.SignMessage(EvmController._originMessage, SignTypeEnum.Personal_Sign, _walletAddress, signature => {
+        $"Sign type: {_signType}, message: {_signMessageTxt.text}".ToLog();
+        _bloctoWalletProvider.SignMessage(_signMessageTxt.text, _signType, _walletAddress, signature => {
                                                                                                                         $"Signature: {signature}".ToLog();
                                                                                                                         _signMessageTxt.text = signature;
                                                                                                                     });
+        var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
     }
     
     private void ForceUseWebView(bool value)
@@ -362,42 +368,32 @@ public class EvmController : MonoBehaviour
     
     private void EthSignSample()
     {
-        _signMessageTxt.text = _evmChains.EthSignSample.EthSign;
+        _signMessageTxt.text = _ethSignSample.EthSign;
+        _signType = SignTypeEnum.Eth_Sign;
     }
     
     private void PersonalSignSample()
     {
-        _signMessageTxt.text = _evmChains.EthSignSample.PersonalSign;
+        _signMessageTxt.text = _ethSignSample.PersonalSign;
+        _signType = SignTypeEnum.Personal_Sign;
     }
     
     private void TypedDataV3()
     {
-        var len = _evmChains.EthSignSample.TypedDataV3.Length;
-        var data = _evmChains.EthSignSample.TypedDataV3.Substring(1, len - 1);
-        _signMessageTxt.text = data;
+        _signMessageTxt.text = _ethSignSample.TypedDataV3;
+        _signType = SignTypeEnum.SignTypedDataV3;
     }
     
     private void TypedDataV4()
     {
-        var len = _evmChains.EthSignSample.TypedDataV4.Length;
-        var data = _evmChains.EthSignSample.TypedDataV4.Substring(1, len - 1);
-        _signMessageTxt.text = data;
+        _signMessageTxt.text = _ethSignSample.TypedDataV4;
+        _signType = SignTypeEnum.SignTypedDataV4;
     }
     
     private void TypedData()
     {
-        var len = _evmChains.EthSignSample.TypedData.Length;
-        var data = _evmChains.EthSignSample.TypedData.Substring(1, len - 1);
-        _signMessageTxt.text = data;
+        _signMessageTxt.text = _ethSignSample.TypedData;
+        _signType = SignTypeEnum.SignTypedData;
     }
     
-    private void ReadAppSetting()
-    {
-        var path = "Assets/Editor/Configs/EvmAppSettings.yaml";
-        var reader = new StreamReader(path); 
-        var deSerializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
-        var content = reader.ReadToEnd();
-        _evmChains = deSerializer.Deserialize<EvmChains>(content);       
-        reader.Close(); 
-    }
 }

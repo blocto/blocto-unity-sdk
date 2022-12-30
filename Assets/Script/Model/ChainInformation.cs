@@ -17,5 +17,9 @@ namespace Script.Model
         public string MainnetExplorerDomain { get; set; }
 
         public string TestnetExplorerDomain { get; set; }
+
+        public string MainnetExplorerApiUrl { get; set; }
+        
+        public string TestnetExplorerApiUrl { get; set; }
     }
 }
