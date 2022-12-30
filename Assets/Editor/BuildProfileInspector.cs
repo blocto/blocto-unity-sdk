@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Editor;
-using Flow.Net.SDK.Extensions;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -17,7 +16,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
     private BuildProfile profile;
     private bool boolValue;
     private int selGridInt = 0;
-    private string[] selStrings = { "FCL", "Blocto-unity-SDK", "Portto.Blocto.Core", "Portto.Blocto.Solana" };
+    private string[] selStrings = { "FCL", "Blocto-unity-SDK", "Portto.Blocto.Core", "Portto.Blocto.Solana", "Portto.Blocto.Evm" };
 
     private void OnEnable() { profile = target as BuildProfile; }
 
@@ -168,20 +167,15 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                                              "Assets/Plugins/Dll",
                                              "Assets/Plugins/System.ComponentModel.Annotations.dll"
                                          };
-                    AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/FCL.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/fcl-unity.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("FCL export successed.");
                     break;
                 case PackageTypeEnum.BloctoUnitySDK:
-                    var bloctoSdkDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk");
-                    var bloctoSdkDirPaths = bloctoSdkDirInfo.GetDirectories().Select(p => {
-                                                                                         var tmp = p.FullName.Split("Assets/")[1];
-                                                                                         return $"Assets/{tmp}";
-                                                                                     }).ToList();
-                    directories.AddRange(bloctoSdkDirPaths);
+                    directories.Add("Assets/Plugins/Blocto.Sdk/Core");
+                    directories.Add("Assets/Plugins/Blocto.Sdk/Flow");
                     directories.Add("Assets/Plugins/Dll");
                     directories.Add($"Assets/Plugins/Android");
                     directories.Add($"Assets/Plugins/iOS/UnityIosPlugin");
-                    directories.Add($"Assets/Plugins/System.ComponentModel.Annotations.dll");
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/blocto-unity-sdk/Blocto-unity-sdk.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Blocto-unity-SDK export successed.");
                     break;
@@ -213,12 +207,28 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
 
                     var solanaDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Solana");
                     var solanaDirPaths = solanaDirInfo.GetDirectories().Select(p => {
-                                                                               var tmp = p.FullName.Split("Assets/")[1];
-                                                                               return $"Assets/{tmp}";
-                                                                           }).ToList(); 
+                                                                                   var tmp = p.FullName.Split("Assets/")[1];
+                                                                                   return $"Assets/{tmp}";
+                                                                               }).ToList(); 
                     directories.AddRange(solanaDirPaths);
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Solana.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed.");
+                    break;
+                case PackageTypeEnum.Evm:
+                    var evmOutputPath = $"release/{task.BuildVersion}";
+                    if(Directory.Exists(evmOutputPath) == false)
+                    {
+                        Directory.CreateDirectory(evmOutputPath);
+                    }
+
+                    var evmDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Evm");
+                    var evmDirPaths = evmDirInfo.GetDirectories().Select(p => {
+                                                                                   var tmp = p.FullName.Split("Assets/")[1];
+                                                                                   return $"Assets/{tmp}";
+                                                                               }).ToList(); 
+                    directories.AddRange(evmDirPaths);
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Evm.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Protto.Blocto.Solana export successed."); 
                     break;
             }
         }
