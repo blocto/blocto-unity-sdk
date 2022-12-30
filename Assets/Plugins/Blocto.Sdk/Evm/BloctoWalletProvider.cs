@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm.Model;
 using Blocto.Sdk.Evm.Model.Eth;
 using Blocto.Sdk.Evm.Utility;
+using Blocto.Sdk.Solana.Model;
+using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -23,7 +24,7 @@ namespace Blocto.Sdk.Evm
         
         public string NodeUrl { get; set;}
         
-        private static string env;
+        private static EnvEnum env;
         
         private WebRequestUtility _webRequestUtility;
         
@@ -39,7 +40,7 @@ namespace Blocto.Sdk.Evm
         /// <param name="env">Env</param>
         /// <param name="bloctoAppIdentifier">Blocto sdk appId</param>
         /// <returns>BloctoWalletProvider</returns>
-        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, string env, Guid bloctoAppIdentifier)
+        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier)
         {
             var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
             bloctoWalletProvider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
@@ -50,9 +51,9 @@ namespace Blocto.Sdk.Evm
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
                 bloctoWalletProvider.isCancelRequest = false;
                 bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
-                BloctoWalletProvider.env = env.ToLower();
+                BloctoWalletProvider.env = env;
             
-                if(env.ToLower() == "testnet")
+                if(env == EnvEnum.Devnet)
                 {
                     bloctoWalletProvider.backedApiDomain = bloctoWalletProvider.backedApiDomain.Replace("api", "api-dev");
                     bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.dev";
@@ -109,11 +110,11 @@ namespace Blocto.Sdk.Evm
             StartCoroutine(OpenUrl(url));
         }
         
-        public void SignMessage(string originMessage, SignTypeEnum signType, string address, Action<string> callback)
+        public void SignMessage(string message, SignTypeEnum signType, string address, Action<string> callback)
         {
             if(signType == SignTypeEnum.Eth_Sign)
             {
-                originMessage = originMessage.ToHexUTF8();
+                message = message.ToHexUTF8();
             }
             
             var requestId = Guid.NewGuid();
@@ -123,7 +124,7 @@ namespace Blocto.Sdk.Evm
                                  {"method", "sign_message"},
                                  {"from", address},
                                  {"type", signType.GetEnumDescription()},
-                                 {"message", Uri.EscapeUriString(originMessage)},
+                                 {"message", Uri.EscapeUriString(message)},
                                  {"request_id", requestId.ToString()},
                              };
             
@@ -132,30 +133,11 @@ namespace Blocto.Sdk.Evm
             
             if(isInstalledApp && ForceUseWebView == false)
             {
-                var app = new StringBuilder(appSdkDomain);
-                app.Append($"app_id={bloctoAppIdentifier}" + "&")
-                     .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
-                     .Append("method=sign_message" + "&")
-                     .Append($"from={address}" + "&")
-                     .Append($"type={signType.GetEnumDescription()}" + "&")
-                     .Append($"message={Uri.EscapeUriString(originMessage)}" + "&")
-                     .Append($"request_id={requestId}");
-                $"App url: {app}".ToLog();
-                
                 var appSb = GenerateUrl(appSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb.ToString()));
                 return;
             }
-            
-            // var webSb = new StringBuilder(webSdkDomain);
-            // webSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-            //      .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
-            //      .Append("method=sign_message" + "&")
-            //      .Append($"from={address}" + "&")
-            //      .Append($"type={signType.GetEnumDescription()}" + "&")
-            //      .Append($"message={Uri.EscapeUriString(originMessage)}" + "&")
-            //      .Append($"request_id={requestId}");
             
             var webSb = GenerateUrl(webSdkDomain, parameters);
             $"Url: {webSb}".ToLog();
@@ -185,32 +167,11 @@ namespace Blocto.Sdk.Evm
             _sendTransactionCallback = callback;
             if(isInstalledApp && ForceUseWebView == false)
             {
-                var app = new StringBuilder(appSdkDomain);
-                app.Append($"app_id={bloctoAppIdentifier}" + "&")
-                     .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
-                     .Append("method=send_transaction" + "&")
-                     .Append($"from={fromAddress}" + "&")
-                     .Append($"to={toAddress}" + "&")
-                     .Append($"value=0x{valueHex}" + "&")
-                     .Append($"data={data}" + "&")
-                     .Append($"request_id={requestId}");
-                $"App url: {app}".ToLog();
-                
                 var appSb = GenerateUrl(appSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb.ToString()));
                 return;
             }
-            
-            // var webSb = new StringBuilder(webSdkDomain);
-            // webSb.Append($"app_id={bloctoAppIdentifier}" + "&")
-            //      .Append($"blockchain={Chain.ToString().ToLower()}" + "&")
-            //      .Append("method=send_transaction" + "&")
-            //      .Append($"from={fromAddress}" + "&")
-            //      .Append($"to={toAddress}" + "&")
-            //      .Append($"value=0x{valueHex}" + "&")
-            //      .Append($"data={data}" + "&")
-            //      .Append($"request_id={requestId}");
             
             var webSb = GenerateUrl(webSdkDomain, parameters);
             $"Url: {webSb}".ToLog();

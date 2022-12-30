@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Solana.Model;
 using UnityEngine;
 
 namespace Blocto.Sdk.Core.Model
@@ -81,11 +82,11 @@ namespace Blocto.Sdk.Core.Model
         /// Check specify app installed
         /// </summary>
         /// <returns></returns>
-        protected bool IsInstalledApp(string env)
+        protected bool IsInstalledApp(EnvEnum env)
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
-            if(env == "testnet")
+            if(env == EnvEnum.Devnet)
             {
                 testDomain = $"blocto-dev://open";
             }

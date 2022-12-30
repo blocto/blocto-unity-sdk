@@ -21,11 +21,8 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
                 var proj = new PBXProject();
                 proj.ReadFromFile(projPath);
 
-                // string targetName = "Unity-iPhone";
                 var targetName = proj.GetUnityFrameworkTargetGuid(); 
-                // var targetGuid = proj.TargetGuidByName();
                 var targetGuid = proj.GetUnityMainTargetGuid();
-
 
                 proj.SetBuildProperty(targetGuid, "ENABLE_BITCODE", "NO");
 
@@ -97,7 +94,7 @@ namespace Plugins.iOS.UnityIosPlugin.Editor
             var capabilityManager = new ProjectCapabilityManager(pathToBuiltProject, relativeDestination, targetName);
             
             // Universal-link 対応
-            capabilityManager.AddAssociatedDomains(new string[] { "applinks:417e-114-36-174-176.jp.ngrok.io?mode=developer" });
+            capabilityManager.AddAssociatedDomains(new string[] { "applinks:2561-220-136-201-167.jp.ngrok.io?mode=developer" });
             
             capabilityManager.WriteToFile();
             return relativeDestination;
