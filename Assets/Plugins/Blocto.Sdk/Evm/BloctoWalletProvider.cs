@@ -8,8 +8,6 @@ using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm.Model;
 using Blocto.Sdk.Evm.Model.Eth;
 using Blocto.Sdk.Evm.Utility;
-using Blocto.Sdk.Solana.Model;
-using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -47,7 +45,6 @@ namespace Blocto.Sdk.Evm
             bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             try
             {
-                bloctoWalletProvider.EthereumClient = new EthereumClient(bloctoWalletProvider._webRequestUtility);
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
                 bloctoWalletProvider.isCancelRequest = false;
                 bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
@@ -148,8 +145,6 @@ namespace Blocto.Sdk.Evm
         {
             var transactionValue = EthConvert.ToWei(value);
             var valueHex = transactionValue.ToString("X");
-            $"Transaction Value: {transactionValue}, to string: {transactionValue.ToString()}, Value hex: {valueHex}".ToLog();
-            
             
             var requestId = Guid.NewGuid();
             var parameters = new Dictionary<string, string>
@@ -185,17 +180,7 @@ namespace Blocto.Sdk.Evm
             var contract = web3.Eth.GetContract(api.Result, contractAddress);
             
             var funData = contract.GetFunction(queryMethod).CallAsync<TResult>().ConfigureAwait(false).GetAwaiter().GetResult();
-            $"Contract value: {funData}".ToLog();
-            
             return funData;
-        }
-        
-        public void SetContractValue(Uri abiUrl,  string contractAddress, string method)
-        {
-            var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
-            var web3 = new Web3(NodeUrl);
-            var contract = web3.Eth.GetContract(api.Result, contractAddress);
-            var serValue = contract.GetFunction("setValue");
         }
         
         /// <summary>

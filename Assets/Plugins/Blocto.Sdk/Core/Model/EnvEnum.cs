@@ -1,4 +1,4 @@
-namespace Blocto.Sdk.Solana.Model
+namespace Blocto.Sdk.Core.Model
 {
     public enum EnvEnum
     {

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
 using Blocto.Sdk.Evm.Model.Eth;
-using Blocto.Sdk.Solana.Model;
 using Nethereum.Web3;
 using Script.Model;
 using UnityEngine;
@@ -252,6 +251,10 @@ public class EvmController : MonoBehaviour
                              ChainEnum.Avalanche => EvmChain.AVALANCHE,
                              _ => throw new ArgumentOutOfRangeException()
                          };
+        if(chain == ChainEnum.BSC)
+        {
+            _receptionAddressTxt.text = "0xd291Eb0048de837A469B3c1A1E9615F0A7860276";
+        }
     }
     
     private void EnvChanged(int index)
@@ -263,9 +266,9 @@ public class EvmController : MonoBehaviour
     {
         $"Sign type: {_signType}, message: {_signMessageTxt.text}".ToLog();
         _bloctoWalletProvider.SignMessage(_signMessageTxt.text, _signType, _walletAddress, signature => {
-                                                                                                                        $"Signature: {signature}".ToLog();
-                                                                                                                        _signMessageTxt.text = signature;
-                                                                                                                    });
+                                                                                               $"Signature: {signature}".ToLog();
+                                                                                               _signMessageTxt.text = signature;
+                                                                                           });
         var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
     }
     
@@ -278,23 +281,19 @@ public class EvmController : MonoBehaviour
     private void SendTransaction()
     {
         var receptionAddress = default(string);
-        _accountTxt.text = "0x57FDcA3F5961A8D8715e15b6770311668f3eD4DB";
         var address = _accountTxt.text;
-        // var value = Convert.ToUInt64(_transferValueTxt.text) * 1000000000000000000;
-        var value = Convert.ToUInt64(_transferValueTxt.text) * 100000000;
+        var value = Convert.ToDecimal(_transferValueTxt.text);
         if(_selectedChain.Title == "BNB Chain")
         {
-            _receptionAddressTxt.text = "0xd291Eb0048de837A469B3c1A1E9615F0A7860276";
             receptionAddress = EvmChain.BLT.TestnetContractAddress;
+            value = value  * 100000000;
             var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={EvmChain.BLT.TestnetContractAddress}");
             var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
-            $"ABI json: {api.Result}".ToLog();
         
             var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
             var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? EvmChain.BLT.MainnetContractAddress : EvmChain.BLT.TestnetContractAddress);
             var transfer = contract.GetFunction("transfer");
-            var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, value });
-            $"Reception address: {_receptionAddressTxt.text}, Set Value: {value}, encode data: {data}".ToLog();
+            var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, Convert.ToUInt64(value) });
             _bloctoWalletProvider.SendTransaction(
                 address, 
                 receptionAddress, 
