@@ -28,8 +28,10 @@ Choose **Assets > Import Package >** to import both types of package.
 ## Usage
 Currently support 
  * Flow SDK
+ * Solana SDK
+ * Evm SDK
 
-For further instructions please refer to [Blocto Docs](https://docs.blocto.app/blocto-ios-sdk/overview)
+For further instructions please refer to [Blocto Docs](https://docs.blocto.app/blocto-sdk/unity-sdk)
 
 ## Author
 
