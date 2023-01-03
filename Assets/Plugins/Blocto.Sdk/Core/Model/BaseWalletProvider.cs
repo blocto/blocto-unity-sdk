@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
-using Blocto.Sdk.Solana.Model;
 using UnityEngine;
 
 namespace Blocto.Sdk.Core.Model
