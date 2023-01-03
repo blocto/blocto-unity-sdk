@@ -104,15 +104,18 @@ namespace Blocto.Sdk.Solana
             requestIdActionMapper.Add(requestId.ToString(), "CONNECTWALLET");
             _connectWalletCallback = callBack;
             
+            var parameters = new Dictionary<string, string>
+                             {
+                                 { "app_id", Uri.EscapeUriString(bloctoAppIdentifier.ToString())},
+                                 { "blockchain", BloctoWalletProvider.chainName},
+                                 { "method", ActionNameEnum.Request_Account.ToString().ToLower()},
+                                 { "request_id", requestId.ToString()}
+                             };
+            
             $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
             if(isInstalledApp && ForceUseWebView == false)
             {
-                $"Use app sdk.".ToLog();
-                var appSb = new StringBuilder(appSdkDomain);
-                appSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                     .Append($"blockchain={BloctoWalletProvider.chainName}" + "&")
-                     .Append($"method={ActionNameEnum.Request_Account.ToString().ToLower()}" + "&")
-                     .Append($"request_id={requestId}");
+                var appSb = GenerateUrl(appSdkDomain, parameters);
                 url = appSb.ToString();
                 
                 $"Url: {url}".ToLog();
@@ -121,12 +124,8 @@ namespace Blocto.Sdk.Solana
             }
             
             $"WebSDK domain: {webSdkDomain}".ToLog();
-            var webSb = new StringBuilder(webSdkDomain);
-            webSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                 .Append($"blockchain={BloctoWalletProvider.chainName}" + "&")
-                 .Append($"method={ActionNameEnum.Request_Account.ToString().ToLower()}" + "&")
-                 .Append($"request_id={requestId}");
-            url = webSb.ToString();
+            var webSb = GenerateUrl(webSdkDomain, parameters);
+            url = webSb;
             
             $"Url: {url}".ToLog();
             StartCoroutine(OpenUrl(url, ForceUseWebView));
@@ -162,31 +161,36 @@ namespace Blocto.Sdk.Solana
             var left = Uri.EscapeDataString("]");
             var message = ByteExtension.ToHex(tx);
             
+            var parameters = new Dictionary<string, string>
+                             {
+                                 { "app_id", Uri.EscapeUriString(bloctoAppIdentifier.ToString()) },
+                                 { "request_id", requestId.ToString() },
+                                 { "method", ActionNameEnum.Sign_And_Send_Transaction.ToString().ToLower() },
+                                 { "blockchain", BloctoWalletProvider.chainName},
+                                 { "from", fromAddress },
+                                 { "message", message },
+                                 { "is_invoke_wrapped", isInvokeWrapped.ToString().ToLower() }
+                             };
+            
             $"Message: {message}".ToLog();
             $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
             if(isInstalledApp && ForceUseWebView == false)
             {
-                var appSb = new StringBuilder(appSdkDomain);
-                appSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                     .Append($"request_id={requestId}" + "&")
-                     .Append($"method={ActionNameEnum.Sign_And_Send_Transaction.ToString().ToLower()}" + "&")
-                     .Append($"blockchain={chainName}" + "&")
-                     .Append($"from={fromAddress}" + "&")
-                     .Append($"message={message}" + "&")
-                     .Append($"is_invoke_wrapped={isInvokeWrapped.ToString().ToLower()}" + "&");
-                
                 foreach (var queryStr in pubKeySignaturePairs.Select(pair => $"public_key_signature_pairs{right}{pair.Key}{left}={pair.Value}"))
                 {
-                    appSb.Append($"{queryStr}" + "&");
+                    var item = queryStr.Split("=");
+                    parameters.Add(item[0], item[1]);
                 }
 
                 foreach (var queryStr in _appendTxdict.SelectMany(appendTx => appendTx.Value.Select(item => $"append_tx{right}{item.Key}{left}={item.Value}")))
                 {
-                    appSb.Append($"{queryStr}" + "&");
+                    var item = queryStr.Split("=");
+                    parameters.Add(item[0], item[1]);
                 }
                 
-                url = appSb.ToString();
-                url = url.Remove(url.Length-1, 1);
+                var appSb = GenerateUrl(appSdkDomain, parameters);
+                url = appSb;
+                
                 _appendTxdict.Clear();
                 $"Url: {url}".ToLog();
                 StartCoroutine(OpenUrl(url));
@@ -194,28 +198,20 @@ namespace Blocto.Sdk.Solana
             }
             
             $"WebSDK domain: {webSdkDomain}".ToLog();
-            var webSb = new StringBuilder(webSdkDomain);
-            webSb.Append($"app_id={Uri.EscapeUriString(bloctoAppIdentifier.ToString())}" + "&")
-                 .Append($"request_id={requestId}" + "&")
-                 .Append($"method={ActionNameEnum.Sign_And_Send_Transaction.ToString().ToLower()}" + "&")
-                 .Append($"blockchain={chainName}" + "&")
-                 .Append($"from={fromAddress}" + "&")
-                 .Append($"message={message}" + "&")
-                 .Append($"is_invoke_wrapped={isInvokeWrapped.ToString().ToLower()}" + "&");
-                
-            
             foreach (var queryStr in pubKeySignaturePairs.Select(pair => $"public_key_signature_pairs{right}{pair.Key}{left}={pair.Value}"))
             {
-                webSb.Append($"{queryStr}" + "&");
+                var item = queryStr.Split("=");
+                parameters.Add(item[0], item[1]);
             }
 
             foreach (var queryStr in _appendTxdict.SelectMany(appendTx => appendTx.Value.Select(item => $"append_tx{right}{item.Key}{left}={item.Value}")))
             {
-                webSb.Append($"{queryStr}" + "&");
+                var item = queryStr.Split("=");
+                parameters.Add(item[0], item[1]);
             }
                 
-            url = webSb.ToString();
-            url = url.Remove(url.Length-1, 1);
+            var webSb = GenerateUrl(webSdkDomain, parameters);
+            url = webSb;
             _appendTxdict.Clear();
             $"ForcedUseWebView: {ForceUseWebView}, Url: {url}".ToLog();
             StartCoroutine(OpenUrl(url, ForceUseWebView));
