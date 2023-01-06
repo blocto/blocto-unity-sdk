@@ -2,13 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
 using Blocto.Sdk.Evm.Model.Eth;
+using Nethereum.ABI.EIP712;
+using Nethereum.ABI.Model;
+using Nethereum.Contracts;
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Util;
 using Nethereum.Web3;
+using Org.BouncyCastle.Crypto.Digests;
 using Script.Model;
 using UnityEngine;
 using UnityEngine.UI;
@@ -80,6 +87,8 @@ public class EvmController : MonoBehaviour
     private SignTypeEnum _signType;
     
     private EthSignSample _ethSignSample;
+    
+    private string _oriSignMessage;
     
     public void Awake()
     {
@@ -181,7 +190,6 @@ public class EvmController : MonoBehaviour
                   };
         
         _ethSignSample = new EthSignSample();
-        // ReadAppSetting();
     }
 
 
@@ -194,7 +202,8 @@ public class EvmController : MonoBehaviour
             _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
                 env: envIndex == 0 ? EnvEnum.Mainnet : EnvEnum.Devnet,
-                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
+                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220"),
+                rpcUrl: "{your rpc url}"
             );
             
             _bloctoWalletProvider.ForceUseWebView = _forceUseWebViewToggle.isOn;
@@ -265,11 +274,49 @@ public class EvmController : MonoBehaviour
     private void SignMessage()
     {
         $"Sign type: {_signType}, message: {_signMessageTxt.text}".ToLog();
-        _bloctoWalletProvider.SignMessage(_signMessageTxt.text, _signType, _walletAddress, signature => {
-                                                                                               $"Signature: {signature}".ToLog();
-                                                                                               _signMessageTxt.text = signature;
-                                                                                           });
-        var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
+        _bloctoWalletProvider.SignMessage(
+            message: _signMessageTxt.text,
+            signType: _signType,
+            address: _walletAddress,
+            callback: signature => {
+                          $"Signature: {signature}".ToLog();
+                          _signMessageTxt.text = signature;
+                          
+                          var hash = default(string);
+                          var signatureByte = _signMessageTxt.text.RemoveHexPrefix().HexToByteArray();
+                          switch (_signType)
+                          {
+                              case SignTypeEnum.Eth_Sign:
+                                  hash = Sha3Keccack.Current.CalculateHash(_oriSignMessage.RemoveHexPrefix().HexToByteArray()).ToHex();
+                                  break;
+                              case SignTypeEnum.Personal_Sign:
+                                  hash = Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(_oriSignMessage)).ToHex();
+                                  break;
+                              case SignTypeEnum.SignTypedData:
+                              case SignTypeEnum.SignTypedDataV3:
+                              case SignTypeEnum.SignTypedDataV4:
+                                  var tmp = Eip712TypedDataEncoder.Current.EncodeTypedData(_oriSignMessage);
+                                  var bytes = Sha3Keccack.Current.CalculateHash(tmp);
+                                  hash = Sha3Keccack.Current.CalculateHash(bytes).ToHex();
+                                  break;
+                              default:
+                                  throw new ArgumentOutOfRangeException();
+                          }
+
+                          var isValidSignature = new FunctionABI("isValidSignature", false);
+                          isValidSignature.InputParameters = new []{ new Parameter("bytes32"), new Parameter("bytes")};
+
+                          var function = new FunctionBuilder(_walletAddress, isValidSignature);
+                          var data = function.GetData(new object[] { hash.HexToByteArray(), signatureByte});
+                          var callInput = new CallInput(data, _walletAddress)
+                                          {
+                                              From = _walletAddress
+                                          };
+
+                          var isValid = _bloctoWalletProvider.EthereumClient.IsValidSignature(_walletAddress, callInput);
+                          _signMessageTxt.text = $"{_signMessageTxt.text}\r\n isAuthorizedSigner: {isValid}";
+                          $"Is valid: {isValid}".ToLog();
+                      });
     }
     
     private void ForceUseWebView(bool value)
@@ -368,30 +415,35 @@ public class EvmController : MonoBehaviour
     private void EthSignSample()
     {
         _signMessageTxt.text = _ethSignSample.EthSign;
+        _oriSignMessage = _ethSignSample.EthSign;
         _signType = SignTypeEnum.Eth_Sign;
     }
     
     private void PersonalSignSample()
     {
         _signMessageTxt.text = _ethSignSample.PersonalSign;
+        _oriSignMessage = _ethSignSample.PersonalSign;
         _signType = SignTypeEnum.Personal_Sign;
     }
     
     private void TypedDataV3()
     {
         _signMessageTxt.text = _ethSignSample.TypedDataV3;
+        _oriSignMessage = _ethSignSample.TypedDataV3;
         _signType = SignTypeEnum.SignTypedDataV3;
     }
     
     private void TypedDataV4()
     {
         _signMessageTxt.text = _ethSignSample.TypedDataV4;
+        _oriSignMessage = _ethSignSample.TypedDataV4;
         _signType = SignTypeEnum.SignTypedDataV4;
     }
     
     private void TypedData()
     {
         _signMessageTxt.text = _ethSignSample.TypedData;
+        _oriSignMessage = _ethSignSample.TypedData;
         _signType = SignTypeEnum.SignTypedData;
     }
     

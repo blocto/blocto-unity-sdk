@@ -38,11 +38,17 @@ namespace Blocto.Sdk.Evm
         /// <param name="env">Env</param>
         /// <param name="bloctoAppIdentifier">Blocto sdk appId</param>
         /// <returns>BloctoWalletProvider</returns>
-        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier)
+        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier, string rpcUrl = default)
         {
             var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
             bloctoWalletProvider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
             bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+            
+            if(rpcUrl != default)
+            {
+                bloctoWalletProvider.EthereumClient = new EthereumClient(rpcUrl, bloctoWalletProvider._webRequestUtility);
+            }
+            
             try
             {
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
@@ -109,11 +115,6 @@ namespace Blocto.Sdk.Evm
         
         public void SignMessage(string message, SignTypeEnum signType, string address, Action<string> callback)
         {
-            if(signType == SignTypeEnum.Eth_Sign)
-            {
-                message = message.ToHexUTF8();
-            }
-            
             var requestId = Guid.NewGuid();
             var parameters = new Dictionary<string, string>
                              {
@@ -121,7 +122,7 @@ namespace Blocto.Sdk.Evm
                                  {"method", "sign_message"},
                                  {"from", address},
                                  {"type", signType.GetEnumDescription()},
-                                 {"message", Uri.EscapeUriString(message)},
+                                 {"message", message },
                                  {"request_id", requestId.ToString()},
                              };
             
