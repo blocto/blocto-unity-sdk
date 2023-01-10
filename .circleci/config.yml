@@ -18,6 +18,8 @@ workflows:
           executor:
             name: "unity/macos"
             editor_version: "2021.3.12f1"
+            macos:
+              xcode: "14.2.0"
             resource_class: "large"
           project-path: "/"
           build-target: StandaloneOSX
