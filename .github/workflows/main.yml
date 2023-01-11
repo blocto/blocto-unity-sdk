@@ -23,8 +23,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: portto/unity-sdk-projectsettings
-          path: ../../portto/settins
-
+          path: /ProjectSettings
       # 以降確認用
       - run: |
           pwd
