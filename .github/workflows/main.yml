@@ -18,12 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          path: chore/circleci_build
+          path: main
       - name: Checkout another repo
         uses: actions/checkout@v3
         with:
           repository: portto/unity-sdk-projectsettings
-          path: portto/settins
+          path: ../../portto/settins
 
       # 以降確認用
       - run: |
