@@ -1,7 +1,8 @@
 name: Remote-SSH
 on:
-  watch:
-    types: started
+  push:
+    branches:
+      - "chore/circleci_build"
 jobs:
   SSH:
     name: Run on ${{ matrix.os }}
