@@ -15,6 +15,7 @@ jobs:
         targetPlatform:
           - iOS # Build an iOS player.
     steps:
+      - run: ls -al
       - uses: game-ci/unity-builder@v2
         with:
           versioning: Semantic
