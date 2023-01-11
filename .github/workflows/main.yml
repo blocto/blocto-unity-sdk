@@ -16,7 +16,7 @@ jobs:
           - iOS # Build an iOS player.
     steps:
       - name: get file
-        working-directory: ./ProjectSettings
+        working-directory: ProjectSettings
         run: | 
           pwd
           curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset
