@@ -1,11 +1,19 @@
-name: debugger-action
+name: Build project
+
 on:
   push:
     branches:
-      - test
+      - "chore/circleci_build"
+
 jobs:
-  build:
+  buildForAllSupportedPlatforms:
+    name: Build for ${{ matrix.targetPlatform }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - iOS # Build an iOS player.
     steps:
       - uses: actions/checkout@v2
       - name: Setup Debug Session
