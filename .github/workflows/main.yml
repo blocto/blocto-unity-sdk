@@ -17,9 +17,11 @@ jobs:
     steps:
       - name: get file
         run: | 
-        cd ProjectSettings |
-        curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset |
-        curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectVersion.txt
+          echo ${{ secrets.REPO_TOKEN }}
+          cd ProjectSettings
+          pwd
+          curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset
+          curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectVersion.txt
       - uses: game-ci/unity-builder@v2
         with:
           versioning: Semantic
