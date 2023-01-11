@@ -15,6 +15,14 @@ jobs:
         targetPlatform:
           - iOS # Build an iOS player.
     steps:
+      - name: Get directory names
+        id: get-directory-names
+        uses: actions/collect-directory-names-by-file-glob@v1.1
+        with:
+          file-glob: '*.asset'
+          unique: "true"
+      - name: Use Directory Names
+        run: echo "Directory Names are ${{ steps.get-directory-names.outputs.directory-names}}
       - name: get file
         working-directory: ProjectSettings
         run: | 
