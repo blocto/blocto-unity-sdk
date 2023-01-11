@@ -15,13 +15,16 @@ jobs:
         targetPlatform:
           - iOS # Build an iOS player.
     steps:
-      - name: Collect Directory Names by File
-        uses: featherweight-design/collect-directory-names-by-file-glob@v1.2.2
+      - uses: actions/checkout@v2
         with:
-          file-glob: '*.asset'
-          unique: "true"
-      - name: Use Directory Names
-        run: echo "Directory Names are ${{ steps.get-directory-names.outputs.directory-names}}
+          fetch-depth: 2
+          lfs: true
+      - name: Path lister action
+        id: pl
+        uses: Rishabh510/Path-lister-action@1.0
+        with:
+          path: "/"
+          type: ".asset"
       - name: get file
         working-directory: ProjectSettings
         run: | 
@@ -33,7 +36,7 @@ jobs:
           versioning: Semantic
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           lfs: true
       - uses: actions/cache@v2
         with:
