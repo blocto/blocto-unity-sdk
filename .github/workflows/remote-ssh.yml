@@ -1,5 +1,7 @@
 name: Remote-SSH
 on:
+  watch:
+    types: started
   push:
     branches:
       - "chore/circleci_build"
