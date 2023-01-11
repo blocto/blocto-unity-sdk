@@ -15,28 +15,31 @@ jobs:
         targetPlatform:
           - iOS # Build an iOS player.
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: get file
+        run: | 
+        echo ${{ secrets.REPO_TOKEN }}
+        ce ProjectSettings
+        curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset
+        curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectVersion.txt
+      - uses: game-ci/unity-builder@v2
         with:
-          path: chore/circleci_build
-      - name: Checkout another repo
-        uses: actions/checkout@v3
+          versioning: Semantic
+      - uses: actions/checkout@v2
         with:
-          repository: portto/unity-sdk-projectsettings
-          path: ProjectSettings
-
-      # 以降確認用
-      - run: |
-          pwd
-          ls -la
-      - name: Check the main repo
-        working-directory: main
-        run: |
-          pwd
-          ls -la
-      - name: Check the another repo
-        working-directory: another
-        run: |
-          pwd
-          ls -la
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/cache@v2
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}
+          restore-keys: Library-
+      - uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: ${{ matrix.targetPlatform }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Build-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
 
