@@ -18,7 +18,7 @@ jobs:
       - name: get file
         run: | 
           echo ${{ secrets.REPO_TOKEN }}
-          cd ProjectSettings
+          ls -al
           pwd
           curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset
           curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectVersion.txt
