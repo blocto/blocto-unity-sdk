@@ -10,7 +10,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6]
+        python-version: [3.11.1]
         os: [ubuntu-latest]
     steps:
       - name: Set up Python ${{ matrix.python-version }}
