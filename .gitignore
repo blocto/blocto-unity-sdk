@@ -71,6 +71,6 @@ flow-unity-sdk/Logs
 flow-unity-sdk/obj
 flow-unity-sdk/Temp
 UserSettings
-release
+Logs
 ProjectSettings/ProjectSettings.asset
-build.log
+build.sh
