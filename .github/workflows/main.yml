@@ -22,7 +22,6 @@ jobs:
       - name: get file
         working-directory: ProjectSettings
         run: | 
-          echo ${{ secrets.UNITY_LICENSE}}
           pwd
           ls -l
           curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset
