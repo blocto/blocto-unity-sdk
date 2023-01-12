@@ -19,31 +19,28 @@ jobs:
         with:
           fetch-depth: 2
           lfs: true
-      - name: Path lister action
-        id: pl
-        uses: Rishabh510/Path-lister-action@1.0
-        with:
-          path: "/"
-          type: ".asset"
       - name: get file
         working-directory: ProjectSettings
         run: | 
           echo ${{ secrets.UNITY_LICENSE}}
           pwd
+          ls -l
           curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectSettings.asset
           curl -H "Authorization: token ${{ secrets.REPO_TOKEN }}" https://raw.githubusercontent.com/jamis-portto/unity_projectsettings_myself/main/ProjectVersion.txt
       - uses: game-ci/unity-builder@v2
         with:
           versioning: Semantic
-      - uses: actions/cache@v2
-        with:
-          path: Library
-          key: Library-${{ matrix.targetPlatform }}
-          restore-keys: Library-
+      # - uses: actions/cache@v2
+      #   with:
+      #     path: Library
+      #     key: Library-${{ matrix.targetPlatform }}
+      #     restore-keys: Library-
       - name: unity build
         uses: game-ci/unity-builder@v2
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
       - uses: actions/upload-artifact@v2
