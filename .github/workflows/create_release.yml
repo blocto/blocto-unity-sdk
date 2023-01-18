@@ -29,7 +29,7 @@ jobs:
         with:
           tag_name: protto.blocto.${{ steps.package_tolowercase.outputs.lowercase }}.${{ env.VERSION }}
           release_name: Protto.Blocto.${{ env.PACKAGE }}.${{ env.VERSION }}
-          body_path: release/release_${{ steps.package_tolowercase.outputs.lowercase }}.md
+          body_path: ./release/release_${{ steps.package_tolowercase.outputs.lowercase }}.md
           draft: ${{ env.DRAFT }}
           prerelease: true
 
