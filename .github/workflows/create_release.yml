@@ -1,0 +1,45 @@
+on:
+  push:
+    branch:
+      release/export_package
+  workflow_dispatch:
+
+#
+name: Create Release
+env:
+  VERSION: 0.3.1
+  PACKAGE: Core
+  DRAFT: false
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - id: package_tolowercase
+        uses: ASzc/change-string-case-action@v2
+        with:
+          string: ${{ env.PACKAGE }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: protto.blocto.${{ steps.package_tolowercase.outputs.lowercase }}.${{ env.VERSION }}
+          release_name: Protto.Blocto.${{ env.PACKAGE }}.${{ env.VERSION }}
+          body_path: ./release_${{ env.PACKAGE }}.md
+          draft: ${{ env.DRAFT }}
+          prerelease: true
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/${{ env.VERSION }}/Portto.Blocto.${{ env.PACKAGE }}.${{ env.VERSION }}.unitypackage
+          asset_name: Portto.Blocto.${{ env.PACKAGE }}.${{ env.VERSION }}.unitypackage
+          asset_content_type: application/zip
+          
