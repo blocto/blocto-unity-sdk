@@ -2,7 +2,6 @@ on:
   push:
     branch:
       release/export_package
-  workflow_dispatch:
 
 #
 name: Create Release
