@@ -28,9 +28,11 @@ then
     exit 1
 else
     echo 'complete export package'
+    git stash -u
     git checkout release/export_package
     git add release/${VERSION}/Portto.Blocto.${PACKAGENAME}.${VERSION}.unitypackage
     git commit -m "chore: add Portto.Blocto."${PACKAGENAME}"."${VERSION}".unitypackage"
-    git push origin release/export_package
-    git checkout develop
+    # git push origin release/export_package
+    # git checkout develop
+    # git stash stash@{0}
 fi
