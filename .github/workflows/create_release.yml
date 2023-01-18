@@ -1,15 +1,15 @@
 on:
   push:
-    branch:
-      release/export_package
+    branches:
+      - release/export_package
   workflow_dispatch:
 
 #
 name: Create Release
 env:
-  VERSION: 0.9.6
+  VERSION: 0.9.5
   PACKAGE: Core
-  DRAFT: true
+  DRAFT: false
 jobs:
   build:
     name: Create Release
