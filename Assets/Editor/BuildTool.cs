@@ -18,28 +18,12 @@ namespace Editor
             {
                 Console.WriteLine($"Package name: {BuildTool._packageName}, Build version: {BuildTool._versionNumber}");
                 ExportPackage(BuildTool._packageName, BuildTool._versionNumber);
+                Console.WriteLine("Complete export package");
             }
-            //
-            // string destinationPath = Path.Combine(_destinationPath, PlayerSettings.productName);
-            // destinationPath += GetExtension();
-            //
-            // BuildPipeline.BuildPlayer(EditorBuildSettings.scenes, destinationPath, EditorUserBuildSettings.activeBuildTarget, BuildOptions.None);
-            // var task = new BuildTask
-            //            {
-            //                BuildPath = "/Users/jamisliao/Unity/Flow-unity-sdk/",
-            //                ProductName = "iOS",
-            //                BuildTarget = BuildTarget.iOS,
-            //            };
-            // var buildScenes = new List<EditorBuildSettingsScene>
-            //                   {
-            //                       new EditorBuildSettingsScene("Assets/Scenes/EvmScene.unity", true),
-            //                   };
-            //
-            // var locationPathName = $"{task.BuildPath}/{task.ProductName}";
-            // var report = BuildPipeline.BuildPlayer(buildScenes.ToArray(), locationPathName, task.BuildTarget, BuildOptions.None);
-            // Debug.Log($"[{task.ProductName}] 打包结果: {report.summary.result}\r\n");
+            
+           Console.WriteLine("Complete build process");
         }
- 
+
  
         private static string _destinationPath;
         private static string _packageName;
@@ -63,9 +47,9 @@ namespace Editor
                                                                 },
                                                                 {
                                                                     "-buildVersion", delegate(string argument)
-                                                                                {
-                                                                                    BuildTool._versionNumber = argument;
-                                                                                }
+                                                                                     {
+                                                                                         BuildTool._versionNumber = argument;
+                                                                                     }
                                                                 },
                                                                 {
                                                                     "-action", delegate(string argument)
@@ -96,6 +80,7 @@ namespace Editor
  
         private static void ExportPackage(string packageName, string buildVersion)
         {
+            Console.WriteLine($"In export package function, Package Name: {packageName}, Build version: {buildVersion}");
             var directories = new List<string>();
             var packageType = default(object);
             var result = Enum.TryParse(typeof(PackageTypeEnum), packageName, true, out packageType);
@@ -104,6 +89,7 @@ namespace Editor
                 throw new ArgumentException("Package type not found.");
             }
         
+            Console.WriteLine($"Package type: {((PackageTypeEnum)packageType).ToString()}");
             switch ((PackageTypeEnum)packageType)
             {
                 case PackageTypeEnum.FCL:
@@ -118,7 +104,7 @@ namespace Editor
                                              "Assets/Plugins/System.ComponentModel.Annotations.dll"
                                          };
                     AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/fcl-unity.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
-                    Debug.Log("FCL export successed.");
+                    Debug.Log("FCL export success.");
                     break;
                 case PackageTypeEnum.BloctoUnitySDK:
                     directories.Add("Assets/Plugins/Blocto.Sdk/Core");
@@ -131,8 +117,11 @@ namespace Editor
                     break;
                 case PackageTypeEnum.Core:
                     var coreOutputPath = $"release/{buildVersion}";
+                    Console.WriteLine($"In core package process, Output path: {coreOutputPath}, Directory exist: {Directory.Exists(coreOutputPath)}");
+
                     if(Directory.Exists(coreOutputPath) == false)
                     {
+                        Console.WriteLine("Create directory.");
                         Directory.CreateDirectory(coreOutputPath);
                     }
                 
@@ -146,7 +135,8 @@ namespace Editor
                     directories.Add($"Assets/Plugins/Android");
                     directories.Add($"Assets/Plugins/iOS/UnityIosPlugin");
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Core.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
-                    Debug.Log("Portto.Blocto.Core export successed.");
+                    Debug.Log("Portto.Blocto.Core export success.");
+                    Console.WriteLine("Portto.Blocto.Core export success.");
                     break;
                 case PackageTypeEnum.Solana:
                     var solanaOutputPath = $"release/{buildVersion}";
@@ -180,7 +170,14 @@ namespace Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Evm.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed."); 
                     break;
+                case PackageTypeEnum.Flow:
+                    break;
+                default:
+                    Console.WriteLine("Default");
+                    throw new ArgumentOutOfRangeException();
             }
+            
+            Console.WriteLine($"Export package process complete, {DateTime.Now:HHmmss}");
         }
  
         private static string GetExtension()
