@@ -1,7 +1,7 @@
 on:
   push:
     branch:
-      release/export_package
+      - release/export_package
 
 #
 name: Create Release
