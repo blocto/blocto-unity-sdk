@@ -17,11 +17,12 @@ namespace Editor
             if(BuildTool._action.ToLower() == "exportpackage")
             {
                 Console.WriteLine($"Package name: {BuildTool._packageName}, Build version: {BuildTool._versionNumber}");
+                PlayerSettings.stripEngineCode = false;
                 ExportPackage(BuildTool._packageName, BuildTool._versionNumber);
                 Console.WriteLine("Complete export package");
             }
             
-           Console.WriteLine("Complete build process");
+            Console.WriteLine("Complete build process");
         }
 
  
