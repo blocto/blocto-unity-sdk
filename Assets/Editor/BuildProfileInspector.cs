@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Editor;
+using Editor.Models;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -154,9 +155,9 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
             var timeVersion = $"{DateTime.UtcNow.DayOfYear}{(DateTime.UtcNow.Hour * 60) + DateTime.UtcNow.Minute}";
             var version = $"{task.BuildVersion}.{timeVersion}";
             
-            switch (task.PackageType)
+            switch (task.ExportType)
             {
-                case PackageTypeEnum.FCL:
+                case ExportTypeEnum.FCL:
                     var fclAssetsPaths = new List<string>
                                          {
                                              "Assets/Plugins/Flow/FCL",
@@ -170,7 +171,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                     AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/fcl-unity.{task.BuildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("FCL export successed.");
                     break;
-                case PackageTypeEnum.BloctoUnitySDK:
+                case ExportTypeEnum.BloctoUnitySDK:
                     directories.Add("Assets/Plugins/Blocto.Sdk/Core");
                     directories.Add("Assets/Plugins/Blocto.Sdk/Flow");
                     directories.Add("Assets/Plugins/Dll");
@@ -179,7 +180,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/blocto-unity-sdk/Blocto-unity-sdk.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Blocto-unity-SDK export successed.");
                     break;
-                case PackageTypeEnum.Core:
+                case ExportTypeEnum.Core:
                     var coreOutputPath = $"release/{task.BuildVersion}";
                     if(Directory.Exists(coreOutputPath) == false)
                     {
@@ -198,7 +199,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Core.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Portto.Blocto.Core export successed.");
                     break;
-                case PackageTypeEnum.Solana:
+                case ExportTypeEnum.Solana:
                     var solanaOutputPath = $"release/{task.BuildVersion}";
                     if(Directory.Exists(solanaOutputPath) == false)
                     {
@@ -214,7 +215,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Solana.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed.");
                     break;
-                case PackageTypeEnum.Evm:
+                case ExportTypeEnum.Evm:
                     var evmOutputPath = $"release/{task.BuildVersion}";
                     if(Directory.Exists(evmOutputPath) == false)
                     {
@@ -223,9 +224,9 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
 
                     var evmDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Evm");
                     var evmDirPaths = evmDirInfo.GetDirectories().Select(p => {
-                                                                                   var tmp = p.FullName.Split("Assets/")[1];
-                                                                                   return $"Assets/{tmp}";
-                                                                               }).ToList(); 
+                                                                             var tmp = p.FullName.Split("Assets/")[1];
+                                                                             return $"Assets/{tmp}";
+                                                                         }).ToList(); 
                     directories.AddRange(evmDirPaths);
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Evm.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed."); 
@@ -243,10 +244,22 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                     buildScenes.Add(new EditorBuildSettingsScene(scenePath, true));
                 }
             }
+            
+            if(task.BuildTarget == BuildTarget.iOS)
+            {
+                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS, $"com.blocto.{task.ChainName.ToString().ToLower()}.unityapp");
+            }
+            
+            Debug.Log($"Platform: {task.BuildTarget.ToString()}, Version: {PlayerSettings.bundleVersion.ToString()}");
+            if(task.BuildTarget == BuildTarget.Android)
+            {
+                PlayerSettings.bundleVersion = task.BuildVersion;
+                Debug.Log($"Android version: {PlayerSettings.bundleVersion}");
+            }
 
             var locationPathName = $"{task.BuildPath}/{task.ProductName}";
             report = BuildPipeline.BuildPlayer(buildScenes.ToArray(), locationPathName, task.BuildTarget, BuildOptions.None);
-            Debug.Log($"[{task.ProductName}] 打包结果: {report.summary.result}\r\n");
+            Debug.Log($"[{task.ProductName}] 打包结果: {report.summary.result}\r\n, version: {PlayerSettings.bundleVersion}");
 
         }
         
@@ -273,10 +286,10 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
         
         if(task.IsExportPackage)
         {
-            var newIndex = GUILayout.SelectionGrid((int) task.PackageType, selStrings, 1);
-            if((int)task.PackageType != newIndex)
+            var newIndex = GUILayout.SelectionGrid((int) task.ExportType, selStrings, 1);
+            if((int)task.ExportType != newIndex)
             {
-                task.PackageType = (PackageTypeEnum) newIndex;    
+                task.ExportType = (ExportTypeEnum) newIndex;    
             }
         }
     }
@@ -371,6 +384,12 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
             Undo.RecordObject(profile, "Product Name");
             task.ProductName = newPN;
         }
+
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("區塊鏈名稱：", GUILayout.Width(70));
+        var chainName = (ChainEnum)EditorGUILayout.EnumPopup(task.ChainName);
+        task.ChainName = chainName;
 
         GUILayout.EndHorizontal();
         GUILayout.BeginHorizontal();
