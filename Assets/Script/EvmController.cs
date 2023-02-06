@@ -15,11 +15,11 @@ using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using Nethereum.Web3;
-using Org.BouncyCastle.Crypto.Digests;
 using Script.Model;
 using UnityEngine;
 using UnityEngine.UI;
 
+// for test
 public class EvmController : MonoBehaviour
 {
     private BloctoWalletProvider _bloctoWalletProvider;

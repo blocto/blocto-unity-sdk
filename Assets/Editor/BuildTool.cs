@@ -16,9 +16,9 @@ namespace Editor
             CustomizedCommandLine();
             if(BuildTool._action.ToLower() == "exportpackage")
             {
-                Console.WriteLine($"Package name: {BuildTool._packageName}, Build version: {BuildTool._versionNumber}");
+                Console.WriteLine($"Package name: {BuildTool._exportName}, Build version: {BuildTool._versionNumber}");
                 PlayerSettings.stripEngineCode = false;
-                ExportPackage(BuildTool._packageName, BuildTool._versionNumber);
+                ExportPackage(BuildTool._exportName, BuildTool._versionNumber);
                 Console.WriteLine("Complete export package");
             }
             
@@ -27,7 +27,7 @@ namespace Editor
 
  
         private static string _destinationPath;
-        private static string _packageName;
+        private static string _exportName;
         private static string _versionNumber;
         private static string _action;
         private static void CustomizedCommandLine()
@@ -41,9 +41,9 @@ namespace Editor
                                                                                         }
                                                                 },
                                                                 {
-                                                                    "-packageName", delegate(string argument)
+                                                                    "-exportName", delegate(string argument)
                                                                                     {
-                                                                                        BuildTool._packageName = argument;
+                                                                                        BuildTool._exportName = argument;
                                                                                     }
                                                                 },
                                                                 {
@@ -79,21 +79,21 @@ namespace Editor
             }
         }
  
-        private static void ExportPackage(string packageName, string buildVersion)
+        private static void ExportPackage(string exportName, string buildVersion)
         {
-            Console.WriteLine($"In export package function, Package Name: {packageName}, Build version: {buildVersion}");
+            Console.WriteLine($"In export package function, Package Name: {exportName}, Build version: {buildVersion}");
             var directories = new List<string>();
             var packageType = default(object);
-            var result = Enum.TryParse(typeof(PackageTypeEnum), packageName, true, out packageType);
+            var result = Enum.TryParse(typeof(ExportTypeEnum), exportName, true, out packageType);
             if(result == false)
             {
                 throw new ArgumentException("Package type not found.");
             }
         
-            Console.WriteLine($"Package type: {((PackageTypeEnum)packageType).ToString()}");
-            switch ((PackageTypeEnum)packageType)
+            Console.WriteLine($"Package type: {((ExportTypeEnum)packageType).ToString()}");
+            switch ((ExportTypeEnum)packageType)
             {
-                case PackageTypeEnum.FCL:
+                case ExportTypeEnum.FCL:
                     var fclAssetsPaths = new List<string>
                                          {
                                              "Assets/Plugins/Flow/FCL",
@@ -107,7 +107,7 @@ namespace Editor
                     AssetDatabase.ExportPackage(fclAssetsPaths.ToArray(), $"release/fcl-unity/fcl-unity.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("FCL export success.");
                     break;
-                case PackageTypeEnum.BloctoUnitySDK:
+                case ExportTypeEnum.BloctoUnitySDK:
                     directories.Add("Assets/Plugins/Blocto.Sdk/Core");
                     directories.Add("Assets/Plugins/Blocto.Sdk/Flow");
                     directories.Add("Assets/Plugins/Dll");
@@ -116,7 +116,7 @@ namespace Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/blocto-unity-sdk/Blocto-unity-sdk.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Blocto-unity-SDK export successed.");
                     break;
-                case PackageTypeEnum.Core:
+                case ExportTypeEnum.Core:
                     var coreOutputPath = $"release/{buildVersion}";
                     Console.WriteLine($"In core package process, Output path: {coreOutputPath}, Directory exist: {Directory.Exists(coreOutputPath)}");
 
@@ -139,7 +139,7 @@ namespace Editor
                     Debug.Log("Portto.Blocto.Core export success.");
                     Console.WriteLine("Portto.Blocto.Core export success.");
                     break;
-                case PackageTypeEnum.Solana:
+                case ExportTypeEnum.Solana:
                     var solanaOutputPath = $"release/{buildVersion}";
                     if(Directory.Exists(solanaOutputPath) == false)
                     {
@@ -155,7 +155,7 @@ namespace Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Solana.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed.");
                     break;
-                case PackageTypeEnum.Evm:
+                case ExportTypeEnum.Evm:
                     var evmOutputPath = $"release/{buildVersion}";
                     if(Directory.Exists(evmOutputPath) == false)
                     {
@@ -171,7 +171,27 @@ namespace Editor
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Evm.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed."); 
                     break;
-                case PackageTypeEnum.Flow:
+                case ExportTypeEnum.Flow:
+                    break;
+                case ExportTypeEnum.iOS:
+                    // var buildScenes = new List<EditorBuildSettingsScene>();
+                    // foreach (var t in task.SceneAssets)
+                    // {
+                    //     var scenePath = AssetDatabase.GetAssetPath(t);
+                    //     if (!string.IsNullOrEmpty(scenePath))
+                    //     {
+                    //         buildScenes.Add(new EditorBuildSettingsScene(scenePath, true));
+                    //     }
+                    // }
+                    //
+                    // if(task.BuildTarget == BuildTarget.iOS)
+                    // {
+                    //     PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS, $"com.blocto.{task.ChainName.ToString().ToLower()}.unityapp");
+                    // }
+                    //
+                    // var locationPathName = $"{task.BuildPath}/{task.ProductName}";
+                    // report = BuildPipeline.BuildPlayer(buildScenes.ToArray(), locationPathName, task.BuildTarget, BuildOptions.None);
+                    // Debug.Log($"[{task.ProductName}] 打包结果: {report.summary.result}\r\n");
                     break;
                 default:
                     Console.WriteLine("Default");
