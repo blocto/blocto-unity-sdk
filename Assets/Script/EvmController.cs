@@ -17,9 +17,9 @@ using Nethereum.Util;
 using Nethereum.Web3;
 using Script.Model;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// for test
 public class EvmController : MonoBehaviour
 {
     private BloctoWalletProvider _bloctoWalletProvider;
@@ -49,6 +49,8 @@ public class EvmController : MonoBehaviour
     private Button _typedDataV4Btn;
     
     private Button _typedDataBtn;
+    
+    private Button _menuBtn;
     
     private InputField _accountTxt;
     
@@ -140,6 +142,10 @@ public class EvmController : MonoBehaviour
         _typedDataBtn = tmp.GetComponent<Button>();
         _typedDataBtn.onClick.AddListener(TypedData);
         
+        tmp = GameObject.Find("MenuBtn");
+        _menuBtn = tmp.GetComponent<Button>();
+        _menuBtn.onClick.AddListener(RetunMenu);
+        
         tmp = GameObject.Find("WalletTxt");
         _accountTxt = tmp.GetComponent<InputField>();
         
@@ -190,6 +196,7 @@ public class EvmController : MonoBehaviour
                   };
         
         _ethSignSample = new EthSignSample();
+        // DontDestroyOnLoad(gameObject);
     }
 
 
@@ -399,6 +406,11 @@ public class EvmController : MonoBehaviour
                 $"TxId: {txId}".ToLog();
                 _setValueResultTxt.text = txId;
             });
+    }
+    
+    private void RetunMenu()
+    {
+        SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
     }
     
     private bool IsMainnet()
