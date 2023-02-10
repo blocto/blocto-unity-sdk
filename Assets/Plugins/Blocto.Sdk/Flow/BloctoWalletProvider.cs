@@ -75,6 +75,13 @@ namespace Blocto.Sdk.Flow
         private static extern bool IsInstalled(string appUrl);
         
         /// <summary>
+        /// Logout at webview
+        /// </summary>
+        /// <returns></returns>
+        [DllImport ("__Internal")]
+        private static extern bool WebViewLogout();
+        
+        /// <summary>
         /// Get universal link data
         /// </summary>
         /// <returns></returns>
@@ -301,6 +308,26 @@ namespace Blocto.Sdk.Flow
             $"Is installed app: {isInstallApp}".ToLog();
             return isInstallApp;
         }
+        
+        public void UnAuthenticate()
+        {
+            var isLogout = false;
+            switch (Application.platform)
+            {
+                case RuntimePlatform.Android:
+                    isLogout = _pluginInstance.Call<bool>("webViewLogout"); 
+                    break;
+                case RuntimePlatform.IPhonePlayer:
+                    #if UNITY_IOS
+                    isLogout = BloctoWalletProvider.WebViewLogout();
+                    #endif
+                    break;
+                case RuntimePlatform.OSXEditor:
+                    break;
+            } 
+            
+            $"WebView status: {isLogout}".ToLog();
+        }
 
         /// <summary>
         /// User connect wallet get account
@@ -348,6 +375,7 @@ namespace Blocto.Sdk.Flow
                 BloctoWalletProvider.Title = titleElement.Split("=")[1];
             }
 
+            $"Url: {endpoint.IframeUrl}".ToLog();
             $"Oper Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
             StartCoroutine(OpenUrl(endpoint.IframeUrl));
             StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));

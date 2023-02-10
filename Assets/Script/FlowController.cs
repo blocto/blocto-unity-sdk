@@ -45,6 +45,8 @@ public class FlowController : MonoBehaviour
     
     private Button _authnBtn;
     
+    private Button _disconnectBtn;
+    
     private Button _sendTransaction;
     
     private Button _getAccountBtn;
@@ -112,6 +114,10 @@ public class FlowController : MonoBehaviour
         var tmp = GameObject.Find("ConnectWalletBtn");
         _authnBtn = tmp.GetComponent<Button>();
         _authnBtn.onClick.AddListener(ConnectWallet);
+        
+        tmp = GameObject.Find("DisconnectWalletBtn");
+        _disconnectBtn = tmp.GetComponent<Button>();
+        _disconnectBtn.onClick.AddListener(DisconnectWallet);
         
         tmp = GameObject.Find("TransferBtn");
         _sendTransaction = tmp.GetComponent<Button>();
@@ -197,7 +203,6 @@ public class FlowController : MonoBehaviour
                                                          return fcl;
                                                      }, config);
         _walletProvider.ForcedUseWebView = true;
-        // DontDestroyOnLoad (_walletProvider);
     }
 
     private void ConnectWallet()
@@ -216,6 +221,14 @@ public class FlowController : MonoBehaviour
                            $"Start verify account proof".ToLog();
                            StartCoroutine(VerifyAccountProof(accountProofData));
                        }));
+    }
+    
+    private void DisconnectWallet()
+    {
+        "Disconnect wallet".ToLog();
+        _fcl.UnAuthenticate(() => {
+                                _accountTxt.text = "";
+                            });
     }
     
     private void SendTransaction()

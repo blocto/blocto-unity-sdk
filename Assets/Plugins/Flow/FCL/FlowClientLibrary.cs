@@ -118,6 +118,7 @@ namespace Flow.FCL
             this._currentUser.LoggedIn = false;
             this._currentUser.ExpiresAt = default;
             this._currentUser.AccountProofData = new AccountProofData();
+            _walletProvider.UnAuthenticate();
             callback?.Invoke();
         }
         
