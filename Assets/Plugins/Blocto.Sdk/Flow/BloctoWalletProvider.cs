@@ -319,7 +319,7 @@ namespace Blocto.Sdk.Flow
                     break;
                 case RuntimePlatform.IPhonePlayer:
                     #if UNITY_IOS
-                    isLogout = BloctoWalletProvider.WebViewLogout();
+                    throw new NotSupportedException("iOS does not support disconnect wallet.");
                     #endif
                     break;
                 case RuntimePlatform.OSXEditor:
