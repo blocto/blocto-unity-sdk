@@ -75,13 +75,6 @@ namespace Blocto.Sdk.Flow
         private static extern bool IsInstalled(string appUrl);
         
         /// <summary>
-        /// Logout at webview
-        /// </summary>
-        /// <returns></returns>
-        [DllImport ("__Internal")]
-        private static extern bool WebViewLogout();
-        
-        /// <summary>
         /// Get universal link data
         /// </summary>
         /// <returns></returns>
