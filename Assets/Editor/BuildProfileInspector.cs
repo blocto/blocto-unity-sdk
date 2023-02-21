@@ -17,7 +17,7 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
     private BuildProfile profile;
     private bool boolValue;
     private int selGridInt = 0;
-    private string[] selStrings = { "FCL", "Blocto-unity-SDK", "Portto.Blocto.Core", "Portto.Blocto.Solana", "Portto.Blocto.Evm" };
+    private string[] selStrings = { "FCL", "Blocto-unity-SDK", "Portto.Blocto.Core", "Portto.Blocto.Solana", "Portto.Blocto.Evm", "Portto.Blocto.Flow" };
 
     private void OnEnable() { profile = target as BuildProfile; }
 
@@ -230,6 +230,27 @@ public sealed class BuildProfileInspector : UnityEditor.Editor
                     directories.AddRange(evmDirPaths);
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Evm.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed."); 
+                    break;
+                case ExportTypeEnum.Flow:
+                    var flowOutputPath = $"release/{task.BuildVersion}";
+                    if(Directory.Exists(flowOutputPath) == false)
+                    {
+                        Directory.CreateDirectory(flowOutputPath);
+                    }
+
+                    var flowDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Flow");
+                    var flowDirPaths = flowDirInfo.GetDirectories().Select(p => {
+                                                                               var tmp = p.FullName.Split("Assets/")[1];
+                                                                               return $"Assets/{tmp}";
+                                                                           }).ToList(); 
+                    directories.AddRange(flowDirPaths);
+                    directories.AddRange(new List<string>
+                                         {
+                                             $"Assets/Plugins/Blocto.Sdk/Flow/BloctoWalletProvider.cs",
+                                             $"Assets/Plugins/Blocto.Sdk/Flow/IBloctoWalletProvider.cs",
+                                         });
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/{task.BuildVersion}/Portto.Blocto.Flow.{version}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Protto.Blocto.Flow export successed."); 
                     break;
             }
         }
