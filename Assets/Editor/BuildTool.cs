@@ -172,6 +172,20 @@ namespace Editor
                     Debug.Log("Protto.Blocto.Solana export successed."); 
                     break;
                 case ExportTypeEnum.Flow:
+                    var flowOutputPath = $"release/{buildVersion}";
+                    if(Directory.Exists(flowOutputPath) == false)
+                    {
+                        Directory.CreateDirectory(flowOutputPath);
+                    }
+
+                    var flowDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Flow");
+                    var flowDirPaths = flowDirInfo.GetDirectories().Select(p => {
+                                                                             var tmp = p.FullName.Split("Assets/")[1];
+                                                                             return $"Assets/{tmp}";
+                                                                         }).ToList(); 
+                    directories.AddRange(flowDirPaths);
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Flow.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Protto.Blocto.Flow export successed."); 
                     break;
                 case ExportTypeEnum.iOS:
                     // var buildScenes = new List<EditorBuildSettingsScene>();

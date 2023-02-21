@@ -17,7 +17,7 @@ echo Build Version: ${VERSION}
 echo Project Path: ${PROJECT_PATH}
 echo Log Path: ${BUILD_LOG_PATH}
 
-$UNITY_PATH -quit -batchmode -projectPath $PROJECT_PATH -executeMethod Editor.BuildTool.Build -logFile $BUILD_LOG_PATH -action exportpackage -packageName $PACKAGENAME -buildVersion $VERSION
+$UNITY_PATH -quit -batchmode -projectPath $PROJECT_PATH -executeMethod Editor.BuildTool.Build -logFile $BUILD_LOG_PATH -action exportpackage -exportName $PACKAGENAME -buildVersion $VERSION
 
 result=$?
 echo ${result}
