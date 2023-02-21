@@ -184,6 +184,11 @@ namespace Editor
                                                                              return $"Assets/{tmp}";
                                                                          }).ToList(); 
                     directories.AddRange(flowDirPaths);
+                    directories.AddRange(new List<string>
+                                         {
+                                             $"Assets/Plugins/Blocto.Sdk/Flow/BloctoWalletProvider.cs",
+                                             $"Assets/Plugins/Blocto.Sdk/Flow/IBloctoWalletProvider.cs",
+                                         });
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Flow.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Flow export successed."); 
                     break;
