@@ -301,6 +301,26 @@ namespace Blocto.Sdk.Flow
             $"Is installed app: {isInstallApp}".ToLog();
             return isInstallApp;
         }
+        
+        public void UnAuthenticate()
+        {
+            var isLogout = false;
+            switch (Application.platform)
+            {
+                case RuntimePlatform.Android:
+                    isLogout = _pluginInstance.Call<bool>("webViewLogout"); 
+                    break;
+                case RuntimePlatform.IPhonePlayer:
+                    #if UNITY_IOS
+                    throw new NotSupportedException("iOS does not support disconnect wallet.");
+                    #endif
+                    break;
+                case RuntimePlatform.OSXEditor:
+                    break;
+            } 
+            
+            $"WebView status: {isLogout}".ToLog();
+        }
 
         /// <summary>
         /// User connect wallet get account
@@ -348,6 +368,7 @@ namespace Blocto.Sdk.Flow
                 BloctoWalletProvider.Title = titleElement.Split("=")[1];
             }
 
+            $"Url: {endpoint.IframeUrl}".ToLog();
             $"Oper Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
             StartCoroutine(OpenUrl(endpoint.IframeUrl));
             StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));

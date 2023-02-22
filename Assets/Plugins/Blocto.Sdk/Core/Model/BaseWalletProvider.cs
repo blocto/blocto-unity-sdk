@@ -13,6 +13,7 @@ namespace Blocto.Sdk.Core.Model
     {
         public bool ForceUseWebView { get; set; }
         
+        #if UNITY_IOS
         /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
@@ -50,6 +51,7 @@ namespace Blocto.Sdk.Core.Model
         /// <returns></returns>
         [DllImport("__Internal")]
         protected static extern string UniversalLink_Reset();
+        #endif
         
         /// <summary>
         /// Android instance
@@ -97,7 +99,9 @@ namespace Blocto.Sdk.Core.Model
                     isInstallApp = pluginInstance.Call<bool>("isInstalledApp", androidPackageName); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
+                    #if UNITY_IOS
                     isInstallApp = BaseWalletProvider.IsInstalled(testDomain);
+                    #endif
                     break;
                 case RuntimePlatform.OSXEditor:
                     isInstallApp = false;
@@ -142,7 +146,9 @@ namespace Blocto.Sdk.Core.Model
                         
                         break;
                     case RuntimePlatform.IPhonePlayer:
+                        #if UNITY_IOS
                         BaseWalletProvider.OpenUrl("bloctowalletprovider", "UniversalLinkCallbackHandler", url, url);
+                        #endif
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

@@ -17,6 +17,11 @@ namespace Flow.FCL.WalletProvider
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null);
         
         /// <summary>
+        /// User disconnect wallet
+        /// </summary>
+        public void UnAuthenticate();
+        
+        /// <summary>
         /// Send Transaction
         /// </summary>
         /// <param name="service">fcl preauth service</param>

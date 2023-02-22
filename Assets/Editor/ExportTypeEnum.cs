@@ -1,6 +1,6 @@
 namespace Editor
 {
-    public enum PackageTypeEnum
+    public enum ExportTypeEnum
     {
         FCL = 0,
         BloctoUnitySDK = 1,
@@ -8,5 +8,7 @@ namespace Editor
         Solana,
         Evm,
         Flow,
+        iOS,
+        Android
     }
 }

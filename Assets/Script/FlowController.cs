@@ -17,6 +17,7 @@ using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
 using Random = System.Random;
@@ -44,6 +45,8 @@ public class FlowController : MonoBehaviour
     
     private Button _authnBtn;
     
+    private Button _disconnectBtn;
+    
     private Button _sendTransaction;
     
     private Button _getAccountBtn;
@@ -61,6 +64,8 @@ public class FlowController : MonoBehaviour
     private Button _openSetValueResultLinkBtn;
     
     private Button _openTransferResultLinkBtn;
+    
+    private Button _menuBtn;
     
     private InputField _accountTxt;
     
@@ -110,6 +115,10 @@ public class FlowController : MonoBehaviour
         _authnBtn = tmp.GetComponent<Button>();
         _authnBtn.onClick.AddListener(ConnectWallet);
         
+        tmp = GameObject.Find("DisconnectWalletBtn");
+        _disconnectBtn = tmp.GetComponent<Button>();
+        _disconnectBtn.onClick.AddListener(DisconnectWallet);
+        
         tmp = GameObject.Find("TransferBtn");
         _sendTransaction = tmp.GetComponent<Button>();
         _sendTransaction.onClick.AddListener(SendTransaction);
@@ -133,6 +142,10 @@ public class FlowController : MonoBehaviour
         tmp = GameObject.Find("SetValueOpenExplorerBtn");
         _openSetValueResultLinkBtn = tmp.GetComponent<Button>();
         _openSetValueResultLinkBtn.onClick.AddListener(OpenSetValueExplorer);
+        
+        tmp = GameObject.Find("MenuBtn");
+        _menuBtn = tmp.GetComponent<Button>();
+        _menuBtn.onClick.AddListener(RetunMenu);
         
         tmp = GameObject.Find("WalletTxt");
         _accountTxt = tmp.GetComponent<InputField>();
@@ -190,7 +203,6 @@ public class FlowController : MonoBehaviour
                                                          return fcl;
                                                      }, config);
         _walletProvider.ForcedUseWebView = true;
-        DontDestroyOnLoad (_walletProvider);
     }
 
     private void ConnectWallet()
@@ -209,6 +221,14 @@ public class FlowController : MonoBehaviour
                            $"Start verify account proof".ToLog();
                            StartCoroutine(VerifyAccountProof(accountProofData));
                        }));
+    }
+    
+    private void DisconnectWallet()
+    {
+        "Disconnect wallet".ToLog();
+        _fcl.UnAuthenticate(() => {
+                                _accountTxt.text = "";
+                            });
     }
     
     private void SendTransaction()
@@ -377,6 +397,11 @@ public class FlowController : MonoBehaviour
     {
         var url = $"https://testnet.flowscan.org/transaction/{_resultTxt.text}";
         Application.OpenURL(url);
+    }
+    
+    private void RetunMenu()
+    {
+        SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
     }
     
     private async void GetAccount()

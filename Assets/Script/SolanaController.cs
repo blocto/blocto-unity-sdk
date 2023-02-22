@@ -11,6 +11,7 @@ using Solnet.Rpc;
 using Solnet.Rpc.Models;
 using Solnet.Wallet;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = System.Random;
 
@@ -42,6 +43,8 @@ public class SolanaController : MonoBehaviour
     private Button _openSetValueResultLinkBtn;
     
     private Button _openTransferResultLinkBtn;
+    
+    private Button _menuBtn;
     
     private InputField _walletTxt;
     
@@ -113,6 +116,10 @@ public class SolanaController : MonoBehaviour
         tmp = GameObject.Find("PartialSignBtn");
         _partialSignBtn = tmp.GetComponent<Button>();
         _partialSignBtn.onClick.AddListener(CreateAccountAndPartialSign);
+        
+        tmp = GameObject.Find("MenuBtn");
+        _menuBtn = tmp.GetComponent<Button>();
+        _menuBtn.onClick.AddListener(RetunMenu);
         
         tmp = GameObject.Find("TransactionResultTxt");
         _transactonResultTxt = tmp.GetComponent<InputField>();
@@ -224,6 +231,11 @@ public class SolanaController : MonoBehaviour
     {
         $"Toggle value: {value}".ToLog();
         _bloctoWalletProvider.ForceUseWebView = value;
+    }
+    
+    private void RetunMenu()
+    {
+        SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
     }
     
     private void CreateAccountAndPartialSign()
