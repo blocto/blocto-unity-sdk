@@ -21,10 +21,13 @@ namespace Blocto.Sdk.Core.Utility
     {
         public string BloctoAppId { get; set; }
         
+        public Dictionary<string, string> Headers;
+
         private Dictionary<string, Action<UnityWebRequest>> _handlers;
 
         private void Awake()
         {
+            Headers = new Dictionary<string, string>();
             _handlers = new Dictionary<string, Action<UnityWebRequest>>
                         {
                             {"400", BadRequestHandler},
@@ -215,6 +218,16 @@ namespace Blocto.Sdk.Core.Utility
             if(url.ToLower().Contains("blocto"))
             {
                 unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", BloctoAppId);
+            }
+            
+            if(Headers.Count > 0)
+            {
+                foreach (var header in Headers)
+                {
+                    unityWebRequest.SetRequestHeader(header.Key, header.Value);
+                }
+                
+                Headers.Clear();
             }
             
             if(uploadHandlerRaw != null)

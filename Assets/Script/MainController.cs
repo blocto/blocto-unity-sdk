@@ -10,6 +10,8 @@ public class MainController : MonoBehaviour
     private Button _solanaBtn;
     
     private Button _flowBtn;
+    
+    private Button _aptosBtn;
 
     public void Awake()
     {
@@ -23,8 +25,12 @@ public class MainController : MonoBehaviour
         _solanaBtn.onClick.AddListener(SolanaBtnOnClick);
         
         tmp = GameObject.Find("FlowBtn");
-        _solanaBtn = tmp.GetComponent<Button>();
-        _solanaBtn.onClick.AddListener(FlowBtnOnClick);
+        _flowBtn = tmp.GetComponent<Button>();
+        _flowBtn.onClick.AddListener(FlowBtnOnClick);
+        
+        tmp = GameObject.Find("AptosBtn");
+        _aptosBtn = tmp.GetComponent<Button>();
+        _aptosBtn.onClick.AddListener(AptosBtnOnClick);
     }
     
     public void EvmBtnOnClick()
@@ -35,13 +41,19 @@ public class MainController : MonoBehaviour
     
     public void SolanaBtnOnClick()
     {
-        $"On EvmBtn on click.".ToLog();
+        $"On Solana btn on click.".ToLog();
        SceneManager.LoadScene("SolanaScene");
     }
     
     public void FlowBtnOnClick()
     {
-        $"On EvmBtn on click.".ToLog();
+        $"On Flow btn on click.".ToLog();
        SceneManager.LoadScene("FlowScene");
+    }
+    
+    public void AptosBtnOnClick()
+    {
+        $"On Aptos btn on click.".ToLog();
+       SceneManager.LoadScene("AptosScene");
     }
 }

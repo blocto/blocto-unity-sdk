@@ -64,6 +64,8 @@ namespace Blocto.Sdk.Core.Model
         
         protected string webSdkDomain = "https://wallet.blocto.app/sdk?";
         
+        protected string webSdkDomainV2 = "https://wallet-v2.blocto.app";
+        
         protected string appSdkDomain = "https://blocto.app/sdk?";
         
         protected string backedApiDomain = "https://api.blocto.app";
@@ -77,6 +79,38 @@ namespace Blocto.Sdk.Core.Model
         public void Awake()
         {
             requestIdActionMapper = new Dictionary<string, string>();
+        }
+        
+        protected virtual string CreateRequestAccountUrl(bool isInstallApp, string chainName, string requestId)
+        {
+            
+            var url = default(string);
+            var parameters = new Dictionary<string, string>
+                             {
+                                 {"blockchain", chainName.ToLower()},
+                                 {"method", "request_account"},
+                                 {"request_id", requestId.ToString()}, 
+                             };
+            
+            if(isInstalledApp && ForceUseWebView == false)
+            {
+                var appSb = GenerateUrl(appSdkDomain, parameters);
+                url = appSb.ToString();
+                
+                $"Url: {url}".ToLog();
+                StartCoroutine(OpenUrl(url));
+                return url;
+            }
+            
+            $"WebSDK domain: {webSdkDomain}".ToLog();
+            var webSb = GenerateUrl(webSdkDomain, parameters);
+            return webSb;
+        }
+        
+        protected virtual string CreateRequestAccountUrlV2(string chainName, string requestId, string appId)
+        {
+            var url = $"{webSdkDomainV2}/{appId}/{chainName}/sdk/authn/{requestId}";
+            return url;
         }
 
         /// <summary>
