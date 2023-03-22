@@ -5,7 +5,6 @@ using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
-using Blocto.Sdk.Flow.Model;
 using Blocto.Sdk.Solana.Model;
 using Newtonsoft.Json;
 using Solnet.Rpc;
@@ -239,7 +238,7 @@ namespace Blocto.Sdk.Solana
             var uploadHandler = new UploadHandlerRaw(requestBytes); 
             var webRequest = _webRequestUtility.CreateUnityWebRequest($"{backedApiDomain}/solana/createRawTransaction" , "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
             var response = _webRequestUtility.ProcessWebRequest<CreateRawTxResponse>(webRequest);
-            var messageBytes = response.RawTx.HexToByteArray();
+            var messageBytes = response.RawTx.HexToBytes();
             var message = Message.Deserialize(messageBytes);
             
             var programTransaction = new Transaction
