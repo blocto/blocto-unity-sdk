@@ -8,7 +8,7 @@ namespace Blocto.Sdk.Aptos.Model
         public string Address { get; set; }
         
         [JsonProperty("arguments")]
-        public string[] Arguments { get; set; }
+        public object[] Arguments { get; set; }
         
         [JsonProperty("type_arguments")]
         public string[] TypeArguments { get; set; }

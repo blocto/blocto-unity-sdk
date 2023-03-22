@@ -12,7 +12,7 @@ namespace Blocto.Sdk.Core.Extension
 
         public static string HexToUTF8String(this string hex)
         {
-            var bytes = hex.HexToByteArray();
+            var bytes = hex.HexToBytes();
             return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
         }
     }

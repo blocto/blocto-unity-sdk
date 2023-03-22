@@ -4,6 +4,13 @@ namespace Blocto.Sdk.Aptos.Model
 {
     public class SignMessagePreRequest
     {
+        public SignMessagePreRequest()
+        {
+            IsIncludeAddress = false;
+            IsIncludeApplication = false;
+            IsIncludeChainId = false;
+        }
+        
         [JsonProperty("from")]
         public string Address { get; set; }
 
@@ -13,10 +20,10 @@ namespace Blocto.Sdk.Aptos.Model
         [JsonProperty("nonce")]
         public string Nonce { get; set; }
 
-        [JsonProperty("address?")]
+        [JsonProperty("address")]
         public bool IsIncludeAddress { get; set; }
 
-        [JsonProperty("application?")]
+        [JsonProperty("application")]
         public bool IsIncludeApplication { get; set; }
 
         [JsonProperty("chainId")]

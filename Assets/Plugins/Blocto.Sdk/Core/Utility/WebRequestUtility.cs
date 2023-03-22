@@ -164,7 +164,12 @@ namespace Blocto.Sdk.Core.Utility
             }
             else
             {
-                $"Url: {unityWebRequest.url}".ToLog();
+                $"Request Url: {unityWebRequest.url}".ToLog();
+                if(unityWebRequest.downloadHandler.data.Length > 0)
+                {
+                    $"Error Message: {Encoding.UTF8.GetString(unityWebRequest.downloadHandler.data)}".ToLog();
+                }
+                
                 throw new ApiException("The HTTP status code of the response was not expected (" + (int)unityWebRequest.responseCode + ").", (int)unityWebRequest.responseCode, "", null); 
             } 
             
@@ -218,12 +223,14 @@ namespace Blocto.Sdk.Core.Utility
             if(url.ToLower().Contains("blocto"))
             {
                 unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", BloctoAppId);
+                unityWebRequest.SetRequestHeader("Blocto-Request-Source", "sdk_unity");
             }
             
             if(Headers.Count > 0)
             {
                 foreach (var header in Headers)
                 {
+                    $"Set unityWebRequest header: {header.Key}:{header.Value}".ToLog();
                     unityWebRequest.SetRequestHeader(header.Key, header.Value);
                 }
                 

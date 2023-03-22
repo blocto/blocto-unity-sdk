@@ -15,36 +15,34 @@ namespace Blocto.Sdk.Aptos
     public class BloctoWalletProvider : BaseWalletProvider
     {
         public string NodeUrl { get; set;}
-        
+
         public const string AptosCoinType = "0x1::aptos_coin::AptosCoin";
  
         private static EnvEnum env;
         
         private string _chainName = "aptos";
         
-        private string _sessionId = "wIiSdPKvXlk-axLxA7KYh-6MyH7y0-97SHK8GnUCQgE";
-        
         private string _signatureId;
         
-        private string _authorizationId;
+        private string _keyAddress;
+        
+        private List<string> _publicKeys;
         
         private WebRequestUtility _webRequestUtility;
         
-        private Action<string> _connectWalletCallback;
-        
         private Action<SignMessageResponse> _signMessageCallback;
-        
-        private Action<string> _sendTransactionCallback;
-        
+
         /// <summary>
         /// Create blocto wallet provider instance
         /// </summary>
+        /// <param name="gameObject">Parent GameObject</param>
         /// <param name="env">Env</param>
         /// <param name="bloctoAppIdentifier">Blocto sdk appId</param>
+        /// <param name="nodeUrl"></param>
         /// <returns>BloctoWalletProvider</returns>
-        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier, string rpcUrl = default)
+        public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier, string nodeUrl = default)
         {
-            var bloctoWalletProvider = gameObject.AddComponent<Aptos.BloctoWalletProvider>();
+            var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
             bloctoWalletProvider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
             bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             
@@ -79,169 +77,127 @@ namespace Blocto.Sdk.Aptos
                 throw;
             }
             
+            if(nodeUrl != default)
+            {
+                bloctoWalletProvider.NodeUrl = nodeUrl;
+            }
+            
             return bloctoWalletProvider;
         }
         
-        public void RequestAccount(Action<string> callBack)
+        /// <summary>
+        /// Get the wallet address
+        /// </summary>
+        /// <param name="callBack">Get wallet address, then execute instructions</param>
+        public new void RequestAccount(Action<string> callBack)
         {
-            $"Aptos blocto provider".ToLog();
-            var url = default(string);
-            var requestId = Guid.NewGuid();
+            base.RequestAccount(callBack);
+            
+            //// just support webSDK now - 20230323
+            isInstalledApp = false;
             $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
             
-            isInstalledApp = false;
-            // url = CreateRequestAccountUrl(isInstalledApp, _chainName, requestId.ToString());
-            url = CreateRequestAccountUrlV2(_chainName, requestId.ToString(), bloctoAppIdentifier.ToString());
+            var url = CreateRequestAccountUrlV2(_chainName, bloctoAppIdentifier.ToString());
             $"Url: {url}".ToLog();
+            
             StartCoroutine(OpenUrl(url));
         }
         
-        public void SignMessage(string message, string address, Action<SignMessageResponse> callback)
+        /// <summary>
+        /// Get public key of address
+        /// </summary>
+        /// <param name="address">address of publ</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public List<string> PublicKeys(string address)
         {
-            var requestId = Guid.NewGuid();
+            if( _keyAddress != address || _publicKeys.Count == 0)
+            {
+                var url = $"{backedApiDomain}/aptos/accounts/{address}";
+                var response = _webRequestUtility.GetResponse<PublicKey>(url, HttpMethod.Get, "");
+                
+                $"Public keys: {string.Join(',', response.Keys)}".ToLog();
+                _keyAddress = address;
+                _publicKeys = response.Keys;
+                return response.Keys;
+            }
             
-            var parameters = new Dictionary<string, string>
-                             {
-                                 {"blockchain", _chainName},
-                                 {"method", "sign_message"},
-                                 {"from", address},
-                                 {"message", message },
-                                 {"request_id", requestId.ToString()},
-                             };
+            if( _publicKeys.Count > 0)
+            {
+                return _publicKeys;
+            }
             
-            requestIdActionMapper.Add(requestId.ToString(), "SIGNMESSAGE");
-            _signMessageCallback = callback;
+            throw new Exception("");
+        }
+        
+        public void SignMessage(SignMessagePreRequest preRequest, Action<SignMessageResponse> callback)
+        {
+            base.SignMessage();
+            _signMessageCallback = callback; 
             
             if(isInstalledApp && ForceUseWebView == false)
             {
+                var parameters = new Dictionary<string, string>
+                                 {
+                                     {"blockchain", _chainName},
+                                     {"method", "sign_message"},
+                                     {"from", preRequest.Address},
+                                     {"message", preRequest.Message },
+                                     {"request_id", requestId.ToString()},
+                                 };
+                
                 var appSb = GenerateUrl(appSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
-                StartCoroutine(OpenUrl(appSb.ToString()));
+                StartCoroutine(OpenUrl(appSb));
                 return;
             }
             
-            var headers = new Dictionary<string, string>
-                          {
-                              {"Blocto-Session-Identifier", _sessionId},
-                              {"Blocto-Request-Identifier", requestId.ToString()}
-                          };
+            _webRequestUtility.Headers = new Dictionary<string, string>
+                                         {
+                                             {"Blocto-Session-Identifier", sessionId},
+                                             {"Blocto-Request-Identifier", requestId.ToString()}
+                                         };
             
-            _webRequestUtility.Headers = headers;
-            var payload = new SignMessagePreRequest
-                          {
-                              Address = null,
-                              Message = null,
-                              Nonce = null,
-                              IsIncludeAddress = false,
-                              IsIncludeApplication = false,
-                              IsIncludeChainId = false
-                          };
-            
-            var preRequestUrl = $"{webSdkDomain}/api/aptos/user-signature";
-            var signMessagePreResponse = _webRequestUtility.GetResponse<SignMessagePreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", payload);
+            var preRequestUrl = $"{webSdkDomainV2}/api/aptos/user-signature";
+            var signMessagePreResponse = _webRequestUtility.GetResponse<SignMessagePreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", preRequest);
             _signatureId = signMessagePreResponse.SignatureId;
-            
-            var sb = new StringBuilder(webSdkDomain);
-            sb.Append($"/{bloctoAppIdentifier}");
-            sb.Append($"/aptos/sdk/user-signature");
-            sb.Append($"/{signMessagePreResponse.SignatureId}");
-            var webSb = sb.ToString();
-            $"Url: {webSb}".ToLog();
-            StartCoroutine(OpenUrl(webSb.ToString()));
-        }
-        
-        /// <summary>
-        /// Send transaction for apt
-        /// </summary>
-        /// <param name="from">From address</param>
-        /// <param name="to">To address</param>
-        /// <param name="amount">Amount</param>
-        /// <param name="callback"></param>
-        public void SendTransaction(string from, string to, ulong amount, Action<string> callback)
-        {
-            var payload = new EntryFunctionTransactionPayload
-                          {
-                              Address = from,
-                              Arguments = new string[]
-                                          {
-                                              to,
-                                              amount.ToString()
-                                          },
-                              TypeArguments = new string[]
-                                              {
-                                                  BloctoWalletProvider.AptosCoinType
-                                              },
-                              MaxGasAmount = "9999",
-                              Function = "0x1::coin::transfer"
-                          };
-            SendTransaction(payload, callback);
-        }
-        
-        /// <summary>
-        /// Send transaction
-        /// </summary>
-        /// <param name="from">From address</param>
-        /// <param name="to">To address</param>
-        /// <param name="amount">Amount</param>
-        /// <param name="coinType">Coin type</param>
-        /// <param name="function">Entry function name</param>
-        /// <param name="callback"></param>
-        public void SendTransaction(string from, string to, ulong amount, string coinType, string function, Action<string> callback)
-        {
-            var payload = new EntryFunctionTransactionPayload
-                          {
-                              Address = from,
-                              Arguments = new string[]
-                                          {
-                                              to,
-                                              amount.ToString()
-                                          },
-                              TypeArguments = new string[]
-                                              {
-                                                  coinType
-                                              },
-                              MaxGasAmount = "9999",
-                              Function = function
-                          };
-            SendTransaction(payload, callback);
-        }
-        
-        /// <summary>
-        /// Send transaction
-        /// </summary>
-        /// <param name="scriptPayload">Script payload body</param>
-        /// <param name="callback"></param>
-        public void SendTransaction<TTransactionType>(TTransactionType transactionPayload, Action<string> callback)
-        {
-            var requestId = Guid.NewGuid();
-            var parameters = new Dictionary<string, string>
-                             {
-                                 {"blockchain", _chainName},
-                                 {"method", "send_transaction"},
-                                 {"request_id", requestId.ToString()},
-                             };
-            
-            requestIdActionMapper.Add(requestId.ToString(), "SENDTRANSACTION");
-            _sendTransactionCallback = callback;
-            
-            var headers = new Dictionary<string, string>
-                          {
-                              {"Blocto-Session-Identifier", _sessionId},
-                              {"Blocto-Request-Identifier", requestId.ToString()}
-                          };
-            
-            _webRequestUtility.Headers = headers;
-            var preRequestUrl = $"{webSdkDomainV2}/api/aptos/authz";
-            var transactionPreResponse = _webRequestUtility.GetResponse<TransactionPreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", transactionPayload);
-            _authorizationId = transactionPreResponse.AuthorizationId;
+            $"SignatureId: {_signatureId}".ToLog();
             
             var sb = new StringBuilder(webSdkDomainV2);
             sb.Append($"/{bloctoAppIdentifier}");
-            sb.Append($"/aptos/sdk/authz");
-            sb.Append($"/{transactionPreResponse.AuthorizationId}");
+            sb.Append($"/aptos/user-signature");
+            sb.Append($"/{signMessagePreResponse.SignatureId}");
+            
             var webSb = sb.ToString();
             $"Url: {webSb}".ToLog();
-            StartCoroutine(OpenUrl(webSb.ToString()));
+            StartCoroutine(OpenUrl(webSb));
+        }
+
+        /// <summary>
+        /// Send transaction
+        /// </summary>
+        /// <param name="transactionPayload">Script payload body</param>
+        /// <param name="callback"></param>
+        public void SendTransaction<TTransactionType>(TTransactionType transactionPayload, Action<string> callback)
+        {
+            base.SendTransaction(callback);
+            _webRequestUtility.Headers = new Dictionary<string, string>
+                                         {
+                                             {"Blocto-Session-Identifier", sessionId},
+                                             {"Blocto-Request-Identifier", requestId.ToString()}
+                                         };
+            
+            var preRequestUrl = $"{webSdkDomainV2}/api/aptos/authz";
+            var transactionPreResponse = _webRequestUtility.GetResponse<TransactionPreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", transactionPayload);
+            
+            var sb = new StringBuilder(webSdkDomainV2);
+            sb.Append($"/{bloctoAppIdentifier}");
+            sb.Append($"/aptos/authz");
+            sb.Append($"/{transactionPreResponse.AuthorizationId}");
+            
+            var webSb = sb.ToString();
+            $"Url: {webSb}".ToLog();
+            StartCoroutine(OpenUrl(webSb));
         }
         
         /// <summary>
@@ -253,48 +209,42 @@ namespace Blocto.Sdk.Aptos
             $"Universal Link: {link}, in Handler".ToLog();
             var decodeLink = UnityWebRequest.UnEscapeURL(link);
             var item = decodeLink.RequestId();
-            var result = default(string);
-            if(requestIdActionMapper.ContainsKey(item.RequestId))
+            if (!requestIdActionMapper.ContainsKey(item.RequestId))
             {
-                var action = requestIdActionMapper[item.RequestId];
-                switch (action)
-                {
-                    case "CONNECTWALLET":
-                        result = UniversalLinkHandler(item.RemainContent, "address=");
-                        _sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
-                        _connectWalletCallback.Invoke(result);
-                        break;
-                    
-                    case "SIGNMESSAGE":
-                        var signatureResult = UniversalLinkHandler(item.RemainContent, "result=");
-                        if(signatureResult == "ok")
-                        {
-                            var headers = new Dictionary<string, string>
-                                          {
-                                              {"Blocto-Session-Identifier", _sessionId},
-                                          };
-                            
-                             var requestUrl = $"{webSdkDomain}/api/aptos/user-signature/{_signatureId}";
-                             var signMessageResponse = _webRequestUtility.GetResponse<SignMessageResponse>(requestUrl, HttpMethod.Get, "application/json");
-                             _signMessageCallback.Invoke(signMessageResponse);
-                        }
-                        
-                        break;
-                    case "SENDTRANSACTION":
-                        var sendTransaction = UniversalLinkHandler(item.RemainContent, "tx_hash");
-                        _sendTransactionCallback.Invoke(sendTransaction);
-                        break;
-                }
+                return;
             }
-        }
-        
-        private string UniversalLinkHandler(string link, string keyword)
-        {
-            var result = default(string);
-            var data = (MatchContents: new List<string>(), RemainContent: link);
-            data = CheckContent(data.RemainContent, keyword);
-            result = data.MatchContents.FirstOrDefault().AddressParser().Value;
-            return result;
+
+            var action = requestIdActionMapper[item.RequestId];
+            switch (action)
+            {
+                case "CONNECTWALLET":
+                    var result = UniversalLinkHandler(item.RemainContent, "address=")  ;
+                    sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                        
+                    $"Address: {result}, SessionId: {sessionId}".ToLog();
+                    _connectWalletCallback.Invoke(result);
+                    break;
+                    
+                case "SIGNMESSAGE":
+                    var signatureResult = UniversalLinkHandler(item.RemainContent, "result=");
+                    if(signatureResult == "ok")
+                    {
+                        _webRequestUtility.Headers = new Dictionary<string, string>
+                                                     {
+                                                         {"Blocto-Session-Identifier", sessionId},
+                                                     };
+                            
+                        var requestUrl = $"{webSdkDomainV2}/api/aptos/user-signature/{_signatureId}";
+                        var signMessageResponse = _webRequestUtility.GetResponse<SignMessageResponse>(requestUrl, HttpMethod.Get, "application/json");
+                        _signMessageCallback.Invoke(signMessageResponse);
+                    }
+                        
+                    break;
+                case "SENDTRANSACTION":
+                    var sendTransaction = UniversalLinkHandler(item.RemainContent, "tx_hash");
+                    _sendTransactionCallback.Invoke(sendTransaction);
+                    break;
+            }
         }
     }
 }

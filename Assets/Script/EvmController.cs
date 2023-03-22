@@ -196,7 +196,6 @@ public class EvmController : MonoBehaviour
                   };
         
         _ethSignSample = new EthSignSample();
-        // DontDestroyOnLoad(gameObject);
     }
 
 
@@ -290,11 +289,11 @@ public class EvmController : MonoBehaviour
                           _signMessageTxt.text = signature;
                           
                           var hash = default(string);
-                          var signatureByte = _signMessageTxt.text.RemoveHexPrefix().HexToByteArray();
+                          var signatureByte = _signMessageTxt.text.RemoveHexPrefix().HexToBytes();
                           switch (_signType)
                           {
                               case SignTypeEnum.Eth_Sign:
-                                  hash = Sha3Keccack.Current.CalculateHash(_oriSignMessage.RemoveHexPrefix().HexToByteArray()).ToHex();
+                                  hash = Sha3Keccack.Current.CalculateHash(_oriSignMessage.RemoveHexPrefix().HexToBytes()).ToHex();
                                   break;
                               case SignTypeEnum.Personal_Sign:
                                   hash = Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(_oriSignMessage)).ToHex();
@@ -314,7 +313,7 @@ public class EvmController : MonoBehaviour
                           isValidSignature.InputParameters = new []{ new Parameter("bytes32"), new Parameter("bytes")};
 
                           var function = new FunctionBuilder(_walletAddress, isValidSignature);
-                          var data = function.GetData(new object[] { hash.HexToByteArray(), signatureByte});
+                          var data = function.GetData(new object[] { hash.HexToBytes(), signatureByte});
                           var callInput = new CallInput(data, _walletAddress)
                                           {
                                               From = _walletAddress

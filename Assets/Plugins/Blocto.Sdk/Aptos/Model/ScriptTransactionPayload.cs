@@ -6,6 +6,7 @@ namespace Blocto.Sdk.Aptos.Model
     {
         public ScriptTransactionPayload()
         {
+            Type = "script_payload";
             MaxGasAmount = "50000";
         }
         
@@ -13,6 +14,6 @@ namespace Blocto.Sdk.Aptos.Model
         public string Type { get; set; }
         
         [JsonProperty("code")]
-        public string Code { get; set; }
+        public Code Code { get; set; }
     }
 }

@@ -102,7 +102,7 @@ namespace Blocto.Sdk.Core.Extension
             return bytes;
         }
 
-        public static byte[] HexToByteArray(this string value)
+        public static byte[] HexToBytes(this string value)
         {
             try {
                 return HexToByteArrayInternal(value);

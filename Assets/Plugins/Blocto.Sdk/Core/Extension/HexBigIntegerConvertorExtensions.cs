@@ -49,7 +49,7 @@ namespace Blocto.Sdk.Core.Extension
                 return 0;
             }
 
-            var encoded = hex.HexToByteArray();
+            var encoded = hex.HexToBytes();
             if (BitConverter.IsLittleEndian == isHexLittleEndian)
             {
                 return new BigInteger(encoded);

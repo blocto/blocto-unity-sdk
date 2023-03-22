@@ -14,6 +14,13 @@ namespace Blocto.Sdk.Aptos.Model
         public bool IsEntry { get; set; }
         
         [JsonProperty("generic_type_params")]
-        public AbiParameterType[] GenericTypeParams { get; set; }
+        public string[] GenericTypeParams { get; set; }
+
+        [JsonProperty("params")]
+        public string[] Params { get; set; }
+        
+        [JsonProperty("return")]
+        
+        public string[] Return { get; set; }
     }
 }

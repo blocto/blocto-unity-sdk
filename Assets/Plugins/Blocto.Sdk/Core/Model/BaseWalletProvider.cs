@@ -72,34 +72,59 @@ namespace Blocto.Sdk.Core.Model
         
         protected string androidPackageName = "com.portto.blocto";
         
+        protected string sessionId;
+        
         protected bool isInstalledApp = false;
         
+        protected Guid requestId;
+        
         protected Dictionary<string, string> requestIdActionMapper;
+        
+        protected Action<string> _connectWalletCallback;
+        
+        protected Action<string> _sendTransactionCallback;
 
         public void Awake()
         {
             requestIdActionMapper = new Dictionary<string, string>();
         }
         
-        protected virtual string CreateRequestAccountUrl(bool isInstallApp, string chainName, string requestId)
+        protected virtual void RequestAccount(Action<string> callback)
         {
-            
-            var url = default(string);
+            requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), "CONNECTWALLET");
+            _connectWalletCallback = callback;
+        }
+        
+        protected virtual void SignMessage()
+        {
+            requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), "SIGNMESSAGE");
+        }
+        
+        protected virtual void SendTransaction(Action<string> callback)
+        {
+            requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), "SENDTRANSACTION");
+            _sendTransactionCallback = callback;
+        }
+        
+        protected virtual string CreateRequestAccountUrl(bool isInstallApp, string chainName)
+        {
             var parameters = new Dictionary<string, string>
                              {
-                                 {"blockchain", chainName.ToLower()},
-                                 {"method", "request_account"},
-                                 {"request_id", requestId.ToString()}, 
+                                 {"blockchain", chainName.ToLower() },
+                                 {"method", "request_account" },
+                                 {"request_id", requestId.ToString() }, 
                              };
             
             if(isInstalledApp && ForceUseWebView == false)
             {
                 var appSb = GenerateUrl(appSdkDomain, parameters);
-                url = appSb.ToString();
                 
-                $"Url: {url}".ToLog();
-                StartCoroutine(OpenUrl(url));
-                return url;
+                $"Url: {appSb}".ToLog();
+                StartCoroutine(OpenUrl(appSb));
+                return appSb;
             }
             
             $"WebSDK domain: {webSdkDomain}".ToLog();
@@ -107,9 +132,9 @@ namespace Blocto.Sdk.Core.Model
             return webSb;
         }
         
-        protected virtual string CreateRequestAccountUrlV2(string chainName, string requestId, string appId)
+        protected virtual string CreateRequestAccountUrlV2(string chainName, string appId)
         {
-            var url = $"{webSdkDomainV2}/{appId}/{chainName}/sdk/authn/{requestId}";
+            var url = $"{webSdkDomainV2}/{appId}/{chainName}/authn/?requestId={requestId}&requestSource=sdk_unity";
             return url;
         }
 
@@ -211,6 +236,13 @@ namespace Blocto.Sdk.Core.Model
             }
                 
             return (matchElements, elements.Count > 0 ? string.Join("&", elements) : string.Empty);
+        }
+        
+        protected string UniversalLinkHandler(string link, string keyword)
+        {
+            var data = (MatchContents: new List<string>(), RemainContent: link);
+            data = CheckContent(data.RemainContent, keyword);
+            return data.MatchContents.FirstOrDefault().AddressParser().Value;
         }
         
         protected string GenerateUrl(string domain, Dictionary<string, string> parameters)

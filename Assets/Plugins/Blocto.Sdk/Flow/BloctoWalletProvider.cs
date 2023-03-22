@@ -369,7 +369,7 @@ namespace Blocto.Sdk.Flow
             }
 
             $"Url: {endpoint.IframeUrl}".ToLog();
-            $"Oper Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
+            $"Open Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
             StartCoroutine(OpenUrl(endpoint.IframeUrl));
             StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
         }
