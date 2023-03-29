@@ -157,8 +157,8 @@ namespace Blocto.Sdk.Aptos
             
             var preRequestUrl = $"{webSdkDomainV2}/api/aptos/user-signature";
             var signMessagePreResponse = _webRequestUtility.GetResponse<SignMessagePreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", preRequest);
-            _signatureId = signMessagePreResponse.SignatureId;
-            $"SignatureId: {_signatureId}".ToLog();
+            signatureId = signMessagePreResponse.SignatureId;
+            $"SignatureId: {signatureId}".ToLog();
             
             var sb = new StringBuilder(webSdkDomainV2);
             sb.Append($"/{bloctoAppIdentifier}");
@@ -231,7 +231,7 @@ namespace Blocto.Sdk.Aptos
                                                          {"Blocto-Session-Identifier", sessionId},
                                                      };
                             
-                        var requestUrl = $"{webSdkDomainV2}/api/aptos/user-signature/{_signatureId}";
+                        var requestUrl = $"{webSdkDomainV2}/api/aptos/user-signature/{signatureId}";
                         var signMessageResponse = _webRequestUtility.GetResponse<SignMessageResponse>(requestUrl, HttpMethod.Get, "application/json");
                         _signMessageCallback.Invoke(signMessageResponse);
                     }
