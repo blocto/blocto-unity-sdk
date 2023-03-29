@@ -15,7 +15,6 @@ using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Random = System.Random;
 
 public class AptosController : MonoBehaviour
 {
@@ -144,7 +143,6 @@ public class AptosController : MonoBehaviour
     
     private void SignMessage()
     {
-        _walletAddress = "0x8f34b15e37d40490045770361dda638679c9b60029605829524b3c5d7093359b";
         var signMessageRequest = new SignMessagePreRequest
                                  {
                                      Address = _walletAddress,
@@ -162,6 +160,7 @@ public class AptosController : MonoBehaviour
                                                                   }
                                                                   
                                                                   _signMessageResponse = signMessageResponse;
+                                                                  Debug.Log($"SignMessage response: {JsonConvert.SerializeObject(_signMessageResponse)}");
                                                                   $"SignMessage response: {JsonConvert.SerializeObject(_signMessageResponse)}".ToLog();
                                                               });
     }
@@ -180,6 +179,7 @@ public class AptosController : MonoBehaviour
             isVerify = Ed25519.Verify(signatureBytes, message, key);
         }
           
+        Debug.Log($"Signature verify is {isVerify}");
         $"Signature verify is: {isVerify}".ToLog();
     }
     
@@ -200,7 +200,7 @@ public class AptosController : MonoBehaviour
     {
         var transaction = new EntryFunctionTransactionPayload
                           {
-                              Address = "0x8f34b15e37d40490045770361dda638679c9b60029605829524b3c5d7093359b", 
+                              Address = _walletAddress, 
                               Function = "0xdaeab14fc79d6fdc60a1ea1d33e815c7d0e7736427224fd9a4c1415fa51d22b2::value::set_value",
                               Arguments = new object[] { _setValueTxt.text },
                               TypeArguments = new string[] {  },
@@ -214,10 +214,10 @@ public class AptosController : MonoBehaviour
     
     private void SendTransaction()
     {
-        var amount= Convert.ToDouble(_transferValueTxt) * 100000000;
+        var amount= Convert.ToDouble(_transferValueTxt) * 10000000;
         var transaction = new EntryFunctionTransactionPayload
                           {
-                              Address = "0x8f34b15e37d40490045770361dda638679c9b60029605829524b3c5d7093359b", 
+                              Address = _walletAddress, 
                               Arguments = new object[] { _receptionAddressTxt.text, amount.ToString(CultureInfo.InvariantCulture) },
                               TypeArguments = new[] { BloctoWalletProvider.AptosCoinType },
                           };
