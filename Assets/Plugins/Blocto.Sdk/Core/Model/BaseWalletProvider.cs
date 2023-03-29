@@ -74,6 +74,8 @@ namespace Blocto.Sdk.Core.Model
         
         protected string sessionId;
         
+        protected string signatureId;
+ 
         protected bool isInstalledApp = false;
         
         protected Guid requestId;
@@ -134,7 +136,7 @@ namespace Blocto.Sdk.Core.Model
         
         protected virtual string CreateRequestAccountUrlV2(string chainName, string appId)
         {
-            var url = $"{webSdkDomainV2}/{appId}/{chainName}/authn/?requestId={requestId}&requestSource=sdk_unity";
+            var url = $"{webSdkDomainV2}/{appId}/{chainName}/authn/?request_id={requestId}&request_source=sdk_unity";
             return url;
         }
 
@@ -257,20 +259,19 @@ namespace Blocto.Sdk.Core.Model
             url.Append($"platform=sdk_unity");
             return url.ToString();
         }
-        
+
         /// <summary>
         /// Initial android instance
         /// </summary>
-        /// <param name="pluginName"></param>
+        /// <param name="pluginName">Android open add full name</param>
         protected void InitializePlugins(string pluginName)
         {
             try
             {
-                $"Init android plugin, plugin name: {pluginName}".ToLog();
-                pluginInstance = new AndroidJavaObject(pluginName);
-                if (pluginInstance != null)
+                $"Init android object, plugin name: {pluginName}".ToLog();
+                if (pluginInstance == null )
                 {
-                    return;
+                    pluginInstance = new AndroidJavaObject(pluginName);
                 }
             }
             catch (Exception e)

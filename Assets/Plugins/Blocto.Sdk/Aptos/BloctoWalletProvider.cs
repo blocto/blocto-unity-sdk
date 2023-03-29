@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using Blocto.Sdk.Aptos.Model;
@@ -20,9 +19,7 @@ namespace Blocto.Sdk.Aptos
  
         private static EnvEnum env;
         
-        private string _chainName = "aptos";
-        
-        private string _signatureId;
+        private readonly string _chainName = "aptos";
         
         private string _keyAddress;
         
