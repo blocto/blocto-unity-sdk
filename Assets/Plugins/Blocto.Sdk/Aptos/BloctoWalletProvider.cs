@@ -127,6 +127,11 @@ namespace Blocto.Sdk.Aptos
             throw new Exception("");
         }
         
+        /// <summary>
+        /// Sign message
+        /// </summary>
+        /// <param name="preRequest">sign message body</param>
+        /// <param name="callback">Complete sign message call back function</param>
         public void SignMessage(SignMessagePreRequest preRequest, Action<SignMessageResponse> callback)
         {
             base.SignMessage();
