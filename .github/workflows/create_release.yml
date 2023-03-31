@@ -7,9 +7,9 @@ on:
 #
 name: Create Release
 env:
-  VERSION: 0.2.5
-  PACKAGE: Flow
-  DRAFT: false
+  VERSION: 0.1.0
+  PACKAGE: Aptos
+  DRAFT: ture
 jobs:
   build:
     name: Create Release
