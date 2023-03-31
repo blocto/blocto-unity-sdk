@@ -178,7 +178,7 @@ namespace Editor
                         Directory.CreateDirectory(aptosOutputPath);
                     }
 
-                    var aptosDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Evm");
+                    var aptosDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Aptos");
                     var aptosDirPaths = aptosDirInfo.GetDirectories().Select(p => {
                                                                              var tmp = p.FullName.Split("Assets/")[1];
                                                                              return $"Assets/{tmp}";
