@@ -1,2 +1,4 @@
 Update:
-- Isolation of iOS plaform-specific code to avoid compilation errors
+- Add support Protto.Blocto.Aptos.0.1.1
+
+**This version only supports Protto.Blocto.Aptos.0.1.0**

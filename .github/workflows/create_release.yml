@@ -7,8 +7,8 @@ on:
 ##
 name: Create Release
 env:
-  VERSION: 0.1.0
-  PACKAGE: Aptos
+  VERSION: 0.2.2
+  PACKAGE: Core
   DRAFT: ture
 jobs:
   build:
