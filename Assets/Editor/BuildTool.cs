@@ -169,7 +169,23 @@ namespace Editor
                                                                          }).ToList(); 
                     directories.AddRange(evmDirPaths);
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Evm.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
-                    Debug.Log("Protto.Blocto.Solana export successed."); 
+                    Debug.Log("Protto.Blocto.Evm export successed."); 
+                    break;
+                case ExportTypeEnum.Aptos:
+                    var aptosOutputPath = $"release/{buildVersion}";
+                    if(Directory.Exists(aptosOutputPath) == false)
+                    {
+                        Directory.CreateDirectory(aptosOutputPath);
+                    }
+
+                    var aptosDirInfo = new DirectoryInfo($"{Application.dataPath}/Plugins/Blocto.Sdk/Evm");
+                    var aptosDirPaths = aptosDirInfo.GetDirectories().Select(p => {
+                                                                             var tmp = p.FullName.Split("Assets/")[1];
+                                                                             return $"Assets/{tmp}";
+                                                                         }).ToList(); 
+                    directories.AddRange(aptosDirPaths);
+                    AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Aptos.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
+                    Debug.Log("Protto.Blocto.Aptos export successed."); 
                     break;
                 case ExportTypeEnum.Flow:
                     var flowOutputPath = $"release/{buildVersion}";

@@ -8,6 +8,7 @@ namespace Editor
         Solana,
         Evm,
         Flow,
+        Aptos,
         iOS,
         Android
     }
