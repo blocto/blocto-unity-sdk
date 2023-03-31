@@ -9,7 +9,7 @@ name: Create Release
 env:
   VERSION: 0.2.2
   PACKAGE: Core
-  DRAFT: ture
+  DRAFT: false
 jobs:
   build:
     name: Create Release
