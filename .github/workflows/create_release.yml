@@ -8,7 +8,7 @@ on:
 name: Create Release
 env:
   VERSION: 0.1.0
-  PACKAGE: aptos
+  PACKAGE: Aptos
   DRAFT: false
 jobs:
   build:
