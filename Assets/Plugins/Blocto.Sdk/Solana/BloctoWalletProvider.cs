@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
@@ -21,8 +22,8 @@ namespace Blocto.Sdk.Solana
     {
         public IRpcClient SolanaClient { get; set; }
         
-        private string walletProgramId = "JBn9VwAiqpizWieotzn6FjEXrBu4fDe2XFjiFqZwp8Am";
-
+        private string _walletProgramId = "Ckv4czD7qPmQvy2duKEa45WRp3ybD2XuaJzQAWrhAour";
+        
         private const string chainName = "solana";
         
         private EnvEnum _env;
@@ -32,6 +33,8 @@ namespace Blocto.Sdk.Solana
         private Action<string> _signMessageCallback;
        
         private Dictionary<string, Dictionary<string, string>> _appendTxDict;
+        
+        private Dictionary<string, Action<SendTransactionPreRequest>> _transactionProcessDict;
 
         /// <summary>
         /// Create blocto wallet provider instance
@@ -60,7 +63,7 @@ namespace Blocto.Sdk.Solana
                         bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.dev";
                         bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
                         bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
-                        bloctoWalletProvider.walletProgramId = "Ckv4czD7qPmQvy2duKEa45WRp3ybD2XuaJzQAWrhAour";
+                        bloctoWalletProvider._walletProgramId = "Ckv4czD7qPmQvy2duKEa45WRp3ybD2XuaJzQAWrhAour";
                         bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet, webRequestUtility);
                         bloctoWalletProvider.webSdkDomainV2 = bloctoWalletProvider.webSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
                         break;
@@ -91,6 +94,17 @@ namespace Blocto.Sdk.Solana
             
             return bloctoWalletProvider;
         }
+
+        public BloctoWalletProvider()
+        {
+            _transactionProcessDict = new Dictionary<string, Action<SendTransactionPreRequest>>
+                                      {
+                                          {"true_false", SignAndSendTransactionByApp},
+                                          {"true_true", SignAndSendTransactionByWeb},
+                                          {"false_true", SignAndSendTransactionByWeb},
+                                          {"false_false", SignAndSendTransactionByWeb},
+                                      };
+        }
         
         /// <summary>
         /// Get the wallet address
@@ -100,28 +114,30 @@ namespace Blocto.Sdk.Solana
         {
             base.RequestAccount(callBack);
             
-            var parameters = new Dictionary<string, string>
-                             {
-                                 { "app_id", Uri.EscapeUriString(bloctoAppIdentifier.ToString())},
-                                 { "blockchain", BloctoWalletProvider.chainName},
-                                 { "method", ActionNameEnum.Request_Account.ToString().ToLower()},
-                                 { "request_id", requestId.ToString()}
-                             };
+            
             
             $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
             if(isInstalledApp && ForceUseWebView == false)
             {
+                var parameters = new Dictionary<string, string>
+                                 {
+                                     { "app_id", Uri.EscapeUriString(bloctoAppIdentifier.ToString())},
+                                     { "blockchain", BloctoWalletProvider.chainName},
+                                     { "method", ActionNameEnum.Request_Account.ToString().ToLower()},
+                                     { "request_id", requestId.ToString()}
+                                 };
+                
                 var appSb = GenerateUrl(appSdkDomain, parameters);
                 
                 $"Url: {appSb}".ToLog();
-                StartCoroutine(OpenUrl(appSb, ForceUseWebView));
+                StartCoroutine(OpenUrl(appSb));
                 return;
             }
             
             $"WebSDK domain: {webSdkDomain}".ToLog();
-            var webSb = GenerateUrl(webSdkDomain, parameters);
+            var webSb = CreateRequestAccountUrlV2("solana", bloctoAppIdentifier.ToString());
             $"Url: {webSb}".ToLog();
-            StartCoroutine(OpenUrl(webSb, ForceUseWebView));
+            StartCoroutine(OpenUrl(webSb));
         }
         
         /// <summary>
@@ -132,7 +148,7 @@ namespace Blocto.Sdk.Solana
         /// <param name="callBack"></param>
         public void SignAndSendTransaction(string fromAddress, Transaction transaction, Action<string> callBack)
         {
-            base.SendTransaction(callBack);
+            base.SendTransaction(callBack, "SIGNANDSENETRANSACTION");
             var tmp = new TransactionBuilder().SetRecentBlockHash(transaction.RecentBlockHash)
                                                             .SetFeePayer(transaction.FeePayer);
 
@@ -141,47 +157,16 @@ namespace Blocto.Sdk.Solana
                 tmp.AddInstruction(instruction);
             }
             
-            var sendTransactionPreRequest = new SendTransactionPreRequest
+            var sendTransactionPreRequest = new SendTransactionPreRequest(fromAddress, transaction, _appendTxDict)
                                             {
-                                                From = fromAddress,
-                                                IsInvokeWrapped = transaction.Instructions
-                                                                             .Any(p => Base58Encoding.Encode(p.ProgramId) == BloctoWalletProvider.walletProgramId),
+                                                IsInvokeWrapped = transaction.Instructions.Any(p => Base58Encoding.Encode(p.ProgramId) == _walletProgramId),
+                                                Message = tmp.BuildExecludeSign().ToHex()
                                             };
-            
-            if(transaction.Signatures != null)
-            {
-                sendTransactionPreRequest.PublicKeySignaturePairs = transaction.Signatures
-                                                                               .Where(p => p.Signature != null)
-                                                                               .Distinct(p => p.PublicKey)
-                                                                               .ToDictionary(pubKeyPair => pubKeyPair.PublicKey.Key, pubKeyPair => pubKeyPair.Signature.ToHex());
-            }
-
-            var tx = tmp.BuildExecludeSign();
-            sendTransactionPreRequest.Message = tx.ToHex();
-            $"Transaction message: {sendTransactionPreRequest.Message}".ToLog();
-            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
-            
-            if(isInstalledApp && ForceUseWebView == false)
-            {
-                var parameters = GetUrlParameters(sendTransactionPreRequest);
-                var appSb = GenerateUrl(appSdkDomain, parameters);
-                _appendTxDict.Clear();
-                $"Url: {appSb}".ToLog();
-                StartCoroutine(OpenUrl(appSb));
-                return;
-            }
-            
-            $"WebSDK domain: {webSdkDomain}".ToLog();
-            foreach (var item in _appendTxDict.SelectMany(appendTx => appendTx.Value.Select(item => item)))
-            {
-                sendTransactionPreRequest.AppenTxDict.Add(item.Key, item.Value);
-            }
-                
-            // var webSb = GenerateUrl(webSdkDomain, parameters);
-            var webSb = string.Empty;
             _appendTxDict.Clear();
-            $"ForcedUseWebView: {ForceUseWebView}, Url: {webSb}".ToLog();
-            StartCoroutine(OpenUrl(webSb, ForceUseWebView));
+            
+            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
+            var process = _transactionProcessDict[$"{isInstalledApp}_{ForceUseWebView}".ToLower()];
+            process.Invoke(sendTransactionPreRequest);
         }
 
         /// <summary>
@@ -198,11 +183,10 @@ namespace Blocto.Sdk.Solana
                 tmp.AddInstruction(instruction);
             }
             
-            var tx = tmp.BuildExecludeSign();
             var request = new CreateRawTxRequest
                           {
                               Address = address,
-                              RawTx = tx.Select(b => (sbyte)b).ToArray().ToHex()
+                              RawTx = tmp.BuildExecludeSign().Select(b => (sbyte)b).ToArray().ToHex()
                           };
             
             var requestBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
@@ -222,20 +206,18 @@ namespace Blocto.Sdk.Solana
                 programTransaction.FeePayer = message.AccountKeys[0];
             }
 
-            // var accountKeys = new List<string>();
             foreach (var instruction in message.Instructions)
             {
-                var keys = instruction.KeyIndices.Select(indices => {
-                                                             var publicKey = message.AccountKeys[Convert.ToInt32(indices)];
-                                                             var isSigner = Convert.ToInt32(indices) < Convert.ToInt32(message.Header.RequiredSignatures);
-                                                             var accountMeta = new AccountMeta(publicKey, message.IsAccountWritable(Convert.ToInt32(indices)), isSigner);
-                                                             return accountMeta;
-                                                         }).ToList();
-                // accountKeys.AddRange(keys.Select(p => p.PublicKey));
                 var transactionInstruction = new TransactionInstruction
                                              {
                                                  ProgramId = message.AccountKeys[instruction.ProgramIdIndex],
-                                                 Keys = keys,
+                                                 Keys = instruction.KeyIndices.Select(indices => {
+                                                                                          var publicKey = message.AccountKeys[Convert.ToInt32(indices)];
+                                                                                          var isSigner = Convert.ToInt32(indices) < Convert.ToInt32(message.Header.RequiredSignatures);
+                                                                                          var accountMeta = new AccountMeta(publicKey, message.IsAccountWritable(Convert.ToInt32(indices)), isSigner);
+                                                                                          return accountMeta;
+                                                                                      })
+                                                                               .ToList(),
                                                  Data = instruction.Data
                                              };
                 
@@ -244,8 +226,8 @@ namespace Blocto.Sdk.Solana
             
             var key = programTransaction.CompileMessage();
             _appendTxDict.Add(key.ToHex(), response.ExtraData.AppendData);
-            var tmpMessage = Message.Deserialize(key);
             
+            var tmpMessage = Message.Deserialize(key);
             var signedKeys = tmpMessage.AccountKeys.Take(tmpMessage.Header.RequiredSignatures);
             var signatures = signedKeys.Select(signedKey => new SignaturePubKeyPair { PublicKey = signedKey }).ToList();
             programTransaction.Signatures = signatures;
@@ -262,32 +244,70 @@ namespace Blocto.Sdk.Solana
             $"Universal Link: {link}, in Handler".ToLog();
             var decodeLink = UnityWebRequest.UnEscapeURL(link);
             var item = decodeLink.RequestId();
-            if(requestIdActionMapper.ContainsKey(item.RequestId))
+            if (!requestIdActionMapper.TryGetValue(item.RequestId, out var action))
             {
-                var action = requestIdActionMapper[item.RequestId];
-                if(item.RemainContent.Contains("error="))
-                {
-                    var errorMessage = UniversalLinkHandler(item.RemainContent, "error=");
-                    throw new Exception($"{errorMessage}");
-                }
+                return;
+            }
+            
+            if(item.RemainContent.Contains("error="))
+            {
+                var errorMessage = UniversalLinkHandler(item.RemainContent, "error=");
+                throw new Exception($"{errorMessage}");
+            }
                 
-                switch (action)
-                {
-                    case "CONNECTWALLET":
-                        var result = UniversalLinkHandler(item.RemainContent, "address=");
-                        sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
-                        _connectWalletCallback.Invoke(result);
-                        break;
+            $"Action: {action}".ToLog();
+            switch (action)
+            {
+                case "CONNECTWALLET":
+                    var result = UniversalLinkHandler(item.RemainContent, "address=");
+                    sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                    _connectWalletCallback.Invoke(result);
+                    break;
                     
-                    case "SIGNANDSENETRANSACTION":
-                        $"In Sign and SendTransaction, remain content: {item.RemainContent}".ToLog();
-                        var signature = UniversalLinkHandler(item.RemainContent, "tx_hash=");
-                        _sendTransactionCallback.Invoke(signature);
-                        break;
-                }
+                case "SIGNANDSENETRANSACTION":
+                    $"In Sign and SendTransaction, remain content: {item.RemainContent}".ToLog();
+                    var signature = UniversalLinkHandler(item.RemainContent, "tx_hash=");
+                    _sendTransactionCallback.Invoke(signature);
+                    break;
             }
         }
         
+        private void SignAndSendTransactionByWeb(SendTransactionPreRequest sendTransactionPreRequest)
+        {
+            "Send by Web".ToLog();
+            _webRequestUtility.Headers = new Dictionary<string, string>
+                                         {
+                                             { "Blocto-Session-Identifier", sessionId },
+                                             { "Blocto-Request-Identifier", requestId.ToString() }
+                                         };
+
+            $"Send transaction prerequest body: {JsonConvert.SerializeObject(sendTransactionPreRequest)}".ToLog();
+            var preRequestUrl = $"{webSdkDomainV2}/api/solana/authz-dapp";
+            var transactionPreResponse = _webRequestUtility.GetResponse<TransactionPreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", sendTransactionPreRequest);
+
+            var webSb = new StringBuilder(webSdkDomainV2);
+            webSb.Append($"/{bloctoAppIdentifier}");
+            webSb.Append($"/{BloctoWalletProvider.chainName}/authz");
+            webSb.Append($"/{transactionPreResponse.AuthorizationId}");
+
+            StartCoroutine(OpenUrl(webSb.ToString()));
+        }
+
+        private void SignAndSendTransactionByApp(SendTransactionPreRequest sendTransactionPreRequest)
+        {
+            "Send by App".ToLog();
+            var parameters = GetUrlParameters(sendTransactionPreRequest);
+            var appSb = GenerateUrl(appSdkDomain, parameters);
+
+            $"Url: {appSb}".ToLog();
+            StartCoroutine(OpenUrl(appSb));
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sendTransactionPreRequest"></param>
+        /// <returns></returns>
         private Dictionary<string, string> GetUrlParameters(SendTransactionPreRequest sendTransactionPreRequest)
         {
             var right = Uri.EscapeDataString("[");
