@@ -36,6 +36,14 @@ namespace Blocto.Sdk.Core.Utility
                         };
         }
         
+        public void SetHeader(KeyValuePair<string, string>[] parameters)
+        {
+            foreach (var item in parameters)
+            {
+                Headers.Add(item.Key, item.Value);
+            }
+        }
+        
         /// <summary>
         /// Send http request
         /// </summary>

@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Blocto.Sdk.Core.Model
 {
-    public class BaseWalletProvider : MonoBehaviour
+public class BaseWalletProvider : MonoBehaviour
     {
         public bool ForceUseWebView { get; set; }
         
@@ -145,7 +145,7 @@ namespace Blocto.Sdk.Core.Model
         /// Check specify app installed
         /// </summary>
         /// <returns></returns>
-        protected bool IsInstalledApp(EnvEnum env)
+        protected virtual bool IsInstalledApp(EnvEnum env)
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
@@ -165,9 +165,6 @@ namespace Blocto.Sdk.Core.Model
                     isInstallApp = BaseWalletProvider.IsInstalled(testDomain);
                     #endif
                     break;
-                case RuntimePlatform.OSXEditor:
-                    isInstallApp = false;
-                    break;
             }
             
             $"Is installed app: {isInstallApp}".ToLog();
@@ -179,7 +176,7 @@ namespace Blocto.Sdk.Core.Model
         /// </summary>
         /// <param name="url">Url</param>
         /// <returns></returns>
-        protected IEnumerator OpenUrl(string url)
+        protected virtual IEnumerator OpenUrl(string url)
         {
             $"ForcedUseWebView: {ForceUseWebView}, Url: {url}".ToLog();
             try
@@ -216,7 +213,7 @@ namespace Blocto.Sdk.Core.Model
             yield return new WaitForSeconds(0.5f);
         }
         
-        protected (List<string> MatchContent, string RemainContent) CheckContent(string text, string keyword)
+        protected virtual (List<string> MatchContent, string RemainContent) CheckContent(string text, string keyword)
         {
             if (!text.ToLower().Contains(keyword))
             {
@@ -233,14 +230,14 @@ namespace Blocto.Sdk.Core.Model
             return (matchElements, elements.Count > 0 ? string.Join("&", elements) : string.Empty);
         }
         
-        protected string UniversalLinkHandler(string link, string keyword)
+        protected virtual string UniversalLinkHandler(string link, string keyword)
         {
             var data = (MatchContents: new List<string>(), RemainContent: link);
             data = CheckContent(data.RemainContent, keyword);
             return data.MatchContents.FirstOrDefault().AddressParser().Value;
         }
         
-        protected string GenerateUrl(string domain, Dictionary<string, string> parameters)
+        protected virtual string GenerateUrl(string domain, Dictionary<string, string> parameters)
         {
             var url = new StringBuilder(domain);
             url.Append($"app_id={bloctoAppIdentifier.ToString()}" + "&");
@@ -253,6 +250,34 @@ namespace Blocto.Sdk.Core.Model
             return url.ToString();
         }
 
+        protected virtual string UserSignatureApiUrl(string chain)
+        {
+            return $"{webSdkDomainV2}/api/{chain.ToLower()}/dapp/user-signature";
+        }
+        
+        protected virtual string UserSignatureWebUrl(string chain)
+        {
+            var sb = new StringBuilder(webSdkDomainV2);
+            sb.Append($"/{bloctoAppIdentifier}");
+            sb.Append($"/{chain.ToLower()}/user-signature");
+            sb.Append($"/{signatureId}");
+            return sb.ToString();
+        }
+        
+        protected virtual string AuthzApiUrl(string chain)
+        {
+            return $"{webSdkDomainV2}/api/{chain.ToLower()}/dapp/authz";
+        }
+        
+        protected virtual StringBuilder AuthzWebUrl(string authorizationId, string chain)
+        {
+            var sb = new StringBuilder(webSdkDomainV2);
+            sb.Append($"/{bloctoAppIdentifier}");
+            sb.Append($"/{chain.ToLower()}/authz");
+            sb.Append($"/{authorizationId}");
+            return sb;
+        }
+        
         /// <summary>
         /// Initial android instance
         /// </summary>
