@@ -89,6 +89,7 @@ namespace Blocto.Sdk.Core.Model
         public void Awake()
         {
             requestIdActionMapper = new Dictionary<string, string>();
+            ForceUseWebView = false;
         }
         
         protected virtual void RequestAccount(Action<string> callback)
@@ -104,10 +105,10 @@ namespace Blocto.Sdk.Core.Model
             requestIdActionMapper.Add(requestId.ToString(), "SIGNMESSAGE");
         }
         
-        protected virtual void SendTransaction(Action<string> callback)
+        protected virtual void SendTransaction(Action<string> callback, string action = null)
         {
             requestId = Guid.NewGuid();
-            requestIdActionMapper.Add(requestId.ToString(), "SENDTRANSACTION");
+            requestIdActionMapper.Add(requestId.ToString(), action ?? "SENDTRANSACTION");
             _sendTransactionCallback = callback;
         }
         
@@ -174,27 +175,19 @@ namespace Blocto.Sdk.Core.Model
         }
 
         /// <summary>
-        /// Open webview
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        protected IEnumerator OpenUrl(string url) => OpenUrl(url, false);
-
-        /// <summary>
         /// Open Web or App SDK
         /// </summary>
         /// <param name="url">Url</param>
-        /// <param name="forcedUseWebView">Force use web SDK</param>
         /// <returns></returns>
-        protected IEnumerator OpenUrl(string url, bool forcedUseWebView)
+        protected IEnumerator OpenUrl(string url)
         {
-            $"ForcedUseWebView: {forcedUseWebView}".ToLog();
+            $"ForcedUseWebView: {ForceUseWebView}, Url: {url}".ToLog();
             try
             {
                 switch (Application.platform)
                 {
                     case RuntimePlatform.Android:
-                        if(isInstalledApp && forcedUseWebView == false)
+                        if(isInstalledApp && ForceUseWebView == false)
                         {
                             $"Call android app, url: {url}".ToLog();
                             pluginInstance.Call("openSDK", androidPackageName, url, url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
