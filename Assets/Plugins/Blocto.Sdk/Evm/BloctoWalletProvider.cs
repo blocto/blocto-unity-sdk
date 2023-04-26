@@ -20,12 +20,12 @@ namespace Blocto.Sdk.Evm
         
         public string NodeUrl { get; set;}
         
+        private string _connectedWalletAddress;
+        
         private static EnvEnum env;
         
-        private WebRequestUtility _webRequestUtility;
-        
         private Action<string> _signMessageCallback;
-
+        
         /// <summary>
         /// Create blocto wallet provider instance
         /// </summary>
@@ -37,12 +37,14 @@ namespace Blocto.Sdk.Evm
         public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier, string rpcUrl = default)
         {
             var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
-            bloctoWalletProvider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-            bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+            // bloctoWalletProvider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
+            // bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+            bloctoWalletProvider.webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
+            bloctoWalletProvider.webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             
             if(rpcUrl != default)
             {
-                bloctoWalletProvider.EthereumClient = new EthereumClient(rpcUrl, bloctoWalletProvider._webRequestUtility);
+                bloctoWalletProvider.EthereumClient = new EthereumClient(rpcUrl, bloctoWalletProvider.webRequestUtility);
             }
             
             try
@@ -111,9 +113,8 @@ namespace Blocto.Sdk.Evm
         /// </summary>
         /// <param name="message"></param>
         /// <param name="signType">Sing type</param>
-        /// <param name="address">Address</param>
         /// <param name="callback"></param>
-        public void SignMessage(string message, SignTypeEnum signType, string address, Action<string> callback)
+        public void SignMessage(string message, SignTypeEnum signType, Action<string> callback)
         {
             base.SignMessage();
             _signMessageCallback = callback; 
@@ -124,7 +125,7 @@ namespace Blocto.Sdk.Evm
                                  {
                                      {"blockchain", Chain.ToString().ToLower()},
                                      {"method", "sign_message"},
-                                     {"from", address},
+                                     {"from", _connectedWalletAddress},
                                      {"type", signType.GetEnumDescription()},
                                      {"message", message },
                                      {"request_id", requestId.ToString()},
@@ -138,19 +139,12 @@ namespace Blocto.Sdk.Evm
             
             var preRequest = new SignMessagePreRequest
                              {
-                                 From = address,
+                                 From = _connectedWalletAddress,
                                  Message = message,
                                  Method = signType.GetEnumDescription()
                              };
             
-            _webRequestUtility.SetHeader(new []
-                                         {
-                                             new KeyValuePair<string, string>("Blocto-Session-Identifier", sessionId),
-                                             new KeyValuePair<string, string>("Blocto-Request-Identifier", requestId.ToString())
-                                         });
-            
-            var preRequestUrl = UserSignatureApiUrl(Chain.ToString());
-            var signMessagePreResponse = _webRequestUtility.GetResponse<SignMessagePreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", preRequest);
+            var signMessagePreResponse = SendData<SignMessagePreRequest, SignMessagePreResponse>(Chain.ToString(), UserSignatureApiUrl, preRequest);
             signatureId = signMessagePreResponse.SignatureId;
             $"SignatureId: {signatureId}".ToLog();
             
@@ -186,15 +180,7 @@ namespace Blocto.Sdk.Evm
                 return;
             }
             
-            _webRequestUtility.SetHeader(new []
-                                         {
-                                             new KeyValuePair<string, string>("Blocto-Session-Identifier", sessionId),
-                                             new KeyValuePair<string, string>("Blocto-Request-Identifier", requestId.ToString())
-                                         });
-            
-            var preRequestUrl = AuthzApiUrl(Chain.ToString());
-            var transactionPreResponse = _webRequestUtility.GetResponse<TransactionPreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", new List<EvmTransaction> {evmTransaction});
-            
+            var transactionPreResponse = SendData<List<EvmTransaction>, TransactionPreResponse>(Chain.ToString(),AuthzApiUrl, new List<EvmTransaction>() {evmTransaction});
             var webSb = AuthzWebUrl(transactionPreResponse.AuthorizationId, Chain.ToString());
             $"Url: {webSb}".ToLog();
             StartCoroutine(OpenUrl(webSb.ToString()));
@@ -210,7 +196,7 @@ namespace Blocto.Sdk.Evm
         /// <returns></returns>
         public TResult QueryForSmartContract<TResult>(Uri abiUrl, string contractAddress, string queryMethod)
         {
-            var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
+            var api = webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
             var web3 = new Web3(NodeUrl);
             var contract = web3.Eth.GetContract(api.Result, contractAddress);
             
@@ -237,7 +223,7 @@ namespace Blocto.Sdk.Evm
                 case "CONNECTWALLET":
                     var result = UniversalLinkHandler(item.RemainContent, "address=");
                     sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
-
+                    _connectedWalletAddress = result;
                     _connectWalletCallback.Invoke(result);
                     break;
                     

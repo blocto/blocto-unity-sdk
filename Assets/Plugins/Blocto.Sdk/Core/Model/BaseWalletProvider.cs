@@ -2,9 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Core.Utility;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Blocto.Sdk.Core.Model
@@ -57,6 +60,8 @@ public class BaseWalletProvider : MonoBehaviour
         /// Android instance
         /// </summary>
         protected AndroidJavaObject pluginInstance;
+        
+        protected WebRequestUtility webRequestUtility;
         
         protected bool isCancelRequest;
         
@@ -235,6 +240,21 @@ public class BaseWalletProvider : MonoBehaviour
             var data = (MatchContents: new List<string>(), RemainContent: link);
             data = CheckContent(data.RemainContent, keyword);
             return data.MatchContents.FirstOrDefault().AddressParser().Value;
+        }
+        
+        protected virtual TResponse SendData<TPayload, TResponse>(string chain, Func<string, string> getUrl, TPayload requestPayload) where TPayload : class where TResponse : class
+        {
+            webRequestUtility.SetHeader(new []
+                                         {
+                                             new KeyValuePair<string, string>("Blocto-Session-Identifier", sessionId),
+                                             new KeyValuePair<string, string>("Blocto-Request-Identifier", requestId.ToString())
+                                         });
+            
+            var url = getUrl.Invoke(chain);
+            var response = webRequestUtility.GetResponse<TResponse>(url, HttpMethod.Post.ToString(), "application/json", requestPayload);
+            
+            $"Url: {url}, Payload: {JsonConvert.SerializeObject(requestPayload)}, Response:".ToLog();
+            return response;
         }
         
         protected virtual string GenerateUrl(string domain, Dictionary<string, string> parameters)

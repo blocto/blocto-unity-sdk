@@ -282,7 +282,6 @@ public class EvmController : MonoBehaviour
         _bloctoWalletProvider.SignMessage(
             message: _signMessageTxt.text,
             signType: _signType,
-            address: _walletAddress,
             callback: signature => {
                           $"Signature: {signature}".ToLog();
                           _signMessageTxt.text = signature;

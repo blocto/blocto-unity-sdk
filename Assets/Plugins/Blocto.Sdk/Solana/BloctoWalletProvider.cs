@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
 using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Solana.Model;
-using Newtonsoft.Json;
 using Solnet.Rpc;
 using Solnet.Rpc.Builders;
 using Solnet.Rpc.Models;
@@ -28,8 +26,6 @@ namespace Blocto.Sdk.Solana
         
         private EnvEnum _env;
 
-        private WebRequestUtility _webRequestUtility;
-        
         private Action<string> _signMessageCallback;
        
         private Dictionary<string, Dictionary<string, string>> _appendTxDict;
@@ -46,14 +42,13 @@ namespace Blocto.Sdk.Solana
         public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier)
         {
             var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
-            var webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-            webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             try
             {
-                bloctoWalletProvider._webRequestUtility = webRequestUtility;
+                bloctoWalletProvider.webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
+                bloctoWalletProvider.webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+                bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
                 bloctoWalletProvider.isCancelRequest = false;
-                bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
                 bloctoWalletProvider._env = env;
             
                 switch (env)
@@ -64,14 +59,14 @@ namespace Blocto.Sdk.Solana
                         bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
                         bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
                         bloctoWalletProvider._walletProgramId = "Ckv4czD7qPmQvy2duKEa45WRp3ybD2XuaJzQAWrhAour";
-                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet, webRequestUtility);
+                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet, bloctoWalletProvider.webRequestUtility);
                         bloctoWalletProvider.webSdkDomainV2 = bloctoWalletProvider.webSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
                         break;
                     case EnvEnum.Mainnet:
-                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.MainNet, webRequestUtility);
+                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.MainNet, bloctoWalletProvider.webRequestUtility);
                         break;
                     case EnvEnum.Testnet:
-                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.TestNet, webRequestUtility);
+                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.TestNet, bloctoWalletProvider.webRequestUtility);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(env), env, null);
@@ -189,10 +184,8 @@ namespace Blocto.Sdk.Solana
                               RawTx = tmp.BuildExecludeSign().Select(b => (sbyte)b).ToArray().ToHex()
                           };
             
-            var requestBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
-            var uploadHandler = new UploadHandlerRaw(requestBytes); 
-            var webRequest = _webRequestUtility.CreateUnityWebRequest($"{backedApiDomain}/solana/createRawTransaction" , "POST", "application/json", new DownloadHandlerBuffer(), uploadHandler);
-            var response = _webRequestUtility.ProcessWebRequest<CreateRawTxResponse>(webRequest);
+            var url = $"{backedApiDomain}/{BloctoWalletProvider.chainName}/createRawTransaction";
+            var response = webRequestUtility.GetResponse<CreateRawTxResponse>(url, "POST", "application/json", request);
             var messageBytes = response.RawTx.HexToBytes();
             var message = Message.Deserialize(messageBytes);
             
@@ -275,20 +268,10 @@ namespace Blocto.Sdk.Solana
         private void SignAndSendTransactionByWeb(SendTransactionPreRequest sendTransactionPreRequest)
         {
             "Send by Web".ToLog();
-            _webRequestUtility.Headers = new Dictionary<string, string>
-                                         {
-                                             { "Blocto-Session-Identifier", sessionId },
-                                             { "Blocto-Request-Identifier", requestId.ToString() }
-                                         };
-
-            $"Send transaction prerequest body: {JsonConvert.SerializeObject(sendTransactionPreRequest)}".ToLog();
-            var preRequestUrl = $"{webSdkDomainV2}/api/solana/authz-dapp";
-            var transactionPreResponse = _webRequestUtility.GetResponse<TransactionPreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", sendTransactionPreRequest);
-
-            var webSb = new StringBuilder(webSdkDomainV2);
-            webSb.Append($"/{bloctoAppIdentifier}");
-            webSb.Append($"/{BloctoWalletProvider.chainName}/authz");
-            webSb.Append($"/{transactionPreResponse.AuthorizationId}");
+            
+            var transactionPreResponse = SendData<SendTransactionPreRequest, TransactionPreResponse>(BloctoWalletProvider.chainName, AuthzApiUrl, sendTransactionPreRequest);
+            var webSb = AuthzWebUrl(transactionPreResponse.AuthorizationId, BloctoWalletProvider.chainName);
+            $"Url: {webSb}".ToLog();
 
             StartCoroutine(OpenUrl(webSb.ToString()));
         }
