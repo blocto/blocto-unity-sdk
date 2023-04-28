@@ -30,14 +30,6 @@ namespace Flow.FCL.WalletProvider
         public void SendTransaction(FclService service, FlowTransaction tx, Action<string> internalCallback = null);
         
         /// <summary>
-        /// Get authorizer signature
-        /// </summary>
-        /// <param name="iframeUrl">User approve page</param>
-        /// <param name="pollingUri">Service endpoint url</param>
-        /// <param name="internalCallback">After, get endpoint response internal callback.</param> 
-        public void Authz<TResponse>(string iframeUrl, Uri pollingUri, Action<TResponse> internalCallback) where TResponse : IResponse;
-        
-        /// <summary>
         /// SignMessage
         /// </summary>
         /// <param name="message">Original message </param>

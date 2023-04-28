@@ -16,11 +16,11 @@ using Flow.Net.Sdk.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
-using Random = System.Random;
 
 [SuppressMessage("ReSharper", "InterpolatedStringExpressionIsNotIFormattable")]
 public class FlowController : MonoBehaviour
@@ -184,7 +184,7 @@ public class FlowController : MonoBehaviour
     void Start()
     {
         var config = new Config();
-        config.Put("discovery.wallet", "https://flow-wallet-dev.blocto.app/api/flow/authn")
+        config.Put("discovery.wallet", "https://wallet-v2-dev.blocto.app/api/flow/dapp/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
               .Put("flow.network", "testnet");
         
@@ -303,37 +303,37 @@ public class FlowController : MonoBehaviour
     
     public async Task ExecuteQuery()
     {
-        var script = @" 
-                    pub struct User {
-                        pub var balance: UFix64
-                        pub var address: Address
-                        pub var name: String
-                        pub var user: Item
-                        
-                        init(name: String, address: Address, balance: UFix64, item: Item) {
-                            self.name = name
-                            self.address = address
-                            self.balance = balance
-                            self.user = item
-                        }
-                    }
-
-                    pub struct Item {
-                        pub var name: String
-
-                        init(name: String){
-                            self.name = name
-                        }
-                    }
-
-                    pub fun main(name: String): User {
-                        return User(
-                            name: name,
-                            address: 0x1,
-                            balance: 10.0,
-                            item: Item(name: name)
-                        )
-                    }";
+//         var script = @" 
+//                     pub struct User {
+//                         pub var balance: UFix64
+//                         pub var address: Address
+//                         pub var name: String
+//                         pub var user: Item
+//                         
+//                         init(name: String, address: Address, balance: UFix64, item: Item) {
+//                             self.name = name
+//                             self.address = address
+//                             self.balance = balance
+//                             self.user = item
+//                         }
+//                     }
+//
+//                     pub struct Item {
+//                         pub var name: String
+//
+//                         init(name: String){
+//                             self.name = name
+//                         }
+//                     }
+//
+//                     pub fun main(name: String): User {
+//                         return User(
+//                             name: name,
+//                             address: 0x1,
+//                             balance: 10.0,
+//                             item: Item(name: name)
+//                         )
+//                     }";
         
         var flowScript = new FlowScript
                          {
@@ -361,6 +361,7 @@ public class FlowController : MonoBehaviour
     public void VerifyUserMessage()
     {
         _signmessageTxt.text = "";
+        $"Origin message: {_originMessage}, Signatures: {JsonConvert.SerializeObject(_flowSignatures)}".ToLog();
         var appUtil = new AppUtility(gameObject, new EncodeUtility());
         var result = appUtil.VerifyUserSignatures(_originMessage, _flowSignatures, "0x5b250a8a85b44a67");
         _signmessageTxt.text += $"\r\nVerify result: {result}";
@@ -372,6 +373,7 @@ public class FlowController : MonoBehaviour
         _originMessage = _signmessageTxt.text;
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
                                                    {
+                                                       $"SignMessage result: {JsonConvert.SerializeObject(result)}".ToLog();
                                                        if(result.IsSuccessed == false)
                                                        {
                                                            _signmessageTxt.text = $"Get signmessage failed, Reason: {result.Message}";

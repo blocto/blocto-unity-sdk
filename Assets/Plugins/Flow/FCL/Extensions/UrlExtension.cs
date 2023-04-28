@@ -9,22 +9,14 @@ namespace Flow.FCL.Extensions
 {
     public static class UrlExtension
     {
-        public static (string IframeUrl, Uri PollingUrl) AuthnEndpoint(this AuthnAdapterResponse response)
+        public static (string IframeUrl, Uri PollingUrl) AuthnEndpoint(this AuthnAdapterResponse response, string appId)
         {
             var iframeUrlBuilder = new StringBuilder();
             iframeUrlBuilder.Append(response.Local.Endpoint + "?")
                            .Append(Uri.EscapeDataString("channel") + "=")
                            .Append(Uri.EscapeDataString(response.Local.Params.Channel) + "&")
-                           .Append(Uri.EscapeDataString("appId") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.AppId) + "&")
                            .Append(Uri.EscapeDataString("authenticationId") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.AuthenticationId) + "&")
-                           .Append(Uri.EscapeDataString("thumbnail") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.Thumbnail) + "&")
-                           .Append(Uri.EscapeDataString("title") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.Title) + "&")
-                           .Append(Uri.EscapeDataString("fclVersion") + "=")
-                           .Append(Uri.EscapeDataString(response.Local.Params.FclVersion));
+                           .Append(Uri.EscapeDataString(response.Local.Params.AuthenticationId) + "&");
                 
             if(response.Local.Params.AccountProofIdentifier != null && response.Local.Params.AccountProofIdentifier != null)
             {
@@ -39,9 +31,9 @@ namespace Flow.FCL.Extensions
             pollingUrlBuilder.Append(response.Updates.Endpoint + "?")
                              .Append(Uri.EscapeDataString("authenticationId") + "=")
                              .Append(Uri.EscapeDataString(response.Updates.Params.AuthenticationId));
-            var iframeUrl = iframeUrlBuilder.ToString();
-            var pollingUrl = pollingUrlBuilder.ToString();
-            var pollingUri = new Uri(pollingUrl.ToString());    
+            var iframeUrl = iframeUrlBuilder.Replace("00000000-0000-0000-0000-000000000000", appId).ToString();
+            var pollingUrl = pollingUrlBuilder.Replace("00000000-0000-0000-0000-000000000000", appId).ToString();
+            var pollingUri = new Uri(pollingUrl);    
             
             return (iframeUrl, pollingUri);
         }
@@ -107,9 +99,7 @@ namespace Flow.FCL.Extensions
             var iframeUrlBuilder = new StringBuilder();
             iframeUrlBuilder.Append(response.Local.Endpoint + "?")
                             .Append(Uri.EscapeDataString("channel") + "=")
-                            .Append(Uri.EscapeDataString(response.Local.Params.Channel) + "&")
-                            .Append(Uri.EscapeDataString("signatureId") + "=")
-                            .Append(Uri.EscapeDataString(response.Local.Params.SignatureId));
+                            .Append(Uri.EscapeDataString(response.Local.Params.Channel));
             
             var pollingUrlBuilder = new StringBuilder();
             pollingUrlBuilder.Append(response.Updates.Endpoint + "?")
@@ -119,7 +109,6 @@ namespace Flow.FCL.Extensions
                              .Append(Uri.EscapeDataString(response.Updates.Params.SessionId));
             
             var iframeUrl = iframeUrlBuilder.ToString();
-            var pollingUrl =pollingUrlBuilder.ToString();
             var pollingUri = new Uri(pollingUrlBuilder.ToString());
             
             return (iframeUrl, pollingUri);
