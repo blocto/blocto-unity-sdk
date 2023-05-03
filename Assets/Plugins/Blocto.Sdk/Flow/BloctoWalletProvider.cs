@@ -21,6 +21,7 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -193,8 +194,6 @@ namespace Blocto.Sdk.Flow
                                       };
             }
         }
-
-        
 
         /// <summary>
         /// Check specify app installed
@@ -404,7 +403,7 @@ namespace Blocto.Sdk.Flow
             var authzResponse = WebRequestUtility.GetResponse<AuthzAdapterResponse>(postUrl, "POST", "application/json", signableJObj);
             var endpoint = authzResponse.AuthzEndpoint();
             Authz<AuthzAdapterResponse>(endpoint.IframeUrl, endpoint.PollingUrl, item => {
-                                                                                     var response = item as AuthzAdapterResponse;
+                                                                                     var response = item;
                                                                                      var signInfo = response.SignatureInfo();
                                                                                      if (signInfo.Signature != null)
                                                                                      {
@@ -501,8 +500,6 @@ namespace Blocto.Sdk.Flow
             return tx;
         }
 
-        
-        
         /// <summary>
         /// SignMessage
         /// </summary>
@@ -647,6 +644,20 @@ namespace Blocto.Sdk.Flow
         }
         
         /// <summary>
+        /// For android, close webview
+        /// </summary>
+        public void CloseWebView()
+        {
+            if (Application.platform != RuntimePlatform.Android)
+            {
+                return;
+            }
+
+            _isCancelRequest = true;
+            _pluginInstance.Call("onBackPressed");
+        }
+        
+        /// <summary>
         /// Get or post https endpoint
         /// </summary>
         /// <param name="pollingUri">Endpoint url</param>
@@ -673,7 +684,7 @@ namespace Blocto.Sdk.Flow
             {
                 var webRequest = WebRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
                 response = WebRequestUtility.ProcessWebRequest<TResponse>(webRequest);
-                isApprove = response!.ResponseStatus is ResponseStatusEnum.APPROVED or ResponseStatusEnum.DECLINED ? true : false;
+                isApprove = response!.ResponseStatus is ResponseStatusEnum.APPROVED or ResponseStatusEnum.DECLINED;
                 yield return new WaitForSeconds(0.5f);
             }
             
@@ -894,29 +905,6 @@ namespace Blocto.Sdk.Flow
                        KeyId = keyId,
                        SequenceNumber = proposalKey.SequenceNumber
                    };
-        }
-        
-        /// <summary>
-        /// For iOS, ASWebAuthenticationSession closed callback.
-        /// </summary>
-        /// <param name="message">Message from iOS</param>
-        private void FailedHandler(string message)
-        {
-            _isCancelRequest = true;
-        }
-        
-        /// <summary>
-        /// For android, close webview
-        /// </summary>
-        public void CloseWebView()
-        {
-            if (Application.platform != RuntimePlatform.Android)
-            {
-                return;
-            }
-
-            _isCancelRequest = true;
-            _pluginInstance.Call("onBackPressed");
         }
         
         /// <summary>

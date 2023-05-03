@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Blocto.Sdk.Core.Extension;
 using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json;
@@ -87,8 +88,8 @@ namespace Flow.Net.Sdk.Client.Unity.Unity
             var client = CreateUnityWebRequestWithGet(urlBuilder, "application/json", new DownloadHandlerBuffer());
             try
             {
-                var result = ProcessWebRequest<ICollection<Block>>(client);
-                return result;
+                var result = ProcessWebRequest<Block[]>(client);
+                return result.ToList();
             }
             finally
             {
@@ -534,14 +535,13 @@ namespace Flow.Net.Sdk.Client.Unity.Unity
             var status = ((int)unityWebRequest.responseCode).ToString();
             if(status is "200" or "204")
             {
-                var tmp = unityWebRequest.downloadHandler.data;
                 var objectResponse_ = ReadObjectResponseAsync<T>(unityWebRequest);
                 return objectResponse_.Object;  
             }
                 
-            if(_handlers.ContainsKey(status))
+            if(_handlers.TryGetValue(status, out var handler))
             {
-                _handlers[status].Invoke(unityWebRequest);
+                handler.Invoke(unityWebRequest);
             }
             else
             {

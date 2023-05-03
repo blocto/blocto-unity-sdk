@@ -197,7 +197,7 @@ public class FlowController : MonoBehaviour
                                                                                           return walletProvider;
                                                                                       }, 
                                                                           env: "testnet",
-                                                                          bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
+                                                                          bloctoAppIdentifier:Guid.Parse("452f82f9-d86f-46ba-90f8-2a1ee930c770")); 
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                          var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                          return fcl;
@@ -245,10 +245,6 @@ public class FlowController : MonoBehaviour
                                      new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:N8}"),
                                      new CadenceAddress(receiveAddress.AddHexPrefix())
                                  },
-                     SignerList =
-                     {
-                         
-                     }
                  };
 
 
