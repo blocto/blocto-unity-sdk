@@ -8,7 +8,6 @@ using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
-using Blocto.Sdk.Evm.Model.Eth;
 using Nethereum.ABI.EIP712;
 using Nethereum.ABI.Model;
 using Nethereum.Contracts;
@@ -190,7 +189,9 @@ public class EvmController : MonoBehaviour
                       "ethereum",
                       "bsc",
                       "polygon",
-                      "avalanche"
+                      "avalanche",
+                      "optimism",
+                      "arbitrum"
                   };
         
         _ethSignSample = new EthSignSample();
@@ -206,8 +207,9 @@ public class EvmController : MonoBehaviour
             _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
                 env: envIndex == 0 ? EnvEnum.Mainnet : EnvEnum.Devnet,
-                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220"),
-                rpcUrl: "https://rinkeby.blocto.app"
+                bloctoAppIdentifier:Guid.Parse("452f82f9-d86f-46ba-90f8-2a1ee930c770"),
+                // rpcUrl: "https://rinkeby.blocto.app"
+                rpcUrl: "https://optimism-goerli.infura.io/v3/0a5f53c7bdbe4e65bcb0929564f75f6d"
             );
             
             _bloctoWalletProvider.ForceUseWebView = _forceUseWebViewToggle.isOn;
@@ -262,6 +264,8 @@ public class EvmController : MonoBehaviour
                              ChainEnum.BSC => EvmChain.BNB_CHAIN,
                              ChainEnum.Polygon => EvmChain.POLYGON,
                              ChainEnum.Avalanche => EvmChain.AVALANCHE,
+                             ChainEnum.Optimism => EvmChain.OPTIMISM,
+                             ChainEnum.Arbitrum => EvmChain.ARBITRUM,
                              _ => throw new ArgumentOutOfRangeException()
                          };
         
@@ -339,6 +343,7 @@ public class EvmController : MonoBehaviour
                           {
                               From = address,
                           };
+        
         if(_selectedChain.Title == "BNB Chain")
         {
             value = value  * 100000000;
@@ -358,13 +363,31 @@ public class EvmController : MonoBehaviour
                                                                    _transferResultTxt.text = txId;
                                                                });
         }
+        else if(_selectedChain.Title == "Optimism")
+        {
+            value = value  * 100000000;
+            var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={EvmChain.OP.TestnetContractAddress}");
+            var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
+        
+            var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
+            var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? EvmChain.BLT.MainnetContractAddress : EvmChain.BLT.TestnetContractAddress);
+            var transfer = contract.GetFunction("transfer");
+            var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, Convert.ToUInt64(value) });
+            
+            transaction.To = EvmChain.OP.TestnetContractAddress;
+            transaction.Value = 0;
+            transaction.Data = data;
+            _bloctoWalletProvider.SendTransaction(transaction, txId => {
+                                                                   $"TxId: {txId}".ToLog();
+                                                                   _transferResultTxt.text = txId;
+                                                               });
+        }
         else
         {
             transaction.To = _receptionAddressTxt.text;
             transaction.Value = value;
             transaction.Data = "";
             $"Transfer value: {value}".ToLog();
-            
             
             _bloctoWalletProvider.SendTransaction(transaction, txId => {
                                                                    $"TxId: {txId}".ToLog(); _transferResultTxt.text = txId;

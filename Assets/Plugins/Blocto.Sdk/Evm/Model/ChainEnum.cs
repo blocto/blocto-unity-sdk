@@ -5,6 +5,8 @@ namespace Blocto.Sdk.Evm.Model
         Ethereum,
         BSC,
         Polygon,
-        Avalanche
+        Avalanche,
+        Optimism,
+        Arbitrum
     }
 }
