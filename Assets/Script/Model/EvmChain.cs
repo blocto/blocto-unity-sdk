@@ -9,13 +9,13 @@ namespace Script.Model
                            Title = "Ethereum",
                            Symbol = "ETH",
                            MainnetContractAddress = "your smart contract address",
-                           TestnetContractAddress = "your smart contract address",
+                           TestnetContractAddress = "0x806243c7368a90D957592B55875eF4C3353C5bEa",
                            MainnetRpcUrl = "your rpc url",
                            TestnetRpcUrl = "your rpc url",
                            MainnetExplorerDomain = "etherscan.io",
-                           TestnetExplorerDomain = "rinkeby.etherscan.io",
-                           MainnetExplorerApiUrl = "https://api-rinkeby.etherscan.io",
-                           TestnetExplorerApiUrl = "https://api-rinkeby.etherscan.io",
+                           TestnetExplorerDomain = "goerli.etherscan.io",
+                           MainnetExplorerApiUrl = "https://etherscan.io",
+                           TestnetExplorerApiUrl = "https://goerli.etherscan.io/",
                        };
             
             BNB_CHAIN = new ChainInformation

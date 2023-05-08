@@ -57,7 +57,7 @@ namespace Blocto.Sdk.Flow.Utility
             datas.Add(tx.ProposalKey.Address.Address.HexToBytes().ToList());
             datas.Add(RLP.GetBytes(tx.ProposalKey.KeyId).ToList());
             datas.Add(RLP.GetBytes(tx.ProposalKey.SequenceNumber).ToList());
-            datas.Add(tx.Payer.Address.ToString().HexToBytes().ToList());
+            datas.Add(tx.Payer.Address.HexToBytes().ToList());
             datas.Add(new List<List<byte>> { tx.Authorizers.First().Address.HexToBytes().ToList() });
 
             return datas;
@@ -92,13 +92,13 @@ namespace Blocto.Sdk.Flow.Utility
             for (var i = 0; i < signatures.Count; i++)
             {
                 var index = i;
-                if (signers.ContainsKey(signatures[i].Address.Address))
+                if (signers.TryGetValue(signatures[i].Address.Address.AddHexPrefix(), out var signer))
                 {
-                    index = signers[signatures[i].Address.Address];
+                    index = signer;
                 }
                 else
                 {
-                    signers.Add(signatures[i].Address.Address, i);
+                    signers.Add(signatures[i].Address.Address.AddHexPrefix(), i);
                 }
 
                 $"EncodedSignature: {signatures[i]}, Index: {index}".ToLog();

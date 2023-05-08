@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Blocto.Sdk.Core.Extension;
 using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Newtonsoft.Json;
 

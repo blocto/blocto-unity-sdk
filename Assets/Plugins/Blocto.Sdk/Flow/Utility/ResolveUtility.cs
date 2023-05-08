@@ -62,9 +62,9 @@ namespace Blocto.Sdk.Flow.Utility
             }
             
             tx.SignerList.Clear();
-            if(!tx.SignerList.ContainsKey(participators.Proposer.Addr))
+            if(!tx.SignerList.ContainsKey(participators.Proposer.Addr.AddHexPrefix()))
             {
-                tx.SignerList.Add(participators.Proposer.Addr, 0);
+                tx.SignerList.Add(participators.Proposer.Addr.AddHexPrefix(), 0);
                 if(participators.Proposer.Addr != participators.Payer.Addr)
                 {
                     var payloadSignature = new FlowSignature
@@ -92,9 +92,9 @@ namespace Blocto.Sdk.Flow.Utility
             }
             
             
-            if(!tx.SignerList.ContainsKey(participators.Payer.Addr))
+            if(!tx.SignerList.ContainsKey(participators.Payer.Addr.AddHexPrefix()))
             {
-                tx.SignerList.Add(participators.Payer.Addr, tx.SignerList.Count);
+                tx.SignerList.Add(participators.Payer.Addr.AddHexPrefix(), tx.SignerList.Count);
             }
 
             foreach (var (key, index) in tmpSigners)

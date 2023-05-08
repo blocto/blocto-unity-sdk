@@ -98,8 +98,6 @@ namespace Solnet.Rpc
                 _ => RpcMainNet,
             };
 
-            $"RpcClient url: {url}".ToLog();
-            
             return GetClient(url, logger, webRequestUtility, rateLimiter);
         }
 
