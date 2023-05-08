@@ -282,8 +282,12 @@ namespace Blocto.Sdk.Flow
 
             $"Url: {endpoint.IframeUrl}".ToLog();
             $"Open Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
-            StartCoroutine(OpenUrl(endpoint.IframeUrl));
-            StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
+            
+            // Coroutine(OpenUrl(endpoint.IframeUrl));
+            Coroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
+            
+            // StartCoroutine(OpenUrl(endpoint.IframeUrl));
+            // StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
         }
         
         /// <summary>
@@ -680,6 +684,8 @@ namespace Blocto.Sdk.Flow
                 _isCancelRequest = true;    
             }
             
+            _isCancelRequest = false;
+            
             while (isApprove == false && _isCancelRequest == false)
             {
                 var webRequest = WebRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
@@ -709,11 +715,17 @@ namespace Blocto.Sdk.Flow
                     #endif
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException($"Platform", "Platform not support");
+                    // throw new ArgumentOutOfRangeException($"Platform", "Platform not support");
+                break;
                     
             }
             
             internalCallback.Invoke(response);
+        }
+        
+        protected virtual void Coroutine(IEnumerator enumerator)
+        {
+            StartCoroutine(enumerator);
         }
         
         /// <summary>

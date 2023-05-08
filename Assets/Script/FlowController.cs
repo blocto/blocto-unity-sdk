@@ -179,6 +179,9 @@ public class FlowController : MonoBehaviour
         tmp = GameObject.Find("WebSdkToggle");
         _forceUseWebViewToggle = tmp.GetComponent<Toggle>();
         _forceUseWebViewToggle.onValueChanged.AddListener(ForceUseWebView);
+        
+        _transactionToTxt.text = "0xf90c31e986eb22f90xf90c31e986eb22f9";
+        _transactionValueTxt.text = "0.1";
     }
 
     void Start()
@@ -221,6 +224,8 @@ public class FlowController : MonoBehaviour
                            $"Start verify account proof".ToLog();
                            StartCoroutine(VerifyAccountProof(accountProofData));
                        }));
+        
+        _address = "0x068606b2acddc1ca";
     }
     
     private void DisconnectWallet()
