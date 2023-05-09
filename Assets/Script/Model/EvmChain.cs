@@ -59,11 +59,34 @@ namespace Script.Model
                             MainnetExplorerApiUrl = "https://api.snowtrace.io/",
                             TestnetExplorerApiUrl = "https://api-testnet.snowtrace.io/"
                         };
+            
+            OPTIMISM = new ChainInformation
+                       {
+                           Title = "Optimism",
+                           Symbol = "ETH",
+                           MainnetContractAddress = "your smart contract address",
+                           TestnetContractAddress = "your smart contract address",
+                           MainnetRpcUrl = "your rpc url",
+                           TestnetRpcUrl = "https://goerli.optimism.io",
+                           MainnetExplorerDomain = "optimism.etherscan.io",
+                           TestnetExplorerDomain = "goerli-optimism.etherscan.io",
+                           MainnetExplorerApiUrl = "",
+                           TestnetExplorerApiUrl = "https://goerli-optimism.etherscan.io",
+                           
+                       };
             BLT = new ContractInformation
                   {
                       MainnetContractAddress = "0xfB0727386DB1A630344a08467b45541bEC9bCf17",
                       TestnetContractAddress = "0xfB0727386DB1A630344a08467b45541bEC9bCf17",
                   };
+            
+            OP = new ContractInformation
+                  {
+                      MainnetContractAddress = "",
+                      TestnetContractAddress = "0x7E07E15D2a87A24492740D16f5bdF58c16db0c4E",
+                  };
+            
+            
         }
         
         public static ChainInformation ETHEREUM { get; set; }
@@ -74,6 +97,12 @@ namespace Script.Model
         
         public static ChainInformation AVALANCHE { get; set; }
         
+        public static ChainInformation OPTIMISM { get; set; }
+        
+        public static ChainInformation ARBITRUM { get; set; }
+        
         public static ContractInformation BLT { get; set; }
+        
+        public static ContractInformation OP { get; set; }
     }
 }
