@@ -7,8 +7,8 @@ on:
 ##
 name: Create Release
 env:
-  VERSION: 0.2.6
-  PACKAGE: Flow
+  VERSION: 0.2.0
+  PACKAGE: Solana
   DRAFT: false
 jobs:
   build:
