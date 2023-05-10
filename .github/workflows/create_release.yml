@@ -7,8 +7,8 @@ on:
 ##
 name: Create Release
 env:
-  VERSION: 0.2.0
-  PACKAGE: Solana
+  VERSION: 0.1.1
+  PACKAGE: Aptos
   DRAFT: false
 jobs:
   build:
