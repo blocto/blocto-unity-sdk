@@ -1,4 +1,3 @@
 Update:
-- Add support Protto.Blocto.Aptos.0.1.0
-
-**This version only supports Protto.Blocto.Aptos.0.1.0**
+- Upgrade to blocto wallet v2
+- fix bug

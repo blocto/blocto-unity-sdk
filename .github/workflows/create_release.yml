@@ -7,7 +7,7 @@ on:
 ##
 name: Create Release
 env:
-  VERSION: 0.2.2
+  VERSION: 0.2.3
   PACKAGE: Core
   DRAFT: false
 jobs:
