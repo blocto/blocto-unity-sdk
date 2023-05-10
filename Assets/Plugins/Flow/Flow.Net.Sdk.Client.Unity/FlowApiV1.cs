@@ -7,7 +7,6 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Blocto.Sdk.Core.Extension;
 using Flow.Net.Sdk.Client.Unity.Models.Apis;
 using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json;
