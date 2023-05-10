@@ -152,6 +152,10 @@ namespace Editor
                                                                                    return $"Assets/{tmp}";
                                                                                }).ToList(); 
                     directories.AddRange(solanaDirPaths);
+                    directories.AddRange(new List<string>
+                                         {
+                                             $"Assets/Plugins/Blocto.Sdk/Solana/BloctoWalletProvider.cs",
+                                         });
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Solana.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Solana export successed.");
                     break;
@@ -168,6 +172,11 @@ namespace Editor
                                                                              return $"Assets/{tmp}";
                                                                          }).ToList(); 
                     directories.AddRange(evmDirPaths);
+                    directories.AddRange(new List<string>
+                                         {
+                                             $"Assets/Plugins/Blocto.Sdk/Evm/BloctoWalletProvider.cs",
+                                             $"Assets/Plugins/Blocto.Sdk/Evm/EthereumClient.cs",
+                                         });
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Evm.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Evm export successed."); 
                     break;
@@ -184,6 +193,10 @@ namespace Editor
                                                                              return $"Assets/{tmp}";
                                                                          }).ToList(); 
                     directories.AddRange(aptosDirPaths);
+                    directories.AddRange(new List<string>
+                                         {
+                                             $"Assets/Plugins/Blocto.Sdk/Aptos/BloctoWalletProvider.cs",
+                                         });
                     AssetDatabase.ExportPackage(directories.ToArray(), $"release/{buildVersion}/Portto.Blocto.Aptos.{buildVersion}.unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.Default);
                     Debug.Log("Protto.Blocto.Aptos export successed."); 
                     break;
