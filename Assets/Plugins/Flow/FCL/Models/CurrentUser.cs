@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Blocto.Sdk.Core.Extension;
 using Flow.FCL.Extensions;
 using Flow.FCL.Utility;
 using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core.Models;
-using Newtonsoft.Json;
 
 namespace Flow.FCL.Models
 {
@@ -72,10 +70,7 @@ namespace Flow.FCL.Models
             }
             
             _walletProvider.Authenticate(url, parameters, item => {
-                                                       $"Item: {JsonConvert.SerializeObject(item)}".ToLog();
                                                        var response = item as AuthenticateResponse;
-                                                       
-                                                       $"Response: {JsonConvert.SerializeObject(response)}".ToLog();
                                                        switch (response?.ResponseStatus)
                                                        {
                                                            case ResponseStatusEnum.APPROVED:
