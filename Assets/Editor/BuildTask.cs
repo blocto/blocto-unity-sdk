@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Editor;
+using Editor.Models;
 using UnityEditor;
 
 /// <summary>
@@ -13,6 +14,11 @@ public sealed class BuildTask
     /// 名稱
     /// </summary>
     public string ProductName;
+    
+    /// <summary>
+    /// 區塊鏈名稱
+    /// </summary>
+    public ChainEnum ChainName;
     
     /// <summary>
     /// 目標平台
@@ -32,7 +38,7 @@ public sealed class BuildTask
     /// <summary>
     /// Package Type, ex: FCL, Blocto-unity-sdk
     /// </summary>
-    public PackageTypeEnum PackageType { get; set; }
+    public ExportTypeEnum ExportType { get; set; }
 
     /// <summary>
     /// 版號

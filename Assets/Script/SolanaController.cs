@@ -11,6 +11,7 @@ using Solnet.Rpc;
 using Solnet.Rpc.Models;
 using Solnet.Wallet;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = System.Random;
 
@@ -42,6 +43,8 @@ public class SolanaController : MonoBehaviour
     private Button _openSetValueResultLinkBtn;
     
     private Button _openTransferResultLinkBtn;
+    
+    private Button _menuBtn;
     
     private InputField _walletTxt;
     
@@ -114,6 +117,10 @@ public class SolanaController : MonoBehaviour
         _partialSignBtn = tmp.GetComponent<Button>();
         _partialSignBtn.onClick.AddListener(CreateAccountAndPartialSign);
         
+        tmp = GameObject.Find("MenuBtn");
+        _menuBtn = tmp.GetComponent<Button>();
+        _menuBtn.onClick.AddListener(SolanaController.ReturnMenu);
+        
         tmp = GameObject.Find("TransactionResultTxt");
         _transactonResultTxt = tmp.GetComponent<InputField>();
         _transactonResultTxt.readOnly = true;
@@ -132,47 +139,26 @@ public class SolanaController : MonoBehaviour
                 env: EnvEnum.Devnet,
                 bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")
             );
+        
+        _walletAddreass = "8uoHvAEdfd1XDWyzmvMiCPsQfUj6vjAYxBzAptK2xMtf";
+        _receptionAddressTxt.text = "CXxPxb5GAkqjVKxb3PkxFZmUus9YrTVuUoLWee4gm8ZR";
+        _transferValueTxt.text = "0.1";
+        _bloctoWalletProvider.UniversalLinkCallbackHandler("blocto://?request_id=5a3ae1d9-d371-4720-b6db-ef92bbc93cc7&tx_hash=4VCh6aBQCkEJaNow3YyNpUKeB1E5yeUzAxUvcqh9eZZPgpBHEnns6P7K8zg9giAfhWNEjwuwQQLGLQ2rHhG73344");
     }
+    
+    private static void ReturnMenu() => SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
 
-    private void ConnectWallet()
-    {
+    private void ConnectWallet() =>
         _bloctoWalletProvider.RequestAccount(address => {
-                                                 Debug.Log($"Address: {address}");
-                                                _walletAddreass = address;
-                                                _walletTxt.text = address;
-;                                            });
-    }
-    
-    private void SetValue()
-    {
-        var solanaClient = ClientFactory.GetClient(Cluster.DevNet, _webRequestUtility);
-        var response = solanaClient.GetLatestBlockHash();
-        var minimumBalance = solanaClient.GetMinimumBalanceForRentExemption(10);
-        
-        
-        var feePayer = new PublicKey(_walletAddreass);
-        var value = Convert.ToInt32(_setValueTxt.text);
-        $"Wallet address: {_walletAddreass}, block hash: {response.Result.Value.Blockhash}, set value: {value}".ToLog();
-        var tmp = ValueProgram.CreateSetValaueInstruction(value, _walletAddreass);
-        Transaction tx = new()
-                         {
-                             RecentBlockHash = response.Result.Value.Blockhash,
-                             FeePayer = feePayer,
-                             Instructions = new List<TransactionInstruction>{ tmp }
-                         };
-        
-        _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, tx, txhash => {
-                                                                         $"Tx hash: {txhash}".ToLog();
-                                                                         _transactonResultTxt.text = txhash;
-                                                                     }); 
-    }
-    
+                                                 $"Address: {address}".ToLog();
+                                                 _walletAddreass = address;
+                                                 _walletTxt.text = address;
+                                             });
+
     private void Transfer()
     {
-        "In SendTransaction".ToLog();
         var solanaClient = ClientFactory.GetClient(Cluster.DevNet, _webRequestUtility);
         var response = solanaClient.GetLatestBlockHash();
-        var minimumBalance = solanaClient.GetMinimumBalanceForRentExemption(10);
         
         var feePayer = new PublicKey(_walletAddreass);
         var realSol = Convert.ToUInt64(Convert.ToDecimal(_transferValueTxt.text) * 1000000000);
@@ -188,42 +174,9 @@ public class SolanaController : MonoBehaviour
                      Instructions = instructions
                  };
         
-        
         _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, tx, txHash => {
                                                                               _transferResultTxt.text = txHash;
                                                                           });
-    }
-
-    private void GetValue()
-    {
-        var account = _bloctoWalletProvider.SolanaClient.GetAccountInfo(ValueProgram.ACCOUNT_PUBLIC_KEY_DEVNET);
-        var value = Parser<UInt32>(Convert.FromBase64String(account.Result.Value.Data[0]));
-        _getValueResultTxt.text = value.ToString();
-    }
-    
-    private void OpenExplorer()
-    {
-        var url = $"https://explorer.solana.com/tx/{_transactonResultTxt.text}?cluster=devnet";
-        Application.OpenURL(url);
-    }
-    
-    private void TransferOpenExplorer()
-    {
-        var url = $"https://explorer.solana.com/tx/{_transferResultTxt.text}?cluster=devnet";
-        Application.OpenURL(url);
-    }
-    
-    private TType Parser<TType>(ReadOnlySpan<Byte> data)
-    {
-        var isInit = data.GetU8(0);
-        var value = data.GetU32(1);
-        return (TType)Convert.ChangeType(value, typeof(TType));
-    }
-    
-    private void ForceUseWebView(bool value)
-    {
-        $"Toggle value: {value}".ToLog();
-        _bloctoWalletProvider.ForceUseWebView = value;
     }
     
     private void CreateAccountAndPartialSign()
@@ -242,6 +195,7 @@ public class SolanaController : MonoBehaviour
         var index = (new Random().Next(1, 1000));
         var signer = wallet.GetAccount(index);
         $"New account: {signer.PublicKey}".ToLog();
+        
         var createAccountInstruction = SystemProgram.CreateAccount(
             new PublicKey(_walletAddreass), 
             signer,
@@ -249,23 +203,70 @@ public class SolanaController : MonoBehaviour
             10,
             ValueProgram.ProgramId());
         var transaction = new Transaction
-                         {
-                             RecentBlockHash = response.Result.Value.Blockhash,
-                             FeePayer = feePayer,
-                             Instructions = new List<TransactionInstruction>{ txInstruction, createAccountInstruction }
-                         };
+                          {
+                              RecentBlockHash = response.Result.Value.Blockhash,
+                              FeePayer = feePayer,
+                              Instructions = new List<TransactionInstruction>{ txInstruction, createAccountInstruction }
+                          };
         
         var convertedTransaction = _bloctoWalletProvider.ConvertToProgramWalletTransaction(_walletAddreass, transaction);
         convertedTransaction.PartialSign(new List<Account>{ signer });
-        _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, convertedTransaction, txhash => {
-                                                                      $"Tx hash: {txhash}".ToLog();
-                                                                      _transactonResultTxt.text = txhash;
-                                                                  });
+        _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, convertedTransaction, txHash => {
+                                                                                                $"Tx hash: {txHash}".ToLog();
+                                                                                                _transactonResultTxt.text = txHash;
+                                                                                            });
+    }
+
+    private void GetValue()
+    {
+        var account = _bloctoWalletProvider.SolanaClient.GetAccountInfo(ValueProgram.ACCOUNT_PUBLIC_KEY_DEVNET);
+        var value = Parser<UInt32>(Convert.FromBase64String(account.Result.Value.Data[0]));
+        _getValueResultTxt.text = value.ToString();
     }
     
-    // private async Task<string> GetRecentBlockIdAsync()
-    // {
-    //     // var block = await _bloctoWalletProvider.SolanaClient.GetLatestBlockHashAsync().ConfigureAwait(false);
-    //     // return block.Result.Value.Blockhash;
-    // }
+    private void SetValue()
+    {
+        var solanaClient = ClientFactory.GetClient(Cluster.DevNet, _webRequestUtility);
+        var response = solanaClient.GetLatestBlockHash();
+        
+        var feePayer = new PublicKey(_walletAddreass);
+        var value = Convert.ToInt32(_setValueTxt.text);
+        $"Wallet address: {_walletAddreass}, block hash: {response.Result.Value.Blockhash}, set value: {value}".ToLog();
+        var tmp = ValueProgram.CreateSetValaueInstruction(value, _walletAddreass);
+        Transaction tx = new()
+                         {
+                             RecentBlockHash = response.Result.Value.Blockhash,
+                             FeePayer = feePayer,
+                             Instructions = new List<TransactionInstruction>{ tmp }
+                         };
+        
+        _bloctoWalletProvider.SignAndSendTransaction(_walletAddreass, tx, txHash => {
+                                                                              $"Tx hash: {txHash}".ToLog();
+                                                                              _transactonResultTxt.text = txHash;
+                                                                          }); 
+    }
+    
+    private void OpenExplorer()
+    {
+        var url = $"https://explorer.solana.com/tx/{_transactonResultTxt.text}?cluster=devnet";
+        Application.OpenURL(url);
+    }
+    
+    private void TransferOpenExplorer()
+    {
+        var url = $"https://explorer.solana.com/tx/{_transferResultTxt.text}?cluster=devnet";
+        Application.OpenURL(url);
+    }
+    
+    private TType Parser<TType>(ReadOnlySpan<Byte> data)
+    {
+        var value = data.GetU32(1);
+        return (TType)Convert.ChangeType(value, typeof(TType));
+    }
+    
+    private void ForceUseWebView(bool value)
+    {
+        $"Toggle value: {value}".ToLog();
+        _bloctoWalletProvider.ForceUseWebView = value;
+    }
 }

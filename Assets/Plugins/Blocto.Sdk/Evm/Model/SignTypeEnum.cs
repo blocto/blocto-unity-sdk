@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Blocto.Sdk.Evm.Model.Eth
+namespace Blocto.Sdk.Evm.Model
 {
     public enum SignTypeEnum
     {

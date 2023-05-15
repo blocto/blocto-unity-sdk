@@ -80,28 +80,6 @@ namespace Flow.Net.Sdk.Core
             }
         }
         
-        public static byte[] HexToBytes(this string hex)
-        {
-            try
-            {
-                hex = hex.RemoveHexPrefix();
-
-                if (IsHexString(hex))
-                {
-                    return Enumerable.Range(0, hex.Length)
-                        .Where(x => x % 2 == 0)
-                        .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                        .ToArray();
-                }
-
-                throw new FlowException("Invalid hex string.");
-            }
-            catch (Exception exception)
-            {
-                throw new FlowException("Failed to convert hex to byte[].", exception);
-            }
-        }
-
         public static bool IsHexString(this string str)
         {
             try
@@ -119,18 +97,6 @@ namespace Flow.Net.Sdk.Core
                 throw new FlowException("Failed to determine if string is hex.", exception);
             }
         }
-
-        // public static string RemoveHexPrefix(this string hex)
-        // {
-        //     try
-        //     {
-        //         return hex.Substring(hex.StartsWith("0x") ? 2 : 0);
-        //     }
-        //     catch (Exception exception)
-        //     {
-        //         throw new FlowException("Failed to remove hex prefix", exception);
-        //     }
-        // }
 
         public static string AddHexPrefix(this string hex)
         {

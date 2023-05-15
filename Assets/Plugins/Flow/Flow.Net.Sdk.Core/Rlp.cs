@@ -47,13 +47,13 @@ namespace Flow.Net.Sdk.Core
             for (var i = 0; i < signatures.Count; i++)
             {
                 var index = i;
-                if (flowTransaction.SignerList.ContainsKey(signatures[i].Address.Address))
+                if (flowTransaction.SignerList.ContainsKey(signatures[i].Address.Address.AddHexPrefix()))
                 {
                     index = flowTransaction.SignerList[signatures[i].Address.Address];
                 }
                 else
                 {
-                    flowTransaction.SignerList.Add(signatures[i].Address.Address, i);
+                    flowTransaction.SignerList.Add(signatures[i].Address.Address.AddHexPrefix(), i);
                 }
 
                 var signatureEncoded = EncodedSignature(signatures[i], index);

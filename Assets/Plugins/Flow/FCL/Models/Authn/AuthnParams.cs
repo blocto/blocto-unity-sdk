@@ -1,9 +1,8 @@
-using System;
 using Newtonsoft.Json;
 
 namespace Flow.FCL.Models.Authn
 {
-    public partial class AuthnParams
+    public class AuthnParams
     {
         [JsonProperty("channel")]
         public string Channel { get; set; }

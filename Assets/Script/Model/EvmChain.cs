@@ -9,13 +9,13 @@ namespace Script.Model
                            Title = "Ethereum",
                            Symbol = "ETH",
                            MainnetContractAddress = "your smart contract address",
-                           TestnetContractAddress = "your smart contract address",
+                           TestnetContractAddress = "0x806243c7368a90D957592B55875eF4C3353C5bEa",
                            MainnetRpcUrl = "your rpc url",
                            TestnetRpcUrl = "your rpc url",
                            MainnetExplorerDomain = "etherscan.io",
-                           TestnetExplorerDomain = "rinkeby.etherscan.io",
-                           MainnetExplorerApiUrl = "https://api-rinkeby.etherscan.io",
-                           TestnetExplorerApiUrl = "https://api-rinkeby.etherscan.io",
+                           TestnetExplorerDomain = "goerli.etherscan.io",
+                           MainnetExplorerApiUrl = "https://etherscan.io",
+                           TestnetExplorerApiUrl = "https://goerli.etherscan.io/",
                        };
             
             BNB_CHAIN = new ChainInformation
@@ -59,11 +59,34 @@ namespace Script.Model
                             MainnetExplorerApiUrl = "https://api.snowtrace.io/",
                             TestnetExplorerApiUrl = "https://api-testnet.snowtrace.io/"
                         };
+            
+            OPTIMISM = new ChainInformation
+                       {
+                           Title = "Optimism",
+                           Symbol = "ETH",
+                           MainnetContractAddress = "your smart contract address",
+                           TestnetContractAddress = "your smart contract address",
+                           MainnetRpcUrl = "your rpc url",
+                           TestnetRpcUrl = "https://goerli.optimism.io",
+                           MainnetExplorerDomain = "optimism.etherscan.io",
+                           TestnetExplorerDomain = "goerli-optimism.etherscan.io",
+                           MainnetExplorerApiUrl = "",
+                           TestnetExplorerApiUrl = "https://goerli-optimism.etherscan.io",
+                           
+                       };
             BLT = new ContractInformation
                   {
                       MainnetContractAddress = "0xfB0727386DB1A630344a08467b45541bEC9bCf17",
                       TestnetContractAddress = "0xfB0727386DB1A630344a08467b45541bEC9bCf17",
                   };
+            
+            OP = new ContractInformation
+                  {
+                      MainnetContractAddress = "",
+                      TestnetContractAddress = "0x7E07E15D2a87A24492740D16f5bdF58c16db0c4E",
+                  };
+            
+            
         }
         
         public static ChainInformation ETHEREUM { get; set; }
@@ -74,6 +97,12 @@ namespace Script.Model
         
         public static ChainInformation AVALANCHE { get; set; }
         
+        public static ChainInformation OPTIMISM { get; set; }
+        
+        public static ChainInformation ARBITRUM { get; set; }
+        
         public static ContractInformation BLT { get; set; }
+        
+        public static ContractInformation OP { get; set; }
     }
 }

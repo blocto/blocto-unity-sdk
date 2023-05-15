@@ -8,16 +8,15 @@ using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
-using Blocto.Sdk.Evm.Model.Eth;
 using Nethereum.ABI.EIP712;
 using Nethereum.ABI.Model;
 using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using Nethereum.Web3;
-using Org.BouncyCastle.Crypto.Digests;
 using Script.Model;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class EvmController : MonoBehaviour
@@ -50,6 +49,8 @@ public class EvmController : MonoBehaviour
     
     private Button _typedDataBtn;
     
+    private Button _menuBtn;
+    
     private InputField _accountTxt;
     
     private InputField _signMessageTxt;
@@ -73,8 +74,6 @@ public class EvmController : MonoBehaviour
     private Dropdown _chainDL;
     
     private WebRequestUtility _webRequestUtility;
-    
-    private const string _originMessage = "blocto demo app.";
     
     private string _walletAddress;
     
@@ -140,6 +139,10 @@ public class EvmController : MonoBehaviour
         _typedDataBtn = tmp.GetComponent<Button>();
         _typedDataBtn.onClick.AddListener(TypedData);
         
+        tmp = GameObject.Find("MenuBtn");
+        _menuBtn = tmp.GetComponent<Button>();
+        _menuBtn.onClick.AddListener(ReturnMenu);
+        
         tmp = GameObject.Find("WalletTxt");
         _accountTxt = tmp.GetComponent<InputField>();
         
@@ -186,7 +189,9 @@ public class EvmController : MonoBehaviour
                       "ethereum",
                       "bsc",
                       "polygon",
-                      "avalanche"
+                      "avalanche",
+                      "optimism",
+                      "arbitrum"
                   };
         
         _ethSignSample = new EthSignSample();
@@ -202,8 +207,9 @@ public class EvmController : MonoBehaviour
             _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
                 env: envIndex == 0 ? EnvEnum.Mainnet : EnvEnum.Devnet,
-                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220"),
-                rpcUrl: "{your rpc url}"
+                bloctoAppIdentifier:Guid.Parse("452f82f9-d86f-46ba-90f8-2a1ee930c770"),
+                // rpcUrl: "https://rinkeby.blocto.app"
+                rpcUrl: "https://optimism-goerli.infura.io/v3/0a5f53c7bdbe4e65bcb0929564f75f6d"
             );
             
             _bloctoWalletProvider.ForceUseWebView = _forceUseWebViewToggle.isOn;
@@ -258,8 +264,11 @@ public class EvmController : MonoBehaviour
                              ChainEnum.BSC => EvmChain.BNB_CHAIN,
                              ChainEnum.Polygon => EvmChain.POLYGON,
                              ChainEnum.Avalanche => EvmChain.AVALANCHE,
+                             ChainEnum.Optimism => EvmChain.OPTIMISM,
+                             ChainEnum.Arbitrum => EvmChain.ARBITRUM,
                              _ => throw new ArgumentOutOfRangeException()
                          };
+        
         if(chain == ChainEnum.BSC)
         {
             _receptionAddressTxt.text = "0xd291Eb0048de837A469B3c1A1E9615F0A7860276";
@@ -277,17 +286,16 @@ public class EvmController : MonoBehaviour
         _bloctoWalletProvider.SignMessage(
             message: _signMessageTxt.text,
             signType: _signType,
-            address: _walletAddress,
             callback: signature => {
                           $"Signature: {signature}".ToLog();
                           _signMessageTxt.text = signature;
                           
-                          var hash = default(string);
-                          var signatureByte = _signMessageTxt.text.RemoveHexPrefix().HexToByteArray();
+                          var hash = string.Empty;
+                          var signatureByte = _signMessageTxt.text.RemoveHexPrefix().HexToBytes();
                           switch (_signType)
                           {
                               case SignTypeEnum.Eth_Sign:
-                                  hash = Sha3Keccack.Current.CalculateHash(_oriSignMessage.RemoveHexPrefix().HexToByteArray()).ToHex();
+                                  hash = Sha3Keccack.Current.CalculateHash(_oriSignMessage.RemoveHexPrefix().HexToBytes()).ToHex();
                                   break;
                               case SignTypeEnum.Personal_Sign:
                                   hash = Sha3Keccack.Current.CalculateHash(Encoding.UTF8.GetBytes(_oriSignMessage)).ToHex();
@@ -303,11 +311,13 @@ public class EvmController : MonoBehaviour
                                   throw new ArgumentOutOfRangeException();
                           }
 
-                          var isValidSignature = new FunctionABI("isValidSignature", false);
-                          isValidSignature.InputParameters = new []{ new Parameter("bytes32"), new Parameter("bytes")};
+                          var isValidSignature = new FunctionABI("isValidSignature", false)
+                                                 {
+                                                     InputParameters = new []{ new Parameter("bytes32"), new Parameter("bytes")}
+                                                 };
 
                           var function = new FunctionBuilder(_walletAddress, isValidSignature);
-                          var data = function.GetData(new object[] { hash.HexToByteArray(), signatureByte});
+                          var data = function.GetData(new object[] { hash.HexToBytes(), signatureByte});
                           var callInput = new CallInput(data, _walletAddress)
                                           {
                                               From = _walletAddress
@@ -327,12 +337,15 @@ public class EvmController : MonoBehaviour
     
     private void SendTransaction()
     {
-        var receptionAddress = default(string);
         var address = _accountTxt.text;
         var value = Convert.ToDecimal(_transferValueTxt.text);
+        var transaction = new EvmTransaction
+                          {
+                              From = address,
+                          };
+        
         if(_selectedChain.Title == "BNB Chain")
         {
-            receptionAddress = EvmChain.BLT.TestnetContractAddress;
             value = value  * 100000000;
             var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={EvmChain.BLT.TestnetContractAddress}");
             var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
@@ -341,24 +354,44 @@ public class EvmController : MonoBehaviour
             var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? EvmChain.BLT.MainnetContractAddress : EvmChain.BLT.TestnetContractAddress);
             var transfer = contract.GetFunction("transfer");
             var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, Convert.ToUInt64(value) });
-            _bloctoWalletProvider.SendTransaction(
-                address, 
-                receptionAddress, 
-                0, 
-                data, 
-                txId => {
-                    $"TxId: {txId}".ToLog();
-                    _transferResultTxt.text = txId;
-                });
+            
+            transaction.To = EvmChain.BLT.TestnetContractAddress;
+            transaction.Value = 0;
+            transaction.Data = data;
+            _bloctoWalletProvider.SendTransaction(transaction, txId => {
+                                                                   $"TxId: {txId}".ToLog();
+                                                                   _transferResultTxt.text = txId;
+                                                               });
+        }
+        else if(_selectedChain.Title == "Optimism")
+        {
+            value = value  * 100000000;
+            var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={EvmChain.OP.TestnetContractAddress}");
+            var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
+        
+            var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
+            var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? EvmChain.BLT.MainnetContractAddress : EvmChain.BLT.TestnetContractAddress);
+            var transfer = contract.GetFunction("transfer");
+            var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, Convert.ToUInt64(value) });
+            
+            transaction.To = EvmChain.OP.TestnetContractAddress;
+            transaction.Value = 0;
+            transaction.Data = data;
+            _bloctoWalletProvider.SendTransaction(transaction, txId => {
+                                                                   $"TxId: {txId}".ToLog();
+                                                                   _transferResultTxt.text = txId;
+                                                               });
         }
         else
         {
-            receptionAddress = _receptionAddressTxt.text;
+            transaction.To = _receptionAddressTxt.text;
+            transaction.Value = value;
+            transaction.Data = "";
             $"Transfer value: {value}".ToLog();
-            _bloctoWalletProvider.SendTransaction(address, receptionAddress, value, "", txId => {
-                                                                                            $"TxId: {txId}".ToLog();
-                                                                                            _transferResultTxt.text = txId;
-                                                                                        }); 
+            
+            _bloctoWalletProvider.SendTransaction(transaction, txId => {
+                                                                   $"TxId: {txId}".ToLog(); _transferResultTxt.text = txId;
+                                                               }); 
         }
     }
     
@@ -390,20 +423,27 @@ public class EvmController : MonoBehaviour
         var setValue = contract.GetFunction("setValue");
         var data = setValue.GetData(new object[]{ Convert.ToUInt64(_setValueTxt.text) });
         $"Set Value: {_setValueTxt.text}, encode data: {data}".ToLog();
-        _bloctoWalletProvider.SendTransaction(
-            address, 
-            _envDL.value == 0 ? _selectedChain.MainnetContractAddress : _selectedChain.TestnetContractAddress, 
-            0, 
-            data, 
-            txId => {
-                $"TxId: {txId}".ToLog();
-                _setValueResultTxt.text = txId;
-            });
+        
+        var transaction = new EvmTransaction
+                          {
+                              From = address,
+                              To = _envDL.value == 0 ? _selectedChain.MainnetContractAddress : _selectedChain.TestnetContractAddress, 
+                              Value = 0,
+                              Data = data
+                          };
+        _bloctoWalletProvider.SendTransaction(transaction, txId => {
+                                                               $"TxId: {txId}".ToLog(); _setValueResultTxt.text = txId;
+                                                           });
+    }
+    
+    private void ReturnMenu()
+    {
+        SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
     }
     
     private bool IsMainnet()
     {
-        return _envDL.value == 0 ? true : false;
+        return _envDL.value == 0;
     }
     
     private void SetValueOpenExplorer()

@@ -89,7 +89,7 @@ namespace Blocto.Sdk.Evm.Model.Hex.Util
 
         public byte[] ToHexByteArray()
         {
-            return HexValue.HexToByteArray();
+            return HexValue.HexToBytes();
         }
 
         public static implicit operator byte[](HexRPCType<T> hexRpcType)

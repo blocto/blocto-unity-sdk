@@ -2,17 +2,21 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using Blocto.Sdk.Core.Extension;
+using Blocto.Sdk.Core.Utility;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Blocto.Sdk.Core.Model
 {
-    public class BaseWalletProvider : MonoBehaviour
+public class BaseWalletProvider : MonoBehaviour
     {
         public bool ForceUseWebView { get; set; }
         
+        #if UNITY_IOS
         /// <summary>
         /// iOS swift open ASWebAuthenticationSession method
         /// </summary>
@@ -50,11 +54,14 @@ namespace Blocto.Sdk.Core.Model
         /// <returns></returns>
         [DllImport("__Internal")]
         protected static extern string UniversalLink_Reset();
+        #endif
         
         /// <summary>
         /// Android instance
         /// </summary>
         protected AndroidJavaObject pluginInstance;
+        
+        protected WebRequestUtility webRequestUtility;
         
         protected bool isCancelRequest;
         
@@ -62,26 +69,88 @@ namespace Blocto.Sdk.Core.Model
         
         protected string webSdkDomain = "https://wallet.blocto.app/sdk?";
         
+        protected string webSdkDomainV2 = "https://wallet-v2.blocto.app";
+        
         protected string appSdkDomain = "https://blocto.app/sdk?";
         
         protected string backedApiDomain = "https://api.blocto.app";
         
         protected string androidPackageName = "com.portto.blocto";
         
+        protected string sessionId;
+        
+        protected string signatureId;
+ 
         protected bool isInstalledApp = false;
         
+        protected Guid requestId;
+        
         protected Dictionary<string, string> requestIdActionMapper;
+        
+        protected Action<string> _connectWalletCallback;
+        
+        protected Action<string> _sendTransactionCallback;
 
         public void Awake()
         {
             requestIdActionMapper = new Dictionary<string, string>();
+            ForceUseWebView = false;
+        }
+        
+        protected virtual void RequestAccount(Action<string> callback)
+        {
+            requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), "CONNECTWALLET");
+            _connectWalletCallback = callback;
+        }
+        
+        protected virtual void SignMessage()
+        {
+            requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), "SIGNMESSAGE");
+        }
+        
+        protected virtual void SendTransaction(Action<string> callback, string action = null)
+        {
+            requestId = Guid.NewGuid();
+            requestIdActionMapper.Add(requestId.ToString(), action ?? "SENDTRANSACTION");
+            _sendTransactionCallback = callback;
+        }
+        
+        protected virtual string CreateRequestAccountUrl(bool isInstallApp, string chainName)
+        {
+            var parameters = new Dictionary<string, string>
+                             {
+                                 {"blockchain", chainName.ToLower() },
+                                 {"method", "request_account" },
+                                 {"request_id", requestId.ToString() }, 
+                             };
+            
+            if(isInstalledApp && ForceUseWebView == false)
+            {
+                var appSb = GenerateUrl(appSdkDomain, parameters);
+                
+                $"Url: {appSb}".ToLog();
+                StartCoroutine(OpenUrl(appSb));
+                return appSb;
+            }
+            
+            $"WebSDK domain: {webSdkDomain}".ToLog();
+            var webSb = GenerateUrl(webSdkDomain, parameters);
+            return webSb;
+        }
+        
+        protected virtual string CreateRequestAccountUrlV2(string chainName, string appId)
+        {
+            var url = $"{webSdkDomainV2}/{appId}/{chainName}/authn/?request_id={requestId}&request_source=sdk_unity";
+            return url;
         }
 
         /// <summary>
         /// Check specify app installed
         /// </summary>
         /// <returns></returns>
-        protected bool IsInstalledApp(EnvEnum env)
+        protected virtual bool IsInstalledApp(EnvEnum env)
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
@@ -97,10 +166,9 @@ namespace Blocto.Sdk.Core.Model
                     isInstallApp = pluginInstance.Call<bool>("isInstalledApp", androidPackageName); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
+                    #if UNITY_IOS
                     isInstallApp = BaseWalletProvider.IsInstalled(testDomain);
-                    break;
-                case RuntimePlatform.OSXEditor:
-                    isInstallApp = false;
+                    #endif
                     break;
             }
             
@@ -109,27 +177,19 @@ namespace Blocto.Sdk.Core.Model
         }
 
         /// <summary>
-        /// Open webview
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        protected IEnumerator OpenUrl(string url) => OpenUrl(url, false);
-
-        /// <summary>
         /// Open Web or App SDK
         /// </summary>
         /// <param name="url">Url</param>
-        /// <param name="forcedUseWebView">Force use web SDK</param>
         /// <returns></returns>
-        protected IEnumerator OpenUrl(string url, bool forcedUseWebView)
+        protected virtual IEnumerator OpenUrl(string url)
         {
-            $"ForcedUseWebView: {forcedUseWebView}".ToLog();
+            $"ForcedUseWebView: {ForceUseWebView}, Url: {url}".ToLog();
             try
             {
                 switch (Application.platform)
                 {
                     case RuntimePlatform.Android:
-                        if(isInstalledApp && forcedUseWebView == false)
+                        if(isInstalledApp && ForceUseWebView == false)
                         {
                             $"Call android app, url: {url}".ToLog();
                             pluginInstance.Call("openSDK", androidPackageName, url, url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
@@ -142,7 +202,9 @@ namespace Blocto.Sdk.Core.Model
                         
                         break;
                     case RuntimePlatform.IPhonePlayer:
+                        #if UNITY_IOS
                         BaseWalletProvider.OpenUrl("bloctowalletprovider", "UniversalLinkCallbackHandler", url, url);
+                        #endif
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -156,7 +218,7 @@ namespace Blocto.Sdk.Core.Model
             yield return new WaitForSeconds(0.5f);
         }
         
-        protected (List<string> MatchContent, string RemainContent) CheckContent(string text, string keyword)
+        protected virtual (List<string> MatchContent, string RemainContent) CheckContent(string text, string keyword)
         {
             if (!text.ToLower().Contains(keyword))
             {
@@ -173,7 +235,29 @@ namespace Blocto.Sdk.Core.Model
             return (matchElements, elements.Count > 0 ? string.Join("&", elements) : string.Empty);
         }
         
-        protected string GenerateUrl(string domain, Dictionary<string, string> parameters)
+        protected virtual string UniversalLinkHandler(string link, string keyword)
+        {
+            var data = (MatchContents: new List<string>(), RemainContent: link);
+            data = CheckContent(data.RemainContent, keyword);
+            return data.MatchContents.FirstOrDefault().AddressParser().Value;
+        }
+        
+        protected virtual TResponse SendData<TPayload, TResponse>(string chain, Func<string, string> getUrl, TPayload requestPayload) where TPayload : class where TResponse : class
+        {
+            webRequestUtility.SetHeader(new []
+                                         {
+                                             new KeyValuePair<string, string>("Blocto-Session-Identifier", sessionId),
+                                             new KeyValuePair<string, string>("Blocto-Request-Identifier", requestId.ToString())
+                                         });
+            
+            var url = getUrl.Invoke(chain);
+            var response = webRequestUtility.GetResponse<TResponse>(url, HttpMethod.Post.ToString(), "application/json", requestPayload);
+            
+            $"Url: {url}, Payload: {JsonConvert.SerializeObject(requestPayload)}, Response:".ToLog();
+            return response;
+        }
+        
+        protected virtual string GenerateUrl(string domain, Dictionary<string, string> parameters)
         {
             var url = new StringBuilder(domain);
             url.Append($"app_id={bloctoAppIdentifier.ToString()}" + "&");
@@ -185,20 +269,47 @@ namespace Blocto.Sdk.Core.Model
             url.Append($"platform=sdk_unity");
             return url.ToString();
         }
+
+        protected virtual string UserSignatureApiUrl(string chain)
+        {
+            return $"{webSdkDomainV2}/api/{chain.ToLower()}/dapp/user-signature";
+        }
+        
+        protected virtual string UserSignatureWebUrl(string chain)
+        {
+            var sb = new StringBuilder(webSdkDomainV2);
+            sb.Append($"/{bloctoAppIdentifier}");
+            sb.Append($"/{chain.ToLower()}/user-signature");
+            sb.Append($"/{signatureId}");
+            return sb.ToString();
+        }
+        
+        protected virtual string AuthzApiUrl(string chain)
+        {
+            return $"{webSdkDomainV2}/api/{chain.ToLower()}/dapp/authz";
+        }
+        
+        protected virtual StringBuilder AuthzWebUrl(string authorizationId, string chain)
+        {
+            var sb = new StringBuilder(webSdkDomainV2);
+            sb.Append($"/{bloctoAppIdentifier}");
+            sb.Append($"/{chain.ToLower()}/authz");
+            sb.Append($"/{authorizationId}");
+            return sb;
+        }
         
         /// <summary>
         /// Initial android instance
         /// </summary>
-        /// <param name="pluginName"></param>
+        /// <param name="pluginName">Android open add full name</param>
         protected void InitializePlugins(string pluginName)
         {
             try
             {
-                $"Init android plugin, plugin name: {pluginName}".ToLog();
-                pluginInstance = new AndroidJavaObject(pluginName);
-                if (pluginInstance != null)
+                $"Init android object, plugin name: {pluginName}".ToLog();
+                if (pluginInstance == null )
                 {
-                    return;
+                    pluginInstance = new AndroidJavaObject(pluginName);
                 }
             }
             catch (Exception e)

@@ -16,10 +16,11 @@ using Flow.Net.Sdk.Client.Unity.Unity;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
+using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using KeyGenerator = Blocto.Sdk.Core.Utility.KeyGenerator;
-using Random = System.Random;
 
 [SuppressMessage("ReSharper", "InterpolatedStringExpressionIsNotIFormattable")]
 public class FlowController : MonoBehaviour
@@ -44,6 +45,8 @@ public class FlowController : MonoBehaviour
     
     private Button _authnBtn;
     
+    private Button _disconnectBtn;
+    
     private Button _sendTransaction;
     
     private Button _getAccountBtn;
@@ -61,6 +64,8 @@ public class FlowController : MonoBehaviour
     private Button _openSetValueResultLinkBtn;
     
     private Button _openTransferResultLinkBtn;
+    
+    private Button _menuBtn;
     
     private InputField _accountTxt;
     
@@ -110,6 +115,10 @@ public class FlowController : MonoBehaviour
         _authnBtn = tmp.GetComponent<Button>();
         _authnBtn.onClick.AddListener(ConnectWallet);
         
+        tmp = GameObject.Find("DisconnectWalletBtn");
+        _disconnectBtn = tmp.GetComponent<Button>();
+        _disconnectBtn.onClick.AddListener(DisconnectWallet);
+        
         tmp = GameObject.Find("TransferBtn");
         _sendTransaction = tmp.GetComponent<Button>();
         _sendTransaction.onClick.AddListener(SendTransaction);
@@ -133,6 +142,10 @@ public class FlowController : MonoBehaviour
         tmp = GameObject.Find("SetValueOpenExplorerBtn");
         _openSetValueResultLinkBtn = tmp.GetComponent<Button>();
         _openSetValueResultLinkBtn.onClick.AddListener(OpenSetValueExplorer);
+        
+        tmp = GameObject.Find("MenuBtn");
+        _menuBtn = tmp.GetComponent<Button>();
+        _menuBtn.onClick.AddListener(RetunMenu);
         
         tmp = GameObject.Find("WalletTxt");
         _accountTxt = tmp.GetComponent<InputField>();
@@ -171,7 +184,7 @@ public class FlowController : MonoBehaviour
     void Start()
     {
         var config = new Config();
-        config.Put("discovery.wallet", "https://flow-wallet-dev.blocto.app/api/flow/authn")
+        config.Put("discovery.wallet", "https://wallet-v2-dev.blocto.app/api/flow/dapp/authn")
               .Put("accessNode.api", "https://rest-testnet.onflow.org/v1")
               .Put("flow.network", "testnet");
         
@@ -184,13 +197,12 @@ public class FlowController : MonoBehaviour
                                                                                           return walletProvider;
                                                                                       }, 
                                                                           env: "testnet",
-                                                                          bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220")); 
+                                                                          bloctoAppIdentifier:Guid.Parse("452f82f9-d86f-46ba-90f8-2a1ee930c770")); 
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                          var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                          return fcl;
                                                      }, config);
         _walletProvider.ForcedUseWebView = true;
-        DontDestroyOnLoad (_walletProvider);
     }
 
     private void ConnectWallet()
@@ -211,6 +223,14 @@ public class FlowController : MonoBehaviour
                        }));
     }
     
+    private void DisconnectWallet()
+    {
+        "Disconnect wallet".ToLog();
+        _fcl.UnAuthenticate(() => {
+                                _accountTxt.text = "";
+                            });
+    }
+    
     private void SendTransaction()
     {
         var receiveAddress = _transactionToTxt.text;
@@ -225,10 +245,6 @@ public class FlowController : MonoBehaviour
                                      new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:N8}"),
                                      new CadenceAddress(receiveAddress.AddHexPrefix())
                                  },
-                     SignerList =
-                     {
-                         
-                     }
                  };
 
 
@@ -283,37 +299,37 @@ public class FlowController : MonoBehaviour
     
     public async Task ExecuteQuery()
     {
-        var script = @" 
-                    pub struct User {
-                        pub var balance: UFix64
-                        pub var address: Address
-                        pub var name: String
-                        pub var user: Item
-                        
-                        init(name: String, address: Address, balance: UFix64, item: Item) {
-                            self.name = name
-                            self.address = address
-                            self.balance = balance
-                            self.user = item
-                        }
-                    }
-
-                    pub struct Item {
-                        pub var name: String
-
-                        init(name: String){
-                            self.name = name
-                        }
-                    }
-
-                    pub fun main(name: String): User {
-                        return User(
-                            name: name,
-                            address: 0x1,
-                            balance: 10.0,
-                            item: Item(name: name)
-                        )
-                    }";
+//         var script = @" 
+//                     pub struct User {
+//                         pub var balance: UFix64
+//                         pub var address: Address
+//                         pub var name: String
+//                         pub var user: Item
+//                         
+//                         init(name: String, address: Address, balance: UFix64, item: Item) {
+//                             self.name = name
+//                             self.address = address
+//                             self.balance = balance
+//                             self.user = item
+//                         }
+//                     }
+//
+//                     pub struct Item {
+//                         pub var name: String
+//
+//                         init(name: String){
+//                             self.name = name
+//                         }
+//                     }
+//
+//                     pub fun main(name: String): User {
+//                         return User(
+//                             name: name,
+//                             address: 0x1,
+//                             balance: 10.0,
+//                             item: Item(name: name)
+//                         )
+//                     }";
         
         var flowScript = new FlowScript
                          {
@@ -341,6 +357,7 @@ public class FlowController : MonoBehaviour
     public void VerifyUserMessage()
     {
         _signmessageTxt.text = "";
+        $"Origin message: {_originMessage}, Signatures: {JsonConvert.SerializeObject(_flowSignatures)}".ToLog();
         var appUtil = new AppUtility(gameObject, new EncodeUtility());
         var result = appUtil.VerifyUserSignatures(_originMessage, _flowSignatures, "0x5b250a8a85b44a67");
         _signmessageTxt.text += $"\r\nVerify result: {result}";
@@ -352,6 +369,7 @@ public class FlowController : MonoBehaviour
         _originMessage = _signmessageTxt.text;
         _fcl.SignUserMessage(_signmessageTxt.text, result => 
                                                    {
+                                                       $"SignMessage result: {JsonConvert.SerializeObject(result)}".ToLog();
                                                        if(result.IsSuccessed == false)
                                                        {
                                                            _signmessageTxt.text = $"Get signmessage failed, Reason: {result.Message}";
@@ -377,6 +395,11 @@ public class FlowController : MonoBehaviour
     {
         var url = $"https://testnet.flowscan.org/transaction/{_resultTxt.text}";
         Application.OpenURL(url);
+    }
+    
+    private void RetunMenu()
+    {
+        SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
     }
     
     private async void GetAccount()

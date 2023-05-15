@@ -17,20 +17,17 @@ namespace Flow.FCL.WalletProvider
         public void Authenticate(string url, Dictionary<string, object> parameters, Action<object> internalCallback = null);
         
         /// <summary>
+        /// User disconnect wallet
+        /// </summary>
+        public void UnAuthenticate();
+        
+        /// <summary>
         /// Send Transaction
         /// </summary>
         /// <param name="service">fcl preauth service</param>
         /// <param name="tx">flow transaction</param>
         /// <param name="internalCallback">completed transaction callback</param>
         public void SendTransaction(FclService service, FlowTransaction tx, Action<string> internalCallback = null);
-        
-        /// <summary>
-        /// Get authorizer signature
-        /// </summary>
-        /// <param name="iframeUrl">User approve page</param>
-        /// <param name="pollingUri">Service endpoint url</param>
-        /// <param name="internalCallback">After, get endpoint response internal callback.</param> 
-        public void Authz<TResponse>(string iframeUrl, Uri pollingUri, Action<TResponse> internalCallback) where TResponse : IResponse;
         
         /// <summary>
         /// SignMessage

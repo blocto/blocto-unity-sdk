@@ -21,16 +21,28 @@ namespace Blocto.Sdk.Core.Utility
     {
         public string BloctoAppId { get; set; }
         
+        public Dictionary<string, string> Headers;
+
         private Dictionary<string, Action<UnityWebRequest>> _handlers;
 
         private void Awake()
         {
+            Headers = new Dictionary<string, string>();
             _handlers = new Dictionary<string, Action<UnityWebRequest>>
                         {
                             {"400", BadRequestHandler},
                             {"404", NotFoundHandler},
                             {"500", InternalServerError}
                         };
+        }
+        
+        public void SetHeader(KeyValuePair<string, string>[] parameters)
+        {
+            Headers ??= new Dictionary<string, string>();
+            foreach (var item in parameters)
+            {
+                Headers.Add(item.Key, item.Value);
+            }
         }
         
         /// <summary>
@@ -161,7 +173,12 @@ namespace Blocto.Sdk.Core.Utility
             }
             else
             {
-                $"Url: {unityWebRequest.url}".ToLog();
+                $"Request Url: {unityWebRequest.url}".ToLog();
+                if(unityWebRequest.downloadHandler.data.Length > 0)
+                {
+                    $"Error Message: {Encoding.UTF8.GetString(unityWebRequest.downloadHandler.data)}".ToLog();
+                }
+                
                 throw new ApiException("The HTTP status code of the response was not expected (" + (int)unityWebRequest.responseCode + ").", (int)unityWebRequest.responseCode, "", null); 
             } 
             
@@ -215,6 +232,18 @@ namespace Blocto.Sdk.Core.Utility
             if(url.ToLower().Contains("blocto"))
             {
                 unityWebRequest.SetRequestHeader("Blocto-Application-Identifier", BloctoAppId);
+                unityWebRequest.SetRequestHeader("Blocto-Request-Source", "sdk_unity");
+            }
+            
+            if(Headers.Count > 0)
+            {
+                foreach (var header in Headers)
+                {
+                    $"Set unityWebRequest header: {header.Key}:{header.Value}".ToLog();
+                    unityWebRequest.SetRequestHeader(header.Key, header.Value);
+                }
+                
+                Headers.Clear();
             }
             
             if(uploadHandlerRaw != null)

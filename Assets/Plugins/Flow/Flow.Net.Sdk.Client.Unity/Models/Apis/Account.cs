@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Flow.Net.Sdk.Client.Unity.Models.Apis
 {
-    public partial class Account
+    public class Account
     {
         [JsonProperty("address", Required = Required.Always)]
         [Required(AllowEmptyStrings = true)]
@@ -17,7 +17,7 @@ namespace Flow.Net.Sdk.Client.Unity.Models.Apis
 
         [JsonProperty("keys", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
         [MinLength(1)]
-        public ICollection<AccountPublicKey> Keys { get; set; }
+        public AccountPublicKey[] Keys { get; set; }
 
         [JsonProperty("contracts", Required = Required.DisallowNull, NullValueHandling = NullValueHandling.Ignore)]
         public IDictionary<string, byte[]> Contracts { get; set; }

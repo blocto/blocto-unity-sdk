@@ -19,6 +19,7 @@
         <activity android:name="com.unity3d.player.UnityPlayerActivity"
                   android:launchMode="singleTask"
                   android:label="@string/app_name"
+                  android:windowSoftInputMode="adjustResize"
                   android:configChanges="fontScale|keyboard|keyboardHidden|locale|mnc|mcc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|touchscreen">
             <meta-data android:name="unityplayer.UnityActivity" android:value="true"/>
             <meta-data android:name="unityplayer.ForwardNativeEventsToDalvik" android:value="true" />
@@ -30,6 +31,15 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:exported="true"
+                  android:launchMode="singleInstance"
+                  android:name="com.blocto.unity.WebActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
         </activity>
         <activity android:exported="true"
