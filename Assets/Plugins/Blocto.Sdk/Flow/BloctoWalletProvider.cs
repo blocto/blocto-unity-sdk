@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
@@ -21,7 +20,6 @@ using Flow.FCL.WalletProvider;
 using Flow.Net.Sdk.Core;
 using Flow.Net.Sdk.Core.Client;
 using Flow.Net.Sdk.Core.Models;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -30,6 +28,7 @@ namespace Blocto.Sdk.Flow
 {
     public class BloctoWalletProvider : MonoBehaviour, IBloctoWalletProvider, IWalletProvider
     {
+        private static string env;
         
         /// <summary>
         /// System Thumbnail
@@ -100,7 +99,11 @@ namespace Blocto.Sdk.Flow
         
         private IFlowClient _flowClient;
         
+        private int _maxRetryCount = 10;
+        
         private bool _isCancelRequest;
+        
+        private bool _isInstalledApp = false;
         
         private Guid _bloctoAppIdentifier;
         
@@ -110,15 +113,11 @@ namespace Blocto.Sdk.Flow
         
         public string _address = "default";
         
+        private string _androidPackageName = "com.portto.blocto";
+        
         private Dictionary<bool, Func<FlowTransaction, PreAuthzAdapterResponse, Action<string>, FlowTransaction>> _transactionModeMapper;
         
         private Dictionary<bool, Action<FclService, FlowTransaction, Action<string>>> _transactionSdkMapper;
-
-        private bool _isInstalledApp = false;
-        
-        private string _androidPackageName = "com.portto.blocto";
-        
-        private static string env;
         
         private Dictionary<string, string> _requestIdActionMapper;
         
@@ -282,7 +281,7 @@ namespace Blocto.Sdk.Flow
 
             $"Url: {endpoint.IframeUrl}".ToLog();
             $"Open Webview. {DateTime.Now:hh:mm:ss.fff}".ToLog();
-            StartCoroutine(OpenUrl(endpoint.IframeUrl));
+            StartCoroutine(OpenUrl(endpoint.IframeUrl, endpoint.PollingUrl.AbsoluteUri));
             StartCoroutine(GetService<AuthenticateResponse>(endpoint.PollingUrl, internalCallback));
         }
         
@@ -543,7 +542,7 @@ namespace Blocto.Sdk.Flow
             var iframeUrl = webSb.ToString();
             $"IframeUrl: {iframeUrl}".ToLog();
 
-            StartCoroutine(OpenUrl(iframeUrl));
+            StartCoroutine(OpenUrl(iframeUrl, endpoint.PollingUrl.AbsoluteUri));
             StartCoroutine(GetService<SignMessageResponse>(endpoint.PollingUrl, signMessageResponse => {
                                                                                     var flowSignatures = signMessageResponse.Data.Select(item => new FlowSignature
                                                                                                                                                  {
@@ -669,6 +668,10 @@ namespace Blocto.Sdk.Flow
         {
             var response = default(TResponse);
             var isApprove = false;
+            var retryCount = 0;
+            _isCancelRequest = false;
+
+            $"isApprove: {isApprove}, _isCancelRequest: {_isCancelRequest}".ToLog();
             
             //// Polling requests are only sent on Android or iOS, because an error action in the editor can cause too many requests to be sent 
             if(Application.platform == RuntimePlatform.Android || Application.platform == RuntimePlatform.IPhonePlayer)
@@ -682,9 +685,17 @@ namespace Blocto.Sdk.Flow
             
             while (isApprove == false && _isCancelRequest == false)
             {
+                if (retryCount > _maxRetryCount)
+                {
+                    _isCancelRequest = true;
+                }
+                
                 var webRequest = WebRequestUtility.CreateUnityWebRequest(pollingUri.AbsoluteUri, "GET", "application/json", new DownloadHandlerBuffer());
                 response = WebRequestUtility.ProcessWebRequest<TResponse>(webRequest);
                 isApprove = response!.ResponseStatus is ResponseStatusEnum.APPROVED or ResponseStatusEnum.DECLINED;
+                
+                $"IsAppreve: {isApprove}, IsCancelRequest: {_isCancelRequest}".ToLog();
+                retryCount++;
                 yield return new WaitForSeconds(0.5f);
             }
             
@@ -701,7 +712,6 @@ namespace Blocto.Sdk.Flow
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
-                    CloseWebView();
                     break;
                 case RuntimePlatform.IPhonePlayer:
                     #if UNITY_IOS && !UNITY_EDITOR
@@ -712,7 +722,7 @@ namespace Blocto.Sdk.Flow
                     throw new ArgumentOutOfRangeException($"Platform", "Platform not support");
                     
             }
-            
+
             internalCallback.Invoke(response);
         }
         
@@ -724,8 +734,8 @@ namespace Blocto.Sdk.Flow
         /// <param name="internalCallback">After, get endpoint response internal callback.</param>
         private void Authz<TResponse>(string iframeUrl, Uri pollingUri, Action<TResponse> internalCallback) where TResponse : IResponse
         {
-            StartCoroutine(OpenUrl(iframeUrl));
-            StartCoroutine(GetService<TResponse>(pollingUri, internalCallback));
+            StartCoroutine(OpenUrl(iframeUrl, pollingUri.AbsoluteUri));
+            StartCoroutine(GetService(pollingUri, internalCallback));
         }
         
         /// <summary>
@@ -733,7 +743,7 @@ namespace Blocto.Sdk.Flow
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        private IEnumerator OpenUrl(string url)
+        private IEnumerator OpenUrl(string url, string pollingUrl = "")
         {
             try
             {
@@ -747,7 +757,7 @@ namespace Blocto.Sdk.Flow
                         else
                         {
                             $"Call android webview".ToLog();
-                            _pluginInstance.Call("webview", url, new AndroidCallback(), "bloctowalletprovider", "DeeplinkHandler");
+                            _pluginInstance.Call("webview", url, new AndroidCallback(), pollingUrl, "flow");
                         }
                         
                         break;
