@@ -234,7 +234,7 @@ public class FlowController : MonoBehaviour
     private void SendTransaction()
     {
         var receiveAddress = _transactionToTxt.text;
-        var transactionAmount = _transactionAmountTxt.text;
+        var transactionAmount = Convert.ToDecimal(_transactionAmountTxt.text);
         
         var tx = new FlowTransaction
                  {
@@ -242,12 +242,13 @@ public class FlowController : MonoBehaviour
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {
-                                     new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:N8}"),
+                                     new CadenceNumber(CadenceNumberType.UFix64, $"{transactionAmount:#0.00000000}"),
                                      new CadenceAddress(receiveAddress.AddHexPrefix())
-                                 },
+                                 }
                  };
 
 
+        $"Amount: {transactionAmount:#0.00000000}, To: {receiveAddress}".ToLog();
         _fcl.Mutate(tx, txId => {
                             _txId = txId;
                             _resultTxt.text = txId;
