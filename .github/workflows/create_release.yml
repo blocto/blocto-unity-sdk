@@ -7,8 +7,8 @@ on:
 ##
 name: Create Release
 env:
-  VERSION: 0.2.0
-  PACKAGE: Evm
+  VERSION: 0.3.0
+  PACKAGE: Flow
   DRAFT: false
 jobs:
   build:

@@ -1,3 +1,3 @@
 Update:
-- Upgrade to blocto wallet v2
+- Add support social login
 - fix bug
