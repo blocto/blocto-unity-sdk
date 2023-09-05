@@ -8,7 +8,7 @@ on:
 name: Create Release
 env:
   VERSION: 0.3.0
-  PACKAGE: Flow
+  PACKAGE: Core
   DRAFT: false
 jobs:
   build:
