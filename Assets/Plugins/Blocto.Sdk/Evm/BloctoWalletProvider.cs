@@ -242,8 +242,12 @@ namespace Blocto.Sdk.Evm
             {
                 case "CONNECTWALLET":
                     var result = UniversalLinkHandler(item.RemainContent, "address=");
-                    sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
                     _connectedWalletAddress = result;
+                    if (item.RemainContent.Contains("session_id"))
+                    {
+                        sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                    }
+                    
                     _connectWalletCallback.Invoke(result);
                     break;
                     

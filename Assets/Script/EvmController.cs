@@ -189,9 +189,7 @@ public class EvmController : MonoBehaviour
                       "ethereum",
                       "bsc",
                       "polygon",
-                      "avalanche",
-                      "optimism",
-                      "arbitrum"
+                      "avalanche"
                   };
         
         _ethSignSample = new EthSignSample();
@@ -207,9 +205,8 @@ public class EvmController : MonoBehaviour
             _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
                 env: envIndex == 0 ? EnvEnum.Mainnet : EnvEnum.Devnet,
-                bloctoAppIdentifier:Guid.Parse("452f82f9-d86f-46ba-90f8-2a1ee930c770"),
-                // rpcUrl: "https://rinkeby.blocto.app"
-                rpcUrl: "https://optimism-goerli.infura.io/v3/0a5f53c7bdbe4e65bcb0929564f75f6d"
+                bloctoAppIdentifier:Guid.Parse("72b5e8c4-759d-4466-bb52-b80077544361"),
+                rpcUrl: "https://rinkeby.blocto.app"
             );
             
             _bloctoWalletProvider.ForceUseWebView = _forceUseWebViewToggle.isOn;
@@ -264,8 +261,6 @@ public class EvmController : MonoBehaviour
                              ChainEnum.BSC => EvmChain.BNB_CHAIN,
                              ChainEnum.Polygon => EvmChain.POLYGON,
                              ChainEnum.Avalanche => EvmChain.AVALANCHE,
-                             ChainEnum.Optimism => EvmChain.OPTIMISM,
-                             ChainEnum.Arbitrum => EvmChain.ARBITRUM,
                              _ => throw new ArgumentOutOfRangeException()
                          };
         
@@ -341,9 +336,8 @@ public class EvmController : MonoBehaviour
         var value = Convert.ToDecimal(_transferValueTxt.text);
         var transaction = new EvmTransaction
                           {
-                              From = address,
+                              From = address
                           };
-        
         if(_selectedChain.Title == "BNB Chain")
         {
             value = value  * 100000000;
@@ -363,31 +357,13 @@ public class EvmController : MonoBehaviour
                                                                    _transferResultTxt.text = txId;
                                                                });
         }
-        else if(_selectedChain.Title == "Optimism")
-        {
-            value = value  * 100000000;
-            var abiUrl = new Uri($"{_selectedChain.TestnetExplorerApiUrl}/api?module=contract&action=getabi&address={EvmChain.OP.TestnetContractAddress}");
-            var api = _webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
-        
-            var web3 = new Web3(IsMainnet() ? _selectedChain.MainnetRpcUrl : _selectedChain.TestnetRpcUrl);
-            var contract = web3.Eth.GetContract(api.Result, IsMainnet() ? EvmChain.BLT.MainnetContractAddress : EvmChain.BLT.TestnetContractAddress);
-            var transfer = contract.GetFunction("transfer");
-            var data = transfer.GetData(new object[]{ _receptionAddressTxt.text, Convert.ToUInt64(value) });
-            
-            transaction.To = EvmChain.OP.TestnetContractAddress;
-            transaction.Value = 0;
-            transaction.Data = data;
-            _bloctoWalletProvider.SendTransaction(transaction, txId => {
-                                                                   $"TxId: {txId}".ToLog();
-                                                                   _transferResultTxt.text = txId;
-                                                               });
-        }
         else
         {
             transaction.To = _receptionAddressTxt.text;
             transaction.Value = value;
             transaction.Data = "";
             $"Transfer value: {value}".ToLog();
+            
             
             _bloctoWalletProvider.SendTransaction(transaction, txId => {
                                                                    $"TxId: {txId}".ToLog(); _transferResultTxt.text = txId;
