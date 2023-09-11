@@ -29,7 +29,8 @@ Choose **Assets > Import Package >** to import both types of package.
 Currently support 
  * Flow SDK
  * Solana SDK
- * Evm SDK
+ * Evm base SDK
+ * Aptos SDK
 
 For further instructions please refer to [Blocto Docs](https://docs.blocto.app/blocto-sdk/unity-sdk)
 

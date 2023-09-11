@@ -8,7 +8,6 @@ using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm;
 using Blocto.Sdk.Evm.Model;
-using Blocto.Sdk.Evm.Model.Eth;
 using Nethereum.ABI.EIP712;
 using Nethereum.ABI.Model;
 using Nethereum.Contracts;
@@ -206,7 +205,7 @@ public class EvmController : MonoBehaviour
             _bloctoWalletProvider = BloctoWalletProvider.CreateBloctoWalletProvider(
                 gameObject: gameObject,
                 env: envIndex == 0 ? EnvEnum.Mainnet : EnvEnum.Devnet,
-                bloctoAppIdentifier:Guid.Parse("4271a8b2-3198-4646-b6a2-fe825f982220"),
+                bloctoAppIdentifier:Guid.Parse("72b5e8c4-759d-4466-bb52-b80077544361"),
                 rpcUrl: "https://rinkeby.blocto.app"
             );
             
@@ -337,7 +336,7 @@ public class EvmController : MonoBehaviour
         var value = Convert.ToDecimal(_transferValueTxt.text);
         var transaction = new EvmTransaction
                           {
-                              From = address,
+                              From = address
                           };
         if(_selectedChain.Title == "BNB Chain")
         {

@@ -13,7 +13,14 @@ The repository contains fcl-unity, blocto-unity-sdk and demo app. This demo appl
 
 * Flow
 * Solana
-* Evm
+* Evm base
+  * Ethereum
+  * Binance Smart Chain
+  * Polygon
+  * Avalanche
+  * Optimism
+  * Arbitrum
+* Aptos
 
 ## Get Started
 

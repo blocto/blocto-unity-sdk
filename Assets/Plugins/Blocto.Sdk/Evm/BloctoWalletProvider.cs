@@ -154,6 +154,26 @@ namespace Blocto.Sdk.Evm
         }
         
         /// <summary>
+        /// Send transaction
+        /// </summary>
+        /// <param name="fromAddress">wallet address</param>
+        /// <param name="toAddress">recipient address or contract address</param>
+        /// <param name="value">token amount</param>
+        /// <param name="data">data</param>
+        /// <param name="callback"></param>
+        public void SendTransaction(string fromAddress, string toAddress, decimal value, string data, Action<string> callback)
+        {
+            var transaction = new EvmTransaction
+                              {
+                                  From = fromAddress,
+                                  To = toAddress,
+                                  Value = value,
+                                  Data = data
+                              };
+            SendTransaction(transaction, callback);
+        }
+        
+        /// <summary>
         /// Send Transaction
         /// </summary>
         /// <param name="evmTransaction">Transaction data</param>
@@ -222,8 +242,12 @@ namespace Blocto.Sdk.Evm
             {
                 case "CONNECTWALLET":
                     var result = UniversalLinkHandler(item.RemainContent, "address=");
-                    sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
                     _connectedWalletAddress = result;
+                    if (item.RemainContent.Contains("session_id"))
+                    {
+                        sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                    }
+                    
                     _connectWalletCallback.Invoke(result);
                     break;
                     

@@ -102,7 +102,7 @@ namespace Flow.Net.Sdk.Utility
             return bytes;
         }
 
-        public static byte[] HexToByteArray(this string value)
+        public static byte[] HexToBytes(this string value)
         {
             try {
                 return HexToByteArrayInternal(value);
