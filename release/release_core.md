@@ -1,3 +1,2 @@
 Update:
-- add support social login
-- fix bug
+- fix blocto app callback not working bug
