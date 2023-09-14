@@ -112,12 +112,16 @@ namespace Blocto.Sdk.Core.Utility
         /// <returns></returns>
         public TResponse GetResponse<TResponse>(string url, string method, string contentType, object parameter)
         {
-            var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());;
-            var jsonStr = default(string);
+            var client = CreateUnityWebRequest(url, method, contentType, new DownloadHandlerBuffer());
+            var jsonStr = string.Empty;
+
+            if (parameter != null)
+            {
+                jsonStr = parameter is JObject
+                              ? parameter.ToString()
+                              : JsonConvert.SerializeObject(parameter);
+            }
             
-            jsonStr = parameter is JObject
-                          ? parameter.ToString()
-                          : JsonConvert.SerializeObject(parameter);
             $"Url: {url}".ToLog();
             $"Request body: {jsonStr}".ToLog();
             var requestBytes = Encoding.UTF8.GetBytes(jsonStr);
@@ -131,7 +135,7 @@ namespace Blocto.Sdk.Core.Utility
             }
             finally
             {
-                client?.Dispose();
+                client.Dispose();
             }
         }
         

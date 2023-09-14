@@ -34,7 +34,7 @@ public class FlowController : MonoBehaviour
         return ValueDapp.value
     }";
     
-    static string _mutateScript = @"
+    public static string MutateScript = @"
     import ValueDapp from 0x5a8143da8058740c
 
     transaction(value: UFix64) {
@@ -200,12 +200,12 @@ public class FlowController : MonoBehaviour
                                                                                           return walletProvider;
                                                                                       }, 
                                                                           env: "testnet",
-                                                                          bloctoAppIdentifier:Guid.Parse("452f82f9-d86f-46ba-90f8-2a1ee930c770")); 
+                                                                          bloctoAppIdentifier:Guid.Parse("72b5e8c4-759d-4466-bb52-b80077544361")); 
         _fcl = FlowClientLibrary.CreateClientLibrary(GetFCL => {
                                                          var fcl = GetFCL.Invoke(gameObject, _walletProvider, new ResolveUtility());
                                                          return fcl;
                                                      }, config);
-        _walletProvider.ForcedUseWebView = true;
+        _walletProvider.ForcedUseWebView = false;
     }
 
     private void ConnectWallet()
@@ -268,7 +268,7 @@ public class FlowController : MonoBehaviour
         
         var tx = new FlowTransaction
                  {
-                     Script = FlowController._mutateScript,
+                     Script = FlowController.MutateScript,
                      GasLimit = 1000,
                      Arguments = new List<ICadence>
                                  {

@@ -5,6 +5,10 @@ namespace Blocto.Sdk.Flow.Model
 {
     public class ConnectWalletPayload
     {
+        public ConnectWalletPayload()
+        {
+        }
+
         public ConnectWalletPayload(Dictionary<string, object> parameter, string appId)
         {
             if(parameter.TryGetValue("accountProofIdentifier", out var appIdentifier) && 
