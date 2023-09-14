@@ -44,29 +44,29 @@ namespace Blocto.Sdk.Solana
             var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
             try
             {
-                bloctoWalletProvider.webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-                bloctoWalletProvider.webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
-                bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
+                bloctoWalletProvider.WebRequestUtility = gameObject.AddComponent<WebRequestUtility>();
+                bloctoWalletProvider.WebRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+                bloctoWalletProvider.BloctoAppIdentifier = bloctoAppIdentifier;
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
-                bloctoWalletProvider.isCancelRequest = false;
+                bloctoWalletProvider.IsCancelRequest = false;
                 bloctoWalletProvider._env = env;
             
                 switch (env)
                 {
                     case EnvEnum.Devnet:
-                        bloctoWalletProvider.backedApiDomain = bloctoWalletProvider.backedApiDomain.Replace("api", "api-dev");
-                        bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.dev";
-                        bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
-                        bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
+                        bloctoWalletProvider.BackedApiDomain = bloctoWalletProvider.BackedApiDomain.Replace("api", "api-dev");
+                        bloctoWalletProvider.AndroidPackageName = $"{bloctoWalletProvider.AndroidPackageName}.dev";
+                        bloctoWalletProvider.AppSdkDomain = bloctoWalletProvider.AppSdkDomain.Replace("blocto.app", "dev.blocto.app");
+                        bloctoWalletProvider.WebSdkDomain = bloctoWalletProvider.WebSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
                         bloctoWalletProvider._walletProgramId = "Ckv4czD7qPmQvy2duKEa45WRp3ybD2XuaJzQAWrhAour";
-                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet, bloctoWalletProvider.webRequestUtility);
-                        bloctoWalletProvider.webSdkDomainV2 = bloctoWalletProvider.webSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
+                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.DevNet, bloctoWalletProvider.WebRequestUtility);
+                        bloctoWalletProvider.WebSdkDomainV2 = bloctoWalletProvider.WebSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
                         break;
                     case EnvEnum.Mainnet:
-                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.MainNet, bloctoWalletProvider.webRequestUtility);
+                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.MainNet, bloctoWalletProvider.WebRequestUtility);
                         break;
                     case EnvEnum.Testnet:
-                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.TestNet, bloctoWalletProvider.webRequestUtility);
+                        bloctoWalletProvider.SolanaClient = ClientFactory.GetClient(Cluster.TestNet, bloctoWalletProvider.WebRequestUtility);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(env), env, null);
@@ -77,7 +77,7 @@ namespace Blocto.Sdk.Solana
                     bloctoWalletProvider.InitializePlugins("com.blocto.unity.UtilityActivity");
                 }
             
-                bloctoWalletProvider.isInstalledApp = bloctoWalletProvider.IsInstalledApp(bloctoWalletProvider._env);
+                bloctoWalletProvider.IsInstalledApp = bloctoWalletProvider.CheckInstalledApp(bloctoWalletProvider._env);
                 bloctoWalletProvider._appendTxDict = new Dictionary<string, Dictionary<string, string>>();
                 bloctoWalletProvider.ForceUseWebView = true;
             }
@@ -111,26 +111,26 @@ namespace Blocto.Sdk.Solana
             
             
             
-            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
-            if(isInstalledApp && ForceUseWebView == false)
+            $"Installed App: {IsInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
+            if(IsInstalledApp && ForceUseWebView == false)
             {
                 var parameters = new Dictionary<string, string>
                                  {
-                                     { "app_id", Uri.EscapeUriString(bloctoAppIdentifier.ToString())},
+                                     { "app_id", Uri.EscapeUriString(BloctoAppIdentifier.ToString())},
                                      { "blockchain", BloctoWalletProvider.chainName},
                                      { "method", ActionNameEnum.Request_Account.ToString().ToLower()},
-                                     { "request_id", requestId.ToString()}
+                                     { "request_id", RequestId.ToString()}
                                  };
                 
-                var appSb = GenerateUrl(appSdkDomain, parameters);
+                var appSb = GenerateUrl(AppSdkDomain, parameters);
                 
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb));
                 return;
             }
             
-            $"WebSDK domain: {webSdkDomain}".ToLog();
-            var webSb = CreateRequestAccountUrlV2("solana", bloctoAppIdentifier.ToString());
+            $"WebSDK domain: {WebSdkDomain}".ToLog();
+            var webSb = CreateRequestAccountUrlV2("solana", BloctoAppIdentifier.ToString());
             $"Url: {webSb}".ToLog();
             StartCoroutine(OpenUrl(webSb));
         }
@@ -159,8 +159,8 @@ namespace Blocto.Sdk.Solana
                                             };
             _appendTxDict.Clear();
             
-            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
-            var process = _transactionProcessDict[$"{isInstalledApp}_{ForceUseWebView}".ToLower()];
+            $"Installed App: {IsInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
+            var process = _transactionProcessDict[$"{IsInstalledApp}_{ForceUseWebView}".ToLower()];
             process.Invoke(sendTransactionPreRequest);
         }
 
@@ -184,8 +184,8 @@ namespace Blocto.Sdk.Solana
                               RawTx = tmp.BuildExecludeSign().Select(b => (sbyte)b).ToArray().ToHex()
                           };
             
-            var url = $"{backedApiDomain}/{BloctoWalletProvider.chainName}/createRawTransaction";
-            var response = webRequestUtility.GetResponse<CreateRawTxResponse>(url, "POST", "application/json", request);
+            var url = $"{BackedApiDomain}/{BloctoWalletProvider.chainName}/createRawTransaction";
+            var response = WebRequestUtility.GetResponse<CreateRawTxResponse>(url, "POST", "application/json", request);
             var messageBytes = response.RawTx.HexToBytes();
             var message = Message.Deserialize(messageBytes);
             
@@ -237,7 +237,7 @@ namespace Blocto.Sdk.Solana
             $"Universal Link: {link}, in Handler".ToLog();
             var decodeLink = UnityWebRequest.UnEscapeURL(link);
             var item = decodeLink.RequestId();
-            if (!requestIdActionMapper.TryGetValue(item.RequestId, out var action))
+            if (!RequestIdActionMapper.TryGetValue(item.RequestId, out var action))
             {
                 return;
             }
@@ -253,14 +253,14 @@ namespace Blocto.Sdk.Solana
             {
                 case "CONNECTWALLET":
                     var result = UniversalLinkHandler(item.RemainContent, "address=");
-                    sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
-                    _connectWalletCallback.Invoke(result);
+                    SessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                    ConnectWalletCallback.Invoke(result);
                     break;
                     
                 case "SIGNANDSENETRANSACTION":
                     $"In Sign and SendTransaction, remain content: {item.RemainContent}".ToLog();
                     var signature = UniversalLinkHandler(item.RemainContent, "tx_hash=");
-                    _sendTransactionCallback.Invoke(signature);
+                    SendTransactionCallback.Invoke(signature);
                     break;
             }
         }
@@ -280,7 +280,7 @@ namespace Blocto.Sdk.Solana
         {
             "Send by App".ToLog();
             var parameters = GetUrlParameters(sendTransactionPreRequest);
-            var appSb = GenerateUrl(appSdkDomain, parameters);
+            var appSb = GenerateUrl(AppSdkDomain, parameters);
 
             $"Url: {appSb}".ToLog();
             StartCoroutine(OpenUrl(appSb));
@@ -297,8 +297,8 @@ namespace Blocto.Sdk.Solana
             var left = Uri.EscapeDataString("]");
             var parameters = new Dictionary<string, string>
                              {
-                                 { "app_id", Uri.EscapeUriString(bloctoAppIdentifier.ToString()) },
-                                 { "request_id", requestId.ToString() },
+                                 { "app_id", Uri.EscapeUriString(BloctoAppIdentifier.ToString()) },
+                                 { "request_id", RequestId.ToString() },
                                  { "method", ActionNameEnum.Sign_And_Send_Transaction.ToString().ToLower() },
                                  { "blockchain", BloctoWalletProvider.chainName },
                                  { "from", sendTransactionPreRequest.From },

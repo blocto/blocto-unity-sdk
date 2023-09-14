@@ -59,62 +59,72 @@ public class BaseWalletProvider : MonoBehaviour
         /// <summary>
         /// Android instance
         /// </summary>
-        protected AndroidJavaObject pluginInstance;
+        protected AndroidJavaObject PluginInstance;
         
-        protected WebRequestUtility webRequestUtility;
+        protected WebRequestUtility WebRequestUtility;
         
-        protected bool isCancelRequest;
+        protected bool IsCancelRequest;
         
-        protected Guid bloctoAppIdentifier;
+        protected Guid BloctoAppIdentifier;
         
-        protected string webSdkDomain = "https://wallet.blocto.app/sdk?";
+        protected string WebSdkDomain = "https://wallet.blocto.app/sdk?";
         
-        protected string webSdkDomainV2 = "https://wallet-v2.blocto.app";
+        protected string WebSdkDomainV2 = "https://wallet-v2.blocto.app";
         
-        protected string appSdkDomain = "https://blocto.app/sdk?";
+        protected string AppSdkDomain = "https://blocto.app/sdk?";
         
-        protected string backedApiDomain = "https://api.blocto.app";
+        protected string BackedApiDomain = "https://api.blocto.app";
         
-        protected string androidPackageName = "com.portto.blocto";
+        protected string AndroidPackageName = "com.portto.blocto";
         
-        protected string sessionId;
+        protected string SessionId;
         
-        protected string signatureId;
+        protected string SignatureId;
  
-        protected bool isInstalledApp = false;
+        protected bool IsInstalledApp = false;
         
-        protected Guid requestId;
+        protected Guid RequestId;
         
-        protected Dictionary<string, string> requestIdActionMapper;
+        protected Dictionary<string, string> RequestIdActionMapper;
         
-        protected Action<string> _connectWalletCallback;
+        protected Action<string> ConnectWalletCallback;
         
-        protected Action<string> _sendTransactionCallback;
+        protected Action<string> SendTransactionCallback;
 
+        public BaseWalletProvider()
+        {
+            SetUp();
+        }
+        
         public void Awake()
         {
-            requestIdActionMapper = new Dictionary<string, string>();
+            SetUp();
+        }
+
+        public void SetUp()
+        {
+            RequestIdActionMapper ??= new Dictionary<string, string>();
             ForceUseWebView = false;
         }
         
         protected virtual void RequestAccount(Action<string> callback)
         {
-            requestId = Guid.NewGuid();
-            requestIdActionMapper.Add(requestId.ToString(), "CONNECTWALLET");
-            _connectWalletCallback = callback;
+            RequestId = CreateGuid();
+            RequestIdActionMapper.Add(RequestId.ToString(), "CONNECTWALLET");
+            ConnectWalletCallback = callback;
         }
         
         protected virtual void SignMessage()
         {
-            requestId = Guid.NewGuid();
-            requestIdActionMapper.Add(requestId.ToString(), "SIGNMESSAGE");
+            RequestId = Guid.NewGuid();
+            RequestIdActionMapper.Add(RequestId.ToString(), "SIGNMESSAGE");
         }
         
         protected virtual void SendTransaction(Action<string> callback, string action = null)
         {
-            requestId = Guid.NewGuid();
-            requestIdActionMapper.Add(requestId.ToString(), action ?? "SENDTRANSACTION");
-            _sendTransactionCallback = callback;
+            RequestId = Guid.NewGuid();
+            RequestIdActionMapper.Add(RequestId.ToString(), action ?? "SENDTRANSACTION");
+            SendTransactionCallback = callback;
         }
         
         protected virtual string CreateRequestAccountUrl(bool isInstallApp, string chainName)
@@ -123,26 +133,26 @@ public class BaseWalletProvider : MonoBehaviour
                              {
                                  {"blockchain", chainName.ToLower() },
                                  {"method", "request_account" },
-                                 {"request_id", requestId.ToString() }, 
+                                 {"request_id", RequestId.ToString() }, 
                              };
             
-            if(isInstalledApp && ForceUseWebView == false)
+            if(IsInstalledApp && ForceUseWebView == false)
             {
-                var appSb = GenerateUrl(appSdkDomain, parameters);
+                var appSb = GenerateUrl(AppSdkDomain, parameters);
                 
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb));
                 return appSb;
             }
             
-            $"WebSDK domain: {webSdkDomain}".ToLog();
-            var webSb = GenerateUrl(webSdkDomain, parameters);
+            $"WebSDK domain: {WebSdkDomain}".ToLog();
+            var webSb = GenerateUrl(WebSdkDomain, parameters);
             return webSb;
         }
         
         protected virtual string CreateRequestAccountUrlV2(string chainName, string appId)
         {
-            var url = $"{webSdkDomainV2}/{appId}/{chainName}/authn/?request_id={requestId}&request_source=sdk_unity";
+            var url = $"{WebSdkDomainV2}/{appId}/{chainName}/authn/?request_id={RequestId}&request_source=sdk_unity";
             return url;
         }
 
@@ -150,7 +160,7 @@ public class BaseWalletProvider : MonoBehaviour
         /// Check specify app installed
         /// </summary>
         /// <returns></returns>
-        protected virtual bool IsInstalledApp(EnvEnum env)
+        protected virtual bool CheckInstalledApp(EnvEnum env)
         {
             var isInstallApp = false;
             var testDomain = "blocto://open";
@@ -163,7 +173,7 @@ public class BaseWalletProvider : MonoBehaviour
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
-                    isInstallApp = pluginInstance.Call<bool>("isInstalledApp", androidPackageName); 
+                    isInstallApp = PluginInstance.Call<bool>("isInstalledApp", AndroidPackageName); 
                     break;
                 case RuntimePlatform.IPhonePlayer:
                     #if UNITY_IOS
@@ -189,15 +199,15 @@ public class BaseWalletProvider : MonoBehaviour
                 switch (Application.platform)
                 {
                     case RuntimePlatform.Android:
-                        if(isInstalledApp && ForceUseWebView == false)
+                        if(IsInstalledApp && ForceUseWebView == false)
                         {
                             $"Call android app, url: {url}".ToLog();
-                            pluginInstance.Call("openSDK", androidPackageName, url, url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
+                            PluginInstance.Call("openSDK", AndroidPackageName, url, url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
                         }
                         else
                         {
                             $"Call android webview, url: {url}".ToLog();
-                            pluginInstance.Call("webview", url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
+                            PluginInstance.Call("webview", url, new AndroidCallback(), "bloctowalletprovider", "UniversalLinkCallbackHandler");
                         }
                         
                         break;
@@ -205,6 +215,9 @@ public class BaseWalletProvider : MonoBehaviour
                         #if UNITY_IOS
                         BaseWalletProvider.OpenUrl("bloctowalletprovider", "UniversalLinkCallbackHandler", url, url);
                         #endif
+                        break;
+                    case RuntimePlatform.WindowsEditor:
+                    case RuntimePlatform.OSXEditor:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -244,23 +257,23 @@ public class BaseWalletProvider : MonoBehaviour
         
         protected virtual TResponse SendData<TPayload, TResponse>(string chain, Func<string, string> getUrl, TPayload requestPayload) where TPayload : class where TResponse : class
         {
-            webRequestUtility.SetHeader(new []
+            WebRequestUtility.SetHeader(new []
                                          {
-                                             new KeyValuePair<string, string>("Blocto-Session-Identifier", sessionId),
-                                             new KeyValuePair<string, string>("Blocto-Request-Identifier", requestId.ToString())
+                                             new KeyValuePair<string, string>("Blocto-Session-Identifier", SessionId),
+                                             new KeyValuePair<string, string>("Blocto-Request-Identifier", RequestId.ToString())
                                          });
             
             var url = getUrl.Invoke(chain);
-            var response = webRequestUtility.GetResponse<TResponse>(url, HttpMethod.Post.ToString(), "application/json", requestPayload);
+            var response = WebRequestUtility.GetResponse<TResponse>(url, HttpMethod.Post.ToString(), "application/json", requestPayload);
             
-            $"Url: {url}, Payload: {JsonConvert.SerializeObject(requestPayload)}, Response:".ToLog();
+            $"Url: {url}, Payload: {JsonConvert.SerializeObject(requestPayload)}, Response: {JsonConvert.SerializeObject(response)}".ToLog();
             return response;
         }
         
         protected virtual string GenerateUrl(string domain, Dictionary<string, string> parameters)
         {
             var url = new StringBuilder(domain);
-            url.Append($"app_id={bloctoAppIdentifier.ToString()}" + "&");
+            url.Append($"app_id={BloctoAppIdentifier.ToString()}" + "&");
             foreach (var parameter in parameters)
             {
                 url.Append($"{parameter.Key}={parameter.Value}" + "&");
@@ -272,27 +285,27 @@ public class BaseWalletProvider : MonoBehaviour
 
         protected virtual string UserSignatureApiUrl(string chain)
         {
-            return $"{webSdkDomainV2}/api/{chain.ToLower()}/dapp/user-signature";
+            return $"{WebSdkDomainV2}/api/{chain.ToLower()}/dapp/user-signature";
         }
         
         protected virtual string UserSignatureWebUrl(string chain)
         {
-            var sb = new StringBuilder(webSdkDomainV2);
-            sb.Append($"/{bloctoAppIdentifier}");
+            var sb = new StringBuilder(WebSdkDomainV2);
+            sb.Append($"/{BloctoAppIdentifier}");
             sb.Append($"/{chain.ToLower()}/user-signature");
-            sb.Append($"/{signatureId}");
+            sb.Append($"/{SignatureId}");
             return sb.ToString();
         }
         
         protected virtual string AuthzApiUrl(string chain)
         {
-            return $"{webSdkDomainV2}/api/{chain.ToLower()}/dapp/authz";
+            return $"{WebSdkDomainV2}/api/{chain.ToLower()}/dapp/authz";
         }
         
         protected virtual StringBuilder AuthzWebUrl(string authorizationId, string chain)
         {
-            var sb = new StringBuilder(webSdkDomainV2);
-            sb.Append($"/{bloctoAppIdentifier}");
+            var sb = new StringBuilder(WebSdkDomainV2);
+            sb.Append($"/{BloctoAppIdentifier}");
             sb.Append($"/{chain.ToLower()}/authz");
             sb.Append($"/{authorizationId}");
             return sb;
@@ -307,9 +320,9 @@ public class BaseWalletProvider : MonoBehaviour
             try
             {
                 $"Init android object, plugin name: {pluginName}".ToLog();
-                if (pluginInstance == null )
+                if (PluginInstance == null )
                 {
-                    pluginInstance = new AndroidJavaObject(pluginName);
+                    PluginInstance = new AndroidJavaObject(pluginName);
                 }
             }
             catch (Exception e)
@@ -317,6 +330,11 @@ public class BaseWalletProvider : MonoBehaviour
                 Debug.Log(e.Message);
                 throw;
             }
+        }
+
+        protected virtual Guid CreateGuid()
+        {
+            return Guid.NewGuid();
         }
     }
 }

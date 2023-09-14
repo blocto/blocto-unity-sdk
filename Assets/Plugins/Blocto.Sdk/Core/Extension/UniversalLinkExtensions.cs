@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Blocto.Sdk.Core.Extension;
 
 namespace Blocto.Sdk.Core.Model
 {

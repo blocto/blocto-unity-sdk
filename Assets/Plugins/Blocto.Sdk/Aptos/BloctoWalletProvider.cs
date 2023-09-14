@@ -44,21 +44,21 @@ namespace Blocto.Sdk.Aptos
             bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             
             //// aptos use v2 domain
-            bloctoWalletProvider.webSdkDomain = "https://wallet-v2.blocto.app/";
+            bloctoWalletProvider.WebSdkDomain = "https://wallet-v2.blocto.app/";
             
             try
             {
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
-                bloctoWalletProvider.isCancelRequest = false;
-                bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
+                bloctoWalletProvider.IsCancelRequest = false;
+                bloctoWalletProvider.BloctoAppIdentifier = bloctoAppIdentifier;
                 BloctoWalletProvider.env = env;
             
                 if(env == EnvEnum.Devnet)
                 {
-                    bloctoWalletProvider.backedApiDomain = bloctoWalletProvider.backedApiDomain.Replace("api", "api-dev");
-                    bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.dev";
-                    bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
-                    bloctoWalletProvider.webSdkDomainV2 = bloctoWalletProvider.webSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
+                    bloctoWalletProvider.BackedApiDomain = bloctoWalletProvider.BackedApiDomain.Replace("api", "api-dev");
+                    bloctoWalletProvider.AndroidPackageName = $"{bloctoWalletProvider.AndroidPackageName}.dev";
+                    bloctoWalletProvider.AppSdkDomain = bloctoWalletProvider.AppSdkDomain.Replace("blocto.app", "dev.blocto.app");
+                    bloctoWalletProvider.WebSdkDomainV2 = bloctoWalletProvider.WebSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
                 } 
             
                 if(Application.platform == RuntimePlatform.Android)
@@ -66,7 +66,7 @@ namespace Blocto.Sdk.Aptos
                     bloctoWalletProvider.InitializePlugins("com.blocto.unity.UtilityActivity");
                 }
             
-                bloctoWalletProvider.isInstalledApp = bloctoWalletProvider.IsInstalledApp(BloctoWalletProvider.env);
+                bloctoWalletProvider.IsInstalledApp = bloctoWalletProvider.CheckInstalledApp(BloctoWalletProvider.env);
             }
             catch (Exception e)
             {
@@ -91,10 +91,10 @@ namespace Blocto.Sdk.Aptos
             base.RequestAccount(callBack);
             
             //// just support webSDK now - 20230323
-            isInstalledApp = false;
-            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
+            IsInstalledApp = false;
+            $"Installed App: {IsInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
             
-            var url = CreateRequestAccountUrlV2(_chainName, bloctoAppIdentifier.ToString());
+            var url = CreateRequestAccountUrlV2(_chainName, BloctoAppIdentifier.ToString());
             $"Url: {url}".ToLog();
             
             StartCoroutine(OpenUrl(url));
@@ -110,7 +110,7 @@ namespace Blocto.Sdk.Aptos
         {
             if( _keyAddress != address || _publicKeys.Count == 0)
             {
-                var url = $"{backedApiDomain}/aptos/accounts/{address}";
+                var url = $"{BackedApiDomain}/aptos/accounts/{address}";
                 var response = _webRequestUtility.GetResponse<PublicKey>(url, HttpMethod.Get, "");
                 
                 $"Public keys: {string.Join(',', response.Keys)}".ToLog();
@@ -137,7 +137,7 @@ namespace Blocto.Sdk.Aptos
             base.SignMessage();
             _signMessageCallback = callback; 
             
-            if(isInstalledApp && ForceUseWebView == false)
+            if(IsInstalledApp && ForceUseWebView == false)
             {
                 var parameters = new Dictionary<string, string>
                                  {
@@ -145,10 +145,10 @@ namespace Blocto.Sdk.Aptos
                                      {"method", "sign_message"},
                                      {"from", preRequest.Address},
                                      {"message", preRequest.Message },
-                                     {"request_id", requestId.ToString()},
+                                     {"request_id", RequestId.ToString()},
                                  };
                 
-                var appSb = GenerateUrl(appSdkDomain, parameters);
+                var appSb = GenerateUrl(AppSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb));
                 return;
@@ -156,17 +156,17 @@ namespace Blocto.Sdk.Aptos
             
             _webRequestUtility.Headers = new Dictionary<string, string>
                                          {
-                                             {"Blocto-Session-Identifier", sessionId},
-                                             {"Blocto-Request-Identifier", requestId.ToString()}
+                                             {"Blocto-Session-Identifier", SessionId},
+                                             {"Blocto-Request-Identifier", RequestId.ToString()}
                                          };
             
-            var preRequestUrl = $"{webSdkDomainV2}/api/aptos/user-signature";
+            var preRequestUrl = $"{WebSdkDomainV2}/api/aptos/user-signature";
             var signMessagePreResponse = _webRequestUtility.GetResponse<SignMessagePreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", preRequest);
-            signatureId = signMessagePreResponse.SignatureId;
-            $"SignatureId: {signatureId}".ToLog();
+            SignatureId = signMessagePreResponse.SignatureId;
+            $"SignatureId: {SignatureId}".ToLog();
             
-            var sb = new StringBuilder(webSdkDomainV2);
-            sb.Append($"/{bloctoAppIdentifier}");
+            var sb = new StringBuilder(WebSdkDomainV2);
+            sb.Append($"/{BloctoAppIdentifier}");
             sb.Append($"/aptos/user-signature");
             sb.Append($"/{signMessagePreResponse.SignatureId}");
             
@@ -185,15 +185,15 @@ namespace Blocto.Sdk.Aptos
             base.SendTransaction(callback);
             _webRequestUtility.Headers = new Dictionary<string, string>
                                          {
-                                             {"Blocto-Session-Identifier", sessionId},
-                                             {"Blocto-Request-Identifier", requestId.ToString()}
+                                             {"Blocto-Session-Identifier", SessionId},
+                                             {"Blocto-Request-Identifier", RequestId.ToString()}
                                          };
             
-            var preRequestUrl = $"{webSdkDomainV2}/api/aptos/authz";
+            var preRequestUrl = $"{WebSdkDomainV2}/api/aptos/authz";
             var transactionPreResponse = _webRequestUtility.GetResponse<TransactionPreResponse>(preRequestUrl, HttpMethod.Post.ToString(), "application/json", transactionPayload);
             
-            var sb = new StringBuilder(webSdkDomainV2);
-            sb.Append($"/{bloctoAppIdentifier}");
+            var sb = new StringBuilder(WebSdkDomainV2);
+            sb.Append($"/{BloctoAppIdentifier}");
             sb.Append($"/aptos/authz");
             sb.Append($"/{transactionPreResponse.AuthorizationId}");
             
@@ -211,20 +211,20 @@ namespace Blocto.Sdk.Aptos
             $"Universal Link: {link}, in Handler".ToLog();
             var decodeLink = UnityWebRequest.UnEscapeURL(link);
             var item = decodeLink.RequestId();
-            if (!requestIdActionMapper.ContainsKey(item.RequestId))
+            if (!RequestIdActionMapper.ContainsKey(item.RequestId))
             {
                 return;
             }
 
-            var action = requestIdActionMapper[item.RequestId];
+            var action = RequestIdActionMapper[item.RequestId];
             switch (action)
             {
                 case "CONNECTWALLET":
                     var result = UniversalLinkHandler(item.RemainContent, "address=")  ;
-                    sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                    SessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
                         
-                    $"Address: {result}, SessionId: {sessionId}".ToLog();
-                    _connectWalletCallback.Invoke(result);
+                    $"Address: {result}, SessionId: {SessionId}".ToLog();
+                    ConnectWalletCallback.Invoke(result);
                     break;
                     
                 case "SIGNMESSAGE":
@@ -233,10 +233,10 @@ namespace Blocto.Sdk.Aptos
                     {
                         _webRequestUtility.Headers = new Dictionary<string, string>
                                                      {
-                                                         {"Blocto-Session-Identifier", sessionId},
+                                                         {"Blocto-Session-Identifier", SessionId},
                                                      };
                             
-                        var requestUrl = $"{webSdkDomainV2}/api/aptos/user-signature/{signatureId}";
+                        var requestUrl = $"{WebSdkDomainV2}/api/aptos/user-signature/{SignatureId}";
                         var signMessageResponse = _webRequestUtility.GetResponse<SignMessageResponse>(requestUrl, HttpMethod.Get, "application/json");
                         _signMessageCallback.Invoke(signMessageResponse);
                     }
@@ -244,7 +244,7 @@ namespace Blocto.Sdk.Aptos
                     break;
                 case "SENDTRANSACTION":
                     var sendTransaction = UniversalLinkHandler(item.RemainContent, "tx_hash");
-                    _sendTransactionCallback.Invoke(sendTransaction);
+                    SendTransactionCallback.Invoke(sendTransaction);
                     break;
             }
         }

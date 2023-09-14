@@ -7,6 +7,7 @@ using Blocto.Sdk.Core.Model;
 using Blocto.Sdk.Core.Utility;
 using Blocto.Sdk.Evm.Model;
 using Nethereum.Web3;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -20,11 +21,11 @@ namespace Blocto.Sdk.Evm
         
         public string NodeUrl { get; set;}
         
-        private string _connectedWalletAddress;
+        protected string ConnectedWalletAddress;
+        
+        protected Action<string> SignMessageCallback;
         
         private static EnvEnum env;
-        
-        private Action<string> _signMessageCallback;
         
         /// <summary>
         /// Create blocto wallet provider instance
@@ -37,30 +38,28 @@ namespace Blocto.Sdk.Evm
         public static BloctoWalletProvider CreateBloctoWalletProvider(GameObject gameObject, EnvEnum env, Guid bloctoAppIdentifier, string rpcUrl = default)
         {
             var bloctoWalletProvider = gameObject.AddComponent<BloctoWalletProvider>();
-            // bloctoWalletProvider._webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-            // bloctoWalletProvider._webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
-            bloctoWalletProvider.webRequestUtility = gameObject.AddComponent<WebRequestUtility>();
-            bloctoWalletProvider.webRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
+            bloctoWalletProvider.WebRequestUtility = gameObject.AddComponent<WebRequestUtility>();
+            bloctoWalletProvider.WebRequestUtility.BloctoAppId = bloctoAppIdentifier.ToString();
             
             if(rpcUrl != default)
             {
-                bloctoWalletProvider.EthereumClient = new EthereumClient(rpcUrl, bloctoWalletProvider.webRequestUtility);
+                bloctoWalletProvider.EthereumClient = new EthereumClient(rpcUrl, bloctoWalletProvider.WebRequestUtility);
             }
             
             try
             {
                 bloctoWalletProvider.gameObject.name = "bloctowalletprovider";
-                bloctoWalletProvider.isCancelRequest = false;
-                bloctoWalletProvider.bloctoAppIdentifier = bloctoAppIdentifier;
+                bloctoWalletProvider.IsCancelRequest = false;
+                bloctoWalletProvider.BloctoAppIdentifier = bloctoAppIdentifier;
                 BloctoWalletProvider.env = env;
             
                 if(env == EnvEnum.Devnet)
                 {
-                    bloctoWalletProvider.backedApiDomain = bloctoWalletProvider.backedApiDomain.Replace("api", "api-dev");
-                    bloctoWalletProvider.androidPackageName = $"{bloctoWalletProvider.androidPackageName}.dev";
-                    bloctoWalletProvider.appSdkDomain = bloctoWalletProvider.appSdkDomain.Replace("blocto.app", "dev.blocto.app");
-                    bloctoWalletProvider.webSdkDomain = bloctoWalletProvider.webSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
-                    bloctoWalletProvider.webSdkDomainV2 = bloctoWalletProvider.webSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
+                    bloctoWalletProvider.BackedApiDomain = bloctoWalletProvider.BackedApiDomain.Replace("api", "api-dev");
+                    bloctoWalletProvider.AndroidPackageName = $"{bloctoWalletProvider.AndroidPackageName}.dev";
+                    bloctoWalletProvider.AppSdkDomain = bloctoWalletProvider.AppSdkDomain.Replace("blocto.app", "dev.blocto.app");
+                    bloctoWalletProvider.WebSdkDomain = bloctoWalletProvider.WebSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
+                    bloctoWalletProvider.WebSdkDomainV2 = bloctoWalletProvider.WebSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
                 } 
             
                 if(Application.platform == RuntimePlatform.Android)
@@ -68,7 +67,7 @@ namespace Blocto.Sdk.Evm
                     bloctoWalletProvider.InitializePlugins("com.blocto.unity.UtilityActivity");
                 }
             
-                bloctoWalletProvider.isInstalledApp = bloctoWalletProvider.IsInstalledApp(BloctoWalletProvider.env);
+                bloctoWalletProvider.IsInstalledApp = bloctoWalletProvider.CheckInstalledApp(BloctoWalletProvider.env);
             }
             catch (Exception e)
             {
@@ -86,26 +85,34 @@ namespace Blocto.Sdk.Evm
         public new void RequestAccount(Action<string> callBack)
         {
             base.RequestAccount(callBack);
-            
-            $"Installed App: {isInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
-            if(isInstalledApp && ForceUseWebView == false)
+            var url = CreateConnectWalletUrl();
+            StartCoroutine(OpenUrl(url));
+        }
+
+        /// <summary>
+        /// Create url for AppSDK or WebSDK
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string CreateConnectWalletUrl()
+        {
+            $"Installed App: {IsInstalledApp}, ForceUseWebView: {ForceUseWebView}".ToLog();
+            if(IsInstalledApp && ForceUseWebView == false)
             {
                 var parameters = new Dictionary<string, string>
-                                 {
-                                     {"blockchain", Chain.ToString().ToLower()},
-                                     {"method", "request_account"},
-                                     {"request_id", requestId.ToString()}, 
-                                 };
+                {
+                    {"blockchain", Chain.ToString().ToLower()},
+                    {"method", "request_account"},
+                    {"request_id", RequestId.ToString()}, 
+                };
                 
-                var appSb = GenerateUrl(appSdkDomain, parameters);
+                var appSb = GenerateUrl(AppSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
-                StartCoroutine(OpenUrl(appSb));
-                return;
+                return appSb;
             }
             
-            var webSb = CreateRequestAccountUrlV2(Chain.ToString().ToLower(), bloctoAppIdentifier.ToString());
+            var webSb = CreateRequestAccountUrlV2(Chain.ToString().ToLower(), BloctoAppIdentifier.ToString());
             $"Url: {webSb}".ToLog();
-            StartCoroutine(OpenUrl(webSb));
+            return webSb;
         }
         
         /// <summary>
@@ -117,42 +124,48 @@ namespace Blocto.Sdk.Evm
         public void SignMessage(string message, SignTypeEnum signType, Action<string> callback)
         {
             base.SignMessage();
-            _signMessageCallback = callback; 
+            SignMessageCallback = callback; 
             
-            if(isInstalledApp && ForceUseWebView == false)
+            var url = CreateSignMessageUrl(message, signType);
+            $"Url: {url}".ToLog();
+            StartCoroutine(OpenUrl(url));
+        }
+
+        protected virtual string CreateSignMessageUrl(string message, SignTypeEnum signType)
+        {
+            if (IsInstalledApp && ForceUseWebView == false)
             {
                 var parameters = new Dictionary<string, string>
-                                 {
-                                     {"blockchain", Chain.ToString().ToLower()},
-                                     {"method", "sign_message"},
-                                     {"from", _connectedWalletAddress},
-                                     {"type", signType.GetEnumDescription()},
-                                     {"message", message },
-                                     {"request_id", requestId.ToString()},
-                                 };
-                
-                var appSb = GenerateUrl(appSdkDomain, parameters);
+                {
+                    { "blockchain", Chain.ToString().ToLower() },
+                    { "method", "sign_message" },
+                    { "from", ConnectedWalletAddress },
+                    { "type", signType.GetEnumDescription() },
+                    { "message", message },
+                    { "request_id", RequestId.ToString() },
+                };
+
+                var appSb = GenerateUrl(AppSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
-                StartCoroutine(OpenUrl(appSb));
-                return;
+                return appSb;
             }
-            
+
             var preRequest = new SignMessagePreRequest
-                             {
-                                 From = _connectedWalletAddress,
-                                 Message = message,
-                                 Method = signType.GetEnumDescription()
-                             };
-            
-            var signMessagePreResponse = SendData<SignMessagePreRequest, SignMessagePreResponse>(Chain.ToString(), UserSignatureApiUrl, preRequest);
-            signatureId = signMessagePreResponse.SignatureId;
-            $"SignatureId: {signatureId}".ToLog();
-            
+            {
+                From = ConnectedWalletAddress,
+                Message = message,
+                Method = signType.GetEnumDescription()
+            };
+
+            var signMessagePreResponse =
+                SendData<SignMessagePreRequest, SignMessagePreResponse>(Chain.ToString(), UserSignatureApiUrl, preRequest);
+            SignatureId = signMessagePreResponse.SignatureId;
+            $"SignatureId: {SignatureId}, Response: {JsonConvert.SerializeObject(signMessagePreResponse)}".ToLog();
+
             var webSb = UserSignatureWebUrl(Chain.ToString());
-            $"Url: {webSb}".ToLog();
-            StartCoroutine(OpenUrl(webSb));
+            return webSb;
         }
-        
+
         /// <summary>
         /// Send transaction
         /// </summary>
@@ -182,7 +195,7 @@ namespace Blocto.Sdk.Evm
         {
             base.SendTransaction(callback);
             
-            if(isInstalledApp && ForceUseWebView == false)
+            if(IsInstalledApp && ForceUseWebView == false)
             {
                 var parameters = new Dictionary<string, string>
                                  {
@@ -192,15 +205,15 @@ namespace Blocto.Sdk.Evm
                                      {"to", evmTransaction.To},
                                      {"value", $"0x{evmTransaction.HexValue}"},
                                      {"data", evmTransaction.Data},
-                                     {"request_id", requestId.ToString()},
+                                     {"request_id", RequestId.ToString()},
                                  };
-                var appSb = GenerateUrl(appSdkDomain, parameters);
+                var appSb = GenerateUrl(AppSdkDomain, parameters);
                 $"Url: {appSb}".ToLog();
                 StartCoroutine(OpenUrl(appSb));
                 return;
             }
             
-            var transactionPreResponse = SendData<List<EvmTransaction>, TransactionPreResponse>(Chain.ToString(),AuthzApiUrl, new List<EvmTransaction>() {evmTransaction});
+            var transactionPreResponse = SendData<List<EvmTransaction>, TransactionPreResponse>(Chain.ToString(),AuthzApiUrl, new List<EvmTransaction> {evmTransaction});
             var webSb = AuthzWebUrl(transactionPreResponse.AuthorizationId, Chain.ToString());
             $"Url: {webSb}".ToLog();
             StartCoroutine(OpenUrl(webSb.ToString()));
@@ -216,7 +229,7 @@ namespace Blocto.Sdk.Evm
         /// <returns></returns>
         public TResult QueryForSmartContract<TResult>(Uri abiUrl, string contractAddress, string queryMethod)
         {
-            var api = webRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
+            var api = WebRequestUtility.GetResponse<AbiResult>(abiUrl.ToString(), HttpMethod.Get, "application/json");
             var web3 = new Web3(NodeUrl);
             var contract = web3.Eth.GetContract(api.Result, contractAddress);
             
@@ -233,7 +246,7 @@ namespace Blocto.Sdk.Evm
             $"Universal Link: {link}, in Handler".ToLog();
             var decodeLink = UnityWebRequest.UnEscapeURL(link);
             var item = decodeLink.RequestId();
-            if (!requestIdActionMapper.TryGetValue(item.RequestId, out var action))
+            if (!RequestIdActionMapper.TryGetValue(item.RequestId, out var action))
             {
                 return;
             }
@@ -242,28 +255,32 @@ namespace Blocto.Sdk.Evm
             {
                 case "CONNECTWALLET":
                     var result = UniversalLinkHandler(item.RemainContent, "address=");
-                    _connectedWalletAddress = result;
+                    ConnectedWalletAddress = result;
+
                     if (item.RemainContent.Contains("session_id"))
                     {
-                        sessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                        SessionId = UniversalLinkHandler(item.RemainContent, "session_id=");
+                        $"SessionId: {SessionId}, ConnectedWalletAddress: {ConnectedWalletAddress}".ToLog();
                     }
                     
-                    _connectWalletCallback.Invoke(result);
+                    ConnectWalletCallback.Invoke(result);
                     break;
                     
                 case "SIGNMESSAGE":
                     var signature = UniversalLinkHandler(item.RemainContent, "signature=");
-                    _signMessageCallback.Invoke(signature);
+                    SignMessageCallback.Invoke(signature);
                     break;
                 case "SENDTRANSACTION":
                     var sendTransaction = UniversalLinkHandler(item.RemainContent, "tx_hash");
-                    _sendTransactionCallback.Invoke(sendTransaction);
+                    SendTransactionCallback.Invoke(sendTransaction);
                     break;
             }
         }
         
+
         private new string UniversalLinkHandler(string link, string keyword)
         {
+            $"Link: {link}, Keyword: {keyword}".ToLog();
             var data = (MatchContents: new List<string>(), RemainContent: link);
             data = CheckContent(data.RemainContent, keyword);
             var result = data.MatchContents.FirstOrDefault().AddressParser().Value;
