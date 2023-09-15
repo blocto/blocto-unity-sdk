@@ -61,7 +61,7 @@ namespace Blocto.Sdk.Evm
                     bloctoWalletProvider.WebSdkDomain = bloctoWalletProvider.WebSdkDomain.Replace("wallet.blocto.app", "wallet-dev.blocto.app");
                     bloctoWalletProvider.WebSdkDomainV2 = bloctoWalletProvider.WebSdkDomainV2.Replace("wallet-v2.blocto.app", "wallet-v2-dev.blocto.app");
                 } 
-            
+                
                 if(Application.platform == RuntimePlatform.Android)
                 {
                     bloctoWalletProvider.InitializePlugins("com.blocto.unity.UtilityActivity");
@@ -276,7 +276,6 @@ namespace Blocto.Sdk.Evm
                     break;
             }
         }
-        
 
         private new string UniversalLinkHandler(string link, string keyword)
         {

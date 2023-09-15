@@ -24,7 +24,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
-using Object = System.Object;
 
 namespace Blocto.Sdk.Flow
 {
@@ -42,10 +41,6 @@ namespace Blocto.Sdk.Flow
         /// </summary>
         protected static string Title;
 
-        /// <summary>
-        /// HTTP utility
-        /// </summary>
-        private WebRequestUtility WebRequestUtility;
         
         /// <summary>
         /// Forced use of WebView
@@ -94,7 +89,6 @@ namespace Blocto.Sdk.Flow
         private static extern string UniversalLink_Reset(); 
         #endif
         
-        
         protected IResolveUtility ResolveUtility;
         
         protected Dictionary<string, string> RequestIdActionMapper;
@@ -111,6 +105,11 @@ namespace Blocto.Sdk.Flow
 
         protected Guid RequestId;
         
+        /// <summary>
+        /// HTTP utility
+        /// </summary>
+        private WebRequestUtility WebRequestUtility;
+
         private IFlowClient _flowClient;
         
         private int _maxRetryCount = 10;
@@ -321,17 +320,12 @@ namespace Blocto.Sdk.Flow
 
         protected virtual (string IframeUrl, Uri PollingUrl) CreateSignMessageUrlForWebSdk(string message, FclService signService)
         {
-            $"Fcl service: {JsonConvert.SerializeObject(signService)}".ToLog();
             var signUrl = signService.SignMessageAdapterEndpoint();
             $"signUrl: {signUrl}".ToLog();
 
             var hexMessage = message.StringToHex();
             var payload = ResolveUtility.ResolveSignMessage(hexMessage, signService.PollingParams.SessionId());
-            $"Payload: {JsonConvert.SerializeObject(payload)}".ToLog();
-            
             var response = SendWebRequest<JObject, AuthnAdapterResponse>((signUrl, "POST", "application/json"), payload);
-            $"Authn adapter response: {JsonConvert.SerializeObject(response)}".ToLog();
-            
             var endpoint = response.SignMessageEndpoint();
             var webSb = new StringBuilder(endpoint.IframeUrl);
             webSb.Append("&")

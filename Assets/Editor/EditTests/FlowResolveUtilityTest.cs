@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using Blocto.Sdk.Flow.Model;
 using Blocto.Sdk.Flow.Utility;
 using Flow.Net.Sdk.Core.Cadence;
 using Flow.Net.Sdk.Core.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -47,6 +49,38 @@ namespace Editor.EditTests
             var actual = JsonConvert.SerializeObject(result);
             var expected = "{\"args\":[{\"type\":\"UFix64\",\"value\":\"0.1\"},{\"type\":\"Address\",\"value\":\"0xf90c31e986eb22f90xf90c31e986eb22f9\"}],\"interaction\":{\"tag\":\"TRANSACTION\",\"assigns\":{},\"reason\":null,\"status\":\"OK\",\"arguments\":{\"1234567890\":{\"kind\":\"ARGUMENT\",\"tempId\":\"1234567890\",\"value\":\"0.1\",\"asArgument\":{\"type\":\"UFix64\",\"value\":\"0.1\"},\"xform\":{\"label\":\"UFix64\"}},\"0987654321\":{\"kind\":\"ARGUMENT\",\"tempId\":\"0987654321\",\"value\":\"0xf90c31e986eb22f90xf90c31e986eb22f9\",\"asArgument\":{\"type\":\"Address\",\"value\":\"0xf90c31e986eb22f90xf90c31e986eb22f9\"},\"xform\":{\"label\":\"Address\"}}},\"message\":{\"cadence\":\"test\",\"refBlock\":null,\"computeLimit\":1000,\"proposer\":null,\"payer\":null,\"authorizations\":[],\"arguments\":[\"1234567890\",\"0987654321\"],\"params\":[]},\"events\":null,\"account\":{\"addr\":null},\"collection\":null,\"transaction\":null,\"block\":null,\"params\":{}},\"voucher\":{\"cadence\":\"test\",\"refBlock\":null,\"computeLimit\":1000,\"arguments\":[{\"type\":\"UFix64\",\"value\":\"0.1\"},{\"type\":\"Address\",\"value\":\"0xf90c31e986eb22f90xf90c31e986eb22f9\"}],\"proposalKey\":{\"address\":null,\"keyId\":null,\"sequenceNum\":null}},\"f_type\":\"PreSignable\",\"f_vsn\":\"1.0.1\",\"addr\":null,\"keyId\":0,\"cadence\":\"test\",\"roles\":{\"proposer\":true,\"authorizer\":true,\"payer\":true}}";
             Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestResolveSignMessage()
+        {
+            var sessionId = "DGEJohAHIYdN5uIzj8_-B-FFq-ES9bWLHNM2guEHweF";
+            var hexMessage = "74657374";
+            var actual = _target.ResolveSignMessage(hexMessage, sessionId);
+            var expected = new JObject
+            {
+                new JProperty(SignablePropertyEnum.service.ToString(), new JObject
+                {
+                    new JProperty("params", new JObject
+                    {
+                        new JProperty("sessionId", sessionId)
+                    }),
+                    new JProperty("type", "user-signature")
+                }),
+                new JProperty(SignablePropertyEnum.config.ToString(), new JObject
+                {
+                    new JProperty("services", new JObject
+                    {
+                        new JProperty("OpenID.scopes", "email!")
+                    }),
+                    new JProperty("app", new JObject())
+                }),
+                new JProperty(SignablePropertyEnum.f_vsn.ToString(), "1.0.1"),
+                new JProperty("fclVersion", "1.0.1"),
+                new JProperty("message", hexMessage)
+            };
+            
+            Assert.AreEqual(JsonConvert.SerializeObject(expected), JsonConvert.SerializeObject(actual));
         }
     }
 }
