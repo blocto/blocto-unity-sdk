@@ -15,7 +15,7 @@ namespace Script.Model
                            MainnetExplorerDomain = "etherscan.io",
                            TestnetExplorerDomain = "goerli.etherscan.io",
                            MainnetExplorerApiUrl = "https://etherscan.io",
-                           TestnetExplorerApiUrl = "https://goerli.etherscan.io/",
+                           TestnetExplorerApiUrl = "https://api-goerli.etherscan.io/",
                        };
             
             BNB_CHAIN = new ChainInformation
